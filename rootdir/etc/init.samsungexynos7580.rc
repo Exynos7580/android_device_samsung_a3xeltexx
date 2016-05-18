@@ -48,16 +48,7 @@ on post-fs-data
     chown system audio /sys/class/voice_trigger/dbd2/va_load_amodel
     chmod 0664 /sys/class/voice_trigger/dbd2/va_load_amodel
     mkdir /data/firmware 0770 media system
-    chmod 0660 /dev/i2c-0
-    chown system system /dev/i2c-0
     chown media system /data/firmware
-
-# permission for CHARGING
-    chown system radio /sys/class/power_supply/battery/batt_discharging_check
-    chown system radio /sys/class/power_supply/battery/batt_discharging_check_adc
-    chown system radio /sys/class/power_supply/battery/batt_discharging_ntc
-    chown system radio /sys/class/power_supply/battery/batt_discharging_ntc_adc
-    chown system radio /sys/class/power_supply/battery/batt_self_discharging_control
 
 on boot
     # override init.rc to keep plenty of large order chunks around
@@ -66,7 +57,10 @@ on boot
     # write /proc/sys/vm/min_free_order_shift 1
 
 # SSWAP
-    write /proc/sys/vm/swappiness 190
+    write /proc/sys/vm/swappiness 130
+
+    #mount debugfs /sys/kernel/debug /sys/kernel/debug
+#    setprop ro.radio.noril yes
 
     # Allow to access debugfs
     chmod 755 /sys/kernel/debug
@@ -79,10 +73,6 @@ on boot
     chown system system /sys/devices/11400000.mali/power_policy
     chmod 0664 /sys/devices/11400000.mali/power_policy
 
-    # Permissions for S.LSI ESE
-    chmod 0660 /dev/p3
-    chown system system /dev/p3
-
     # Dynamic cluster hotplug
     chown system system /sys/devices/system/cpu/clusterhotplug/force_hstate
     chmod 0660 /sys/devices/system/cpu/clusterhotplug/force_hstate
@@ -94,6 +84,10 @@ on boot
     # C-STATE
     chown system system /sys/module/cpuidle/parameters/off
     chmod 0660 /sys/module/cpuidle/parameters/off
+
+    # S/W self discharging
+    chown system system /sys/power/cpufreq_self_discharging
+    chmod 0660 /sys/power/cpufreq_self_discharging
 
     # Change permission for dvfshelper
     chown radio system /sys/class/devfreq/17000020.bus_mif/available_frequencies
@@ -137,30 +131,6 @@ on boot
     chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse_duration
     chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/io_is_busy
     chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/io_is_busy
-
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_slack
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_slack
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/input_boost
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/input_boost
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse_duration
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse_duration
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/io_is_busy
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/io_is_busy
 
     chown system log /proc/sec_log
 
@@ -229,7 +199,6 @@ on boot
     # Switch Device
     chown system radio /sys/class/sec/switch/usb_state
     chown system radio /sys/class/sec/switch/chg_type
-    chown system system /sys/class/sec/switch/afc_off
 
 #for datarouter
     chown system system /dev/dun
@@ -243,13 +212,6 @@ on boot
     chown system radio /sys/class/host_notify/usb_otg/booster
     chmod 0660 /sys/class/host_notify/usb_otg/booster
 
-#MST HW Support
-    setprop ro.mst.support 1
-
-#Secure OS migration
-    chown radio system /sys/devices/system/sec_os_ctrl/migrate_os
-    chmod 664 /sys/devices/system/sec_os_ctrl/migrate_os
-
 # IPSec for VOLTE
     chown root system /dev/socket
     chmod 0775 /dev/socket
@@ -257,10 +219,6 @@ on boot
 on fs
     mount_all /fstab.samsungexynos7580
     setprop ro.crypto.fuse_sdcard true
-
-# sem_daemon permission
-    chown system system /efs/sec_efs/ssp_data
-    chmod 0644 /efs/sec_efs/ssp_data
 
 # Permissions for ION
     chmod 0660 /sys/class/ion_cma/ion_video_ext/isolated
@@ -278,11 +236,6 @@ on fs
     chown system system /sys/class/lcd/panel/siop_enable
     chown system system /sys/class/lcd/panel/temperature
     chown system radio /sys/class/lcd/panel/power_reduce
-
-# Permissions for LCD HMT
-    chown system system /sys/class/lcd/panel/hmt_on
-    chown system system /sys/class/lcd/panel/hmt_bright
-    chown system system /sys/class/mdnie/mdnie/hmt_color_temperature
 
 # Permissions for MDNIE
     chown system media_rw /sys/class/mdnie/mdnie/mode
@@ -332,7 +285,6 @@ on fs
 # Permissions for gpio_keys
     chown radio system /sys/class/sec/sec_key/wakeup_keys
     write /sys/class/sec/sec_key/wakeup_keys 116,172
-
 # Fingerprint
     mkdir /dev/validity 0770 system system
 
@@ -392,8 +344,6 @@ on fs
     chown system radio /sys/class/camera/ois/ois_exif
 
 # SENSORS
-# Fingerprint_sensor
-    chown system radio /sys/class/fingerprint/fingerprint/type_check
 # Accelerometer_sensor
     chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
     chown system radio /sys/class/sensors/accelerometer_sensor/calibration
@@ -834,65 +784,17 @@ on fs
     chmod 760	/sys/class/sensors/sensor_dev/flush
 
 # BHY
-    chown system radio  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/event_shealth_int
-    chown system radio  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/pedometer_steps
-    chown system radio  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/shealth_cadence
-    chown system radio  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/shealth_cadence_enable
-    chown system radio  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/shealth_enable
-    chown system radio  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/shealth_flush_cadence
-    chmod 660  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/event_shealth_int
-    chmod 660  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/pedometer_steps
-    chmod 660  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/shealth_cadence_enable
-    chmod 660  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/shealth_enable
-    chmod 660  /sys/devices/13890000.hsi2c/i2c-2/2-0028/iio:device0/shealth_flush_cadence
-
-    chown system radio  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/event_shealth_int
-    chown system radio  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/pedometer_steps
-    chown system radio  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/shealth_cadence
-    chown system radio  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/shealth_cadence_enable
-    chown system radio  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/shealth_enable
-    chown system radio  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/shealth_flush_cadence
-    chmod 660  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/event_shealth_int
-    chmod 660  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/pedometer_steps
-    chmod 660  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/shealth_cadence_enable
-    chmod 660  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/shealth_enable
-    chmod 660  /sys/devices/i2c.24/i2c-6/6-0028/iio:device0/shealth_flush_cadence
-
-    chown system radio  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/event_shealth_int
-    chown system radio  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/pedometer_steps
-    chown system radio  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/shealth_cadence
-    chown system radio  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/shealth_cadence_enable
-    chown system radio  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/shealth_enable
-    chown system radio  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/shealth_flush_cadence
-    chmod 660  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/event_shealth_int
-    chmod 660  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/pedometer_steps
-    chmod 660  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/shealth_cadence_enable
-    chmod 660  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/shealth_enable
-    chmod 660  /sys/devices/i2c.44/i2c-7/7-0028/iio:device0/shealth_flush_cadence
-
-    chown system radio  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/event_shealth_int
-    chown system radio  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/pedometer_steps
-    chown system radio  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/shealth_cadence
-    chown system radio  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/shealth_cadence_enable
-    chown system radio  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/shealth_enable
-    chown system radio  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/shealth_flush_cadence
-    chmod 660  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/event_shealth_int
-    chmod 660  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/pedometer_steps
-    chmod 660  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/shealth_cadence_enable
-    chmod 660  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/shealth_enable
-    chmod 660  /sys/devices/i2c.47/i2c-7/7-0028/iio:device0/shealth_flush_cadence
-
-    chown system radio  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/event_shealth_int
-    chown system radio  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/pedometer_steps
-    chown system radio  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/shealth_cadence
-    chown system radio  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/shealth_cadence_enable
-    chown system radio  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/shealth_enable
-    chown system radio  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/shealth_flush_cadence
-    chmod 660  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/event_shealth_int
-    chmod 660  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/pedometer_steps
-    chmod 660  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/shealth_cadence_enable
-    chmod 660  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/shealth_enable
-    chmod 660  /sys/devices/i2c.21/i2c-6/6-0028/iio:device0/shealth_flush_cadence
+    chown system radio  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/event_shealth_int
+    chown system radio  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/pedometer_steps
+    chown system radio  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/shealth_cadence
+    chown system radio  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/shealth_cadence_enable
+    chown system radio  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/shealth_enable
+    chown system radio  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/shealth_flush_cadence
+    chmod 660  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/event_shealth_int
+    chmod 660  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/pedometer_steps
+    chmod 660  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/shealth_cadence_enable
+    chmod 660  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/shealth_enable
+    chmod 660  /sys/devices/13870000.hsi2c/i2c-0/0-0028/iio:device0/shealth_flush_cadence
 
 # IRLED_sensor
     chown system radio /sys/class/sensors/irled_remote/name
@@ -923,38 +825,12 @@ service gpsd /system/bin/gpsd -c /system/etc/gps.xml
     group system inet net_raw
     ioprio be 0
 
-# SENSOR FRAMEWORK : starts fingerprintService
-service vcsFPService /system/bin/vcsFPService
-    class late_start
-    user system
-    group system
-
-# BIO FRAMEWORK : starts bio auth service
-service bauthserver /system/bin/bauthserver
-    class late_start
-    user system
-    group system
-
 service prepare_param /system/bin/prepare_param.sh /dev/block/platform/13540000.dwmmc0/by-name/PARAM
     class core
     user root
     group root
     seclabel u:r:prepare_param:s0
     oneshot
-
-# sem_daemon
-service sem_daemon /system/bin/sem_daemon
-    class core
-    user system
-    group system nfc
-    disabled
-
-on property:sys.boot_completed=1
-    setprop security.semdaemonfinish 0
-    start sem_daemon
-
-on property:security.semdaemonfinish=1
-    stop sem_daemon
 
 # Blowfish tzdaemon
 service tz_service /system/bin/tzdaemon
@@ -1057,7 +933,7 @@ on property:sys.mobicoredaemon.enable=true
     start cs_service
 
 # SSWAP
-service swapon /sbin/sswap -s -f 1536
+service swapon /sbin/sswap -s
     class core
     user root
     group root
