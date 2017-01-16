@@ -1,12 +1,13 @@
 import init.samsungexynos7580.usb.rc
 import init.baseband.rc
 import init.wifi.rc
-import init.fac.rc
 
 on early-init
     mount debugfs /sys/kernel/debug /sys/kernel/debug
 
 on init
+    start watchdogd
+
     mkdir /preload 0771 system system
 
     # See storage config details at http://source.android.com/tech/storage/
@@ -19,10 +20,6 @@ on init
     export EXTERNAL_STORAGE /sdcard
     symlink /data/app /factory
     symlink /dev/block/platform/13540000.dwmmc0/by-name/PERSISTENT /dev/block/persistent
-
-#Private Mode
-#    mkdir /mnt/shell/privatemode 0700 system system
-#    mkdir /storage/Private 0000 system system
 
 on post-fs-data
     mkdir /data/media 0770 media_rw media_rw
@@ -51,28 +48,7 @@ on post-fs-data
     mkdir /data/firmware 0770 media system
     chown media system /data/firmware
 
-# BlowFish service
-#    mkdir /data/tee 0700 system system
-#    start tz_service
-#    setprop sys.blowfish.loaded true
-
-#Private Mode
-#    mkdir /data/privatemode 0770 system system
-#    chown system system /data/privatemode
-#    restorecon /data/privatemode
-
 on boot
-    # override init.rc to keep plenty of large order chunks around
-    # to improve allocation times
-    # write /proc/sys/vm/min_free_kbytes 32768
-    # write /proc/sys/vm/min_free_order_shift 1
-
-# SSWAP
-    write /proc/sys/vm/swappiness 130
-
-    #mount debugfs /sys/kernel/debug /sys/kernel/debug
-#    setprop ro.radio.noril yes
-
     # Allow to access debugfs
     chmod 755 /sys/kernel/debug
 
@@ -94,7 +70,7 @@ on boot
 
     # C-STATE
     chown system system /sys/module/cpuidle/parameters/off
-    chmod 0660 /sys/module/cpuidle/parameters/off
+    chmod 0664 /sys/module/cpuidle/parameters/off
 
     # Change permission for dvfshelper
     chown radio system /sys/class/devfreq/17000020.bus_mif/available_frequencies
@@ -245,11 +221,6 @@ on boot
     chown system radio /sys/class/sec/switch/otg_test
     chown system radio /sys/class/host_notify/usb_otg/booster
     chmod 0660 /sys/class/host_notify/usb_otg/booster
-
-#Private Mode
-#    service privatemode /system/bin/sdcard -r /data/privatemode /mnt/shell/privatemode 1000 1000
-#    class late_start
-#    oneshot
 
 # IPSec for VOLTE
     chown root system /dev/socket
@@ -454,21 +425,6 @@ service vcsFPService /system/bin/vcsFPService
     user system
     group system
 
-service prepare_param /system/bin/prepare_param.sh /dev/block/platform/13540000.dwmmc0/by-name/PARAM
-    class core
-    user root
-    group root
-    seclabel u:r:prepare_param:s0
-    oneshot
-
-# Blowfish tzdaemon
-service tz_service /system/bin/tzdaemon
-    class core
-    socket tz stream 0666 system system
-    user system
-    group system
-    disabled
-
 service taa_service /system/bin/taadaemon
     class core
     socket taa stream 0666 system system
@@ -502,54 +458,14 @@ on property:sys.boot_completed=1
     write /proc/sys/vm/dirty_bytes 31457280
     write /proc/sys/vm/dirty_background_bytes 15728640
 
-# DIAG
-service DIAG-daemon /system/bin/diagexe
-    class main
-    user root
-    group system radio inet net_raw
-
-# Kick watchdogd if debug_level is low
-on property:ro.debug_level=0x4f4c
-    start watchdogd
-
-# Secure Storage startup
-service secure_storage /system/bin/secure_storage_daemon
-    class core
-    user system
-    group system
-    disabled
-
-on property:ro.securestorage.support=true
-    mkdir /dev/.secure_storage
-    chmod 0711 /dev/.secure_storage
-    chown system system /dev/.secure_storage
-    restorecon -R /dev/.secure_storage
-    start secure_storage
-
 # LPM
 on property:ro.bootmode=charger
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM /system wait ro
     wait /dev/block/platform/13540000.dwmmc0/by-name/EFS
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit
 
-on property:ro.bootmode=charger
-    class_start sec-charger
-
 on property:sys.tzdaemon=Ready
     start taa_service
-
-# umount service
-service umount_service /system/bin/umount /preload
-    disabled
-    oneshot
-
-# Support Preload install apks
-on property:persist.sys.storage_preload=1
-    mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/HIDDEN /preload nosuid nodev ro barrier=1
-    setprop storage.preload.complete 1
-
-on property:persist.sys.storage_preload=0
-    start umount_service
 
 # DRK/CS service
 service cs_service /system/bin/cs
@@ -560,12 +476,5 @@ service cs_service /system/bin/cs
 
 on property:sys.mobicoredaemon.enable=true
     start cs_service
-	write /proc/iccc_ready 1
+    write /proc/iccc_ready 1
 
-# SSWAP
-service swapon /sbin/sswap -s
-    class core
-    user root
-    group root
-    seclabel u:r:sswap:s0
-    oneshot
