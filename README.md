@@ -18,5 +18,5 @@ Rear Camera  | 13 MP,  4128 x 3096 pixels, autofocus, LED flash
 
 ![Galaxy A3 [2016]](http://cdn2.gsmarena.com/vv/pics/samsung/samsung-galaxy-a3-2016-1.jpg "Galaxy A3 [2016]")
 
-This branch is for building CyanogenMod 13.0 Firmware.
+This branch is for building LineageOS 13.0 Firmware.
 
