@@ -843,6 +843,10 @@
 
 	<!-- call forwarding output -->
 	<path name="call_forwarding_master">
+		<ctl name="S2801 Mixer En" value="On" />
+		<ctl name="S2801 SRC2 En" value="On" />
+		<ctl name="S2801 CH1 Mixer En" value="On" />
+		<ctl name="S2801 CH2 DOUT Select" value="DMIX_OUT" />
 	</path>
 
 	<path name="call_forwarding_slave-handset">
@@ -920,6 +924,15 @@
 
 	<path name="recording-headphone-mic">
 		<path name="media-mic" />
+	</path>
+
+	<!-- jam voice input -->
+	<path name="recording-jam-mic">
+		<path name="media-mic" />
+	</path>
+
+	<path name="recording-jam-headset-mic">
+		<path name="media-headset-mic" />
 	</path>
 
 	<!-- interview input -->
@@ -1511,7 +1524,11 @@
 
 	<!-- call forwarding input -->
 	<path name="call_forwarding_master-mic">
-		<path name="communication-handset-mic" />
+		<ctl name="S2801 Mixer En" value="On" />
+		<ctl name="S2801 SRC2 En" value="On" />
+		<ctl name="S2801 RMIX1 En" value="On" />
+		<ctl name="S2801 RMIX2 En" value="Off" />
+		<ctl name="S2801 CH1 DOUT Select" value="RMIX_OUT" />
 	</path>
 
 	<path name="call_forwarding_slave-handset-mic">
@@ -2256,9 +2273,7 @@
 
 	<!-- call forwarding output volume -->
 	<path name="gain-call_forwarding_master">
-		<ctl name="S2801 MIX1_LVL" value="0" />
-		<ctl name="DAC Gain" value="127" />
-		<ctl name="Earphone Volume" value="0" />
+		<!-- we use default volume -->
 	</path>
 
 	<path name="gain-call_forwarding_slave-handset">
@@ -2316,11 +2331,11 @@
 
 	<!-- camcorder input volume -->
 	<path name="gain-camcorder-mic">
-		<ctl name="MIC1 Volume" value="10" />
+		<ctl name="MIC1 Volume" value="12" />
 		<ctl name="MIC1 Boost Volume" value="1" />
 		<ctl name="Line-in Volume" value="4" />
-		<ctl name="ADC Left Gain" value="136" />
-		<ctl name="ADC Right Gain" value="136" />
+		<ctl name="ADC Left Gain" value="137" />
+		<ctl name="ADC Right Gain" value="137" />
 	</path>
 
 	<path name="gain-camcorder-headset-mic">
@@ -2360,6 +2375,21 @@
 		<ctl name="MIC1 Boost Volume" value="1" />
 		<ctl name="ADC Left Gain" value="138" />
 		<ctl name="ADC Right Gain" value="138" />
+	</path>
+
+	<!-- jam voice input volume-->
+	<path name="gain-recording-jam-mic">
+		<ctl name="MIC1 Volume" value="10" />
+		<ctl name="MIC1 Boost Volume" value="1" />
+		<ctl name="ADC Left Gain" value="138" />
+		<ctl name="ADC Right Gain" value="138" />
+	</path>
+
+	<path name="gain-recording-jam-headset-mic">
+		<ctl name="MIC2 Volume" value="7" />
+		<ctl name="MIC2 Boost Volume" value="2" />
+		<ctl name="ADC Left Gain" value="136" />
+		<ctl name="ADC Right Gain" value="136" />
 	</path>
 
 	<!-- interview input volume -->
@@ -3367,10 +3397,7 @@
 
 	<!-- call forwarding input volume -->
 	<path name="gain-call_forwarding_master-mic">
-		<ctl name="MIC1 Volume" value="11" />
-		<ctl name="MIC1 Boost Volume" value="2" />
-		<ctl name="ADC Left Gain" value="127" />
-		<ctl name="ADC Right Gain" value="127" />
+		<!-- we use default volume -->
 	</path>
 
 	<path name="gain-call_forwarding_slave-handset-mic">
