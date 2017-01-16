@@ -29,7 +29,7 @@ TARGET_INIT_VENDOR_LIB := libinit_sec
 TARGET_UNIFIED_DEVICE := true
 
 # Kernel
-BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 --tags_offset 0x00000100 --dt $(DEVICE_PATH)/dt.img
+BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 --tags_offset 0x00000100 --board SYSMAGIC000KU --dt $(DEVICE_PATH)/dt.img
 TARGET_KERNEL_CONFIG := cyanogenmod_a3xelte_defconfig
 TARGET_KERNEL_SOURCE := kernel/samsung/a3xelte
 
