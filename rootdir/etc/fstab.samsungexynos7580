@@ -12,5 +12,5 @@
 /dev/block/platform/13540000.dwmmc0/by-name/USERDATA   /data               ext4      noatime,nosuid,nodev,noauto_da_alloc,journal_async_commit,errors=panic    wait,check,encryptable=footer
 
 # VOLD
-/devices/13560000.dwmmc2/mmc_host/mmc*		auto         vfat default voldmanaged=extSdCard:auto,encryptable=userdata
+/devices/13560000.dwmmc2/mmc_host/mmc*		auto         vfat default voldmanaged=sdcard1:auto,encryptable=userdata
 /devices/13510000.usb*				auto         vfat default voldmanaged=usb:auto
