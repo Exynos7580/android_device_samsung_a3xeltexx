@@ -289,7 +289,6 @@ on fs
     mkdir /persdata/absolute 0750 system system
 
     wait /dev/block/platform/13540000.dwmmc0/by-name/PERSDATA
-    check_fs /dev/block/platform/13540000.dwmmc0/by-name/PERSDATA ext4
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/PERSDATA /persdata/absolute nosuid nodev barrier=1
 
     chown system system /persdata
@@ -531,7 +530,6 @@ on property:ro.securestorage.support=true
 on property:ro.bootmode=charger
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM /system wait ro
     wait /dev/block/platform/13540000.dwmmc0/by-name/EFS
-    check_fs /dev/block/platform/13540000.dwmmc0/by-name/EFS ext4
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit
 
 on property:ro.bootmode=charger
