@@ -59,9 +59,6 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/keylayout/sec_touchkey.kl:system/usr/keylayout/sec_touchkey.kl
 
 # GPS
-PRODUCT_PACKAGES += \
-    libdmitry
-
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/gps/gps.conf:system/etc/gps.conf \
     $(LOCAL_PATH)/configs/gps/gps.xml:system/etc/gps.xml
@@ -125,10 +122,6 @@ PRODUCT_COPY_FILES += \
 ADDITIONAL_DEFAULT_PROPERTIES += \
     wifi.interface=wlan0
 
-# SYMBOLS FOR BLOBS
-PRODUCT_PACKAGES += \
-    libsamsung_symbols
-
 # Ril
 PRODUCT_PACKAGES += \
     libprotobuf-cpp-full \
@@ -137,15 +130,6 @@ PRODUCT_PACKAGES += \
 # cpboot-daemon for modem
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/ril/sbin/cbd:root/sbin/cbd
-
-
-# Default.prop overrides to get adb working at boot
-ifneq ($(TARGET_BUILD_VARIANT),user) 
-ADDITIONAL_DEFAULT_PROPERTIES += \
-    ro.secure=0 \
-    ro.adb.secure=0
-endif
-
 
 # Inherit from Exynos7580-common
 $(call inherit-product, device/samsung/exynos7580-common/device-common.mk)
