@@ -68,5 +68,3 @@ BOARD_MODEM_TYPE := tss310
 TARGET_GLOBAL_CFLAGS += -DANDROID_MULTI_SIM
 TARGET_GLOBAL_CPPFLAGS += -DANDROID_MULTI_SIM
 
-# inherit from the proprietary version
--include vendor/samsung/a3xe3gxx/BoardConfigVendor.mk
