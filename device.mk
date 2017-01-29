@@ -89,6 +89,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     power.universal7580
 
+# Shims
+PRODUCT_PACKAGES += \
+    libshim_gpsd \
+    libshim_wvm
+
 # Ramdisk
 PRODUCT_PACKAGES += \
     fstab.samsungexynos7580 \
