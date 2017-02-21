@@ -91,8 +91,7 @@ PRODUCT_PACKAGES += \
 
 # Shims
 PRODUCT_PACKAGES += \
-    libshim_gpsd \
-    libshim_wvm
+    libshim_gpsd
 
 # Ramdisk
 PRODUCT_PACKAGES += \

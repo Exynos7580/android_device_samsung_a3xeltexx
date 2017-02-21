@@ -235,14 +235,8 @@ vendor/etc/yas_set.cfg
 vendor/lib/libyasalgo.so
 
 ### Widevine
-lib/liboemcrypto.so
-lib/libdrmdecrypt.so
 lib/libstagefright_hdcp.so
-lib/drm/libdrmwvmplugin.so
 vendor/lib/mediadrm/libwvdrmengine.so
-vendor/lib/libWVStreamControlAPI_L1.so
-vendor/lib/libwvdrm_L1.so
-vendor/lib/libwvm.so
 
 ### Wifi
 etc/wifi/bcmdhd_apsta.bin
