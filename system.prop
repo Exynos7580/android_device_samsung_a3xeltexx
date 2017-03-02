@@ -1,6 +1,8 @@
 # Display
 ro.sf.lcd_density=320
 ro.opengles.version=196609
+ro.bq.gpu_to_cpu_unsupported=1
+debug.hwc.force_gpu=1
 
 # Radio
 telephony.lteOnCdmaDevice=0
