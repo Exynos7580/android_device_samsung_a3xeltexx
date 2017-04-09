@@ -47,19 +47,14 @@ void make_me_dual()
 
 void vendor_load_properties()
 {
-    char platform[PROP_VALUE_MAX];
-    char bootloader[PROP_VALUE_MAX];
-    char device[PROP_VALUE_MAX];
-    char devicename[PROP_VALUE_MAX];
+    std::string bootloader = property_get("ro.bootloader");
 
-    property_get("ro.bootloader", bootloader);
-
-    if (strstr(bootloader, "A310F")) {
+    if (bootloader.find("A310F") == 0) {
         property_set("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:5.1.1/LMY47X/A310FXXS2APD1:user/release-keys");
         property_set("ro.build.description", "a3xeltexx-user 5.1.1 LMY47X A310FXXS2APD1 release-keys");
         property_set("ro.product.model", "SM-A310F");
         property_set("ro.product.device", "a3xelte");
-    } else if (strstr(bootloader, "A310M")) {
+    } else if (bootloader.find("A310M") == 0) {
         property_set("ro.build.fingerprint", "samsung/a3xelteub/a3xelte:5.1.1/LMY47X/A310MUBS1APC1:user/release-keys");
         property_set("ro.build.description", "a3xelteub-user 5.1.1 LMY47X A310MUBS1APC1 release-keys");
         property_set("ro.product.model", "SM-A310M");
@@ -70,7 +65,7 @@ void vendor_load_properties()
         property_set("ro.product.device", "a3xelte");
     }
 
-    property_get("ro.product.device", device);
-    strlcpy(devicename, device, sizeof(devicename));
-    ERROR("Found bootloader id %s setting build properties for %s device\n", bootloader, devicename);
+    std::string device = property_get("ro.product.device");
+    std::string devicename = property_get("ro.product.model");
+    ERROR("Found bootloader id %s setting build properties for %s device\n", bootloader.c_str(), devicename.c_str());
 }
