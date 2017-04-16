@@ -17,9 +17,9 @@
 # Inherit from Exynos7580-common
 include device/samsung/exynos7580-common/BoardConfigCommon.mk
 
-TARGET_OTA_ASSERT_DEVICE := j7e3g,j7e3gxx,j7elte,j7eltexx
+TARGET_OTA_ASSERT_DEVICE := a3xelte,a3xeltexx
 
-DEVICE_PATH := device/samsung/j7eltexx
+DEVICE_PATH := device/samsung/a3xeltexx
 
 # Include path
 TARGET_SPECIFIC_HEADER_PATH += $(DEVICE_PATH)/include
@@ -35,12 +35,12 @@ TARGET_INIT_VENDOR_LIB := libinit_sec
 TARGET_UNIFIED_DEVICE := true
 
 # Kernel
-TARGET_KERNEL_CONFIG := lineageos_j7elte_defconfig
+TARGET_KERNEL_CONFIG := lineageos_a3xelte_defconfig
 TARGET_KERNEL_SOURCE := kernel/samsung/a3xelte
 
 # Extracted with libbootimg
 #BOARD_KERNEL_SEPARATED_DT := true
-BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 --tags_offset 0x00000100 --dt $(DEVICE_PATH)/dt.img --board SYSMAGIC000KU
+BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 --tags_offset 0x00000100 --dt $(DEVICE_PATH)/dt.img --board SRPOJ08A000KU
 #TARGET_CUSTOM_DTBTOOL := dtbhtoolExynos
 
 # Partitions
@@ -62,4 +62,4 @@ BOARD_RIL_CLASS := ../../../$(DEVICE_PATH)/ril
 BOARD_MODEM_TYPE := tss310
 
 # inherit from the proprietary version
--include vendor/samsung/j7eltexx/BoardConfigVendor.mk
+-include vendor/samsung/a3xeltexx/BoardConfigVendor.mk

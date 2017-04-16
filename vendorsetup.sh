@@ -1,2 +1,2 @@
-add_lunch_combo lineage_j7eltexx-eng
-add_lunch_combo lineage_j7eltexx-userdebug
+add_lunch_combo lineage_a3xeltexx-eng
+add_lunch_combo lineage_a3xeltexx-userdebug

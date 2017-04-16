@@ -15,12 +15,12 @@
 # limitations under the License.
 #
 
-LOCAL_PATH := device/samsung/j7eltexx
+LOCAL_PATH := device/samsung/a3xeltexx
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 
 # Overlays
-DEVICE_PACKAGE_OVERLAYS += device/samsung/j7eltexx/overlay
+DEVICE_PACKAGE_OVERLAYS += device/samsung/a3xeltexx/overlay
 
 # Device uses high-density artwork where available
 PRODUCT_AAPT_CONFIG := xlarge
@@ -110,4 +110,4 @@ PRODUCT_COPY_FILES += \
 $(call inherit-product, device/samsung/exynos7580-common/device-common.mk)
 
 # Get non-open-source specific aspects
-$(call inherit-product-if-exists, vendor/samsung/j7eltexx/j7eltexx-vendor.mk)
+$(call inherit-product-if-exists, vendor/samsung/a3xeltexx/a3xeltexx-vendor.mk)
