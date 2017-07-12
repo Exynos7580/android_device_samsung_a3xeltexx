@@ -58,6 +58,8 @@ bin/cs
 
 ### NFC
 vendor/firmware/sec_s3fwrn5s_firmware.bin
+etc/sec_s3fwrn5s_rfreg.bin
+lib/hw/nfc_nci.universal7580.so
 
 ### Noise supppression
 vendor/etc/nxp/BargeIn/Tx_ControlParams_WIDEBAND_ANALOG_DOCK.txt
@@ -148,6 +150,8 @@ lib/libsec-ril-dsds.so
 
 ### Sensors
 lib/hw/sensors.universal7580.so
+vendor/firmware/ram_patch.fw
+vendor/lib/libyasalgo.so
 
 ### Widevine
 lib/libstagefright_hdcp.so
