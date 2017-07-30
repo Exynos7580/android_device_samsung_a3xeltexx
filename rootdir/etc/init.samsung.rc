@@ -92,27 +92,6 @@ on post-fs-data
     mkdir /data/biometrics 0700 system system
     restorecon /data/biometrics
 
-# [ SEC_MM_DRM
-    # DRM directory creation
-    mkdir /system/etc/security/.drm 0775
-    chown root root /system/etc/security/.drm
-    chmod 0775 /system/etc/security/.drm
-
-    # Added for Playready DCM DRM Support
-    mkdir /data/.dcmdrm 0775
-    chown drm system /data/.dcmdrm
-    chmod 0775 /data/.dcmdrm
-    mkdir /data/.dcmdrm/.playready 0775
-    chown drm system /data/.dcmdrm/.playready
-    chmod 0775 /data/.dcmdrm/.playready
-
-    # Added drm folder to copy drm plugins
-    mkdir /system/lib/drm 0775
-    chown root root /system/lib/drm
-    chmod 0775 /system/lib/drm
-
-# ]
-
 on boot
 
     # for BT MAC address
@@ -224,18 +203,6 @@ on boot
     chmod 0660 /dev/sec-nfc
     chown nfc nfc /dev/sec-nfc
 
-    # KNOX KAP
-    chown system system /dev/knox_kap
-    chmod 0660 /dev/knox_kap
-
-    # MST/NFC Switch
-    chown spay system /dev/mst_ctrl
-    chmod 0660 /dev/mst_ctrl
-
-    #MST Factory Test
-    chown system system /sys/class/mstldo/mst_drv/transmit
-    chmod 0770 /sys/class/mstldo/mst_drv/transmit
-
     # mobicore
     chmod 0660 /dev/s5p-smem
     chown system system /dev/s5p-smem
@@ -252,11 +219,10 @@ on boot
 
     chmod 0660 /sys/class/sec_touchkey/input/enabled
     chown system system /sys/class/sec/sec_touchkey/input/enabled
-	chown system radio /sys/class/sec/sec_touchkey/brightness
-	
-	chmod 0660 /sys/class/sec/sec_epen/input/enabled
-    chown system system /sys/class/sec/sec_epen/input/enabled
+    chown system radio /sys/class/sec/sec_touchkey/brightness
 
+    chmod 0660 /sys/class/sec/sec_epen/input/enabled
+    chown system system /sys/class/sec/sec_epen/input/enabled
 
     # Switch Device
     chown system radio /sys/class/sec/switch/usb_sel
@@ -455,12 +421,6 @@ on boot
     write /sys/block/sda/queue/scheduler noop
 
     copy /system/etc/battery_charging_temp.data /sys/class/power_supply/battery/batt_temp_table
-
-service scs /system/bin/scs
-    class main
-    user system
-    group system
-    oneshot
 
 # MobiCore startup
 service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin

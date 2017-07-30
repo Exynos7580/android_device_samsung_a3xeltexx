@@ -126,6 +126,7 @@ on boot
 
     chown bluetooth net_bt_stack /dev/ttySAC3
     chmod 0660 /dev/ttySAC3
+
 # permissions for bluetooth.
     setprop ro.bt.bdaddr_path "/efs/bluetooth/bt_addr"
     chown bluetooth net_bt_stack ro.bt.bdaddr_path
@@ -169,7 +170,7 @@ on boot
     mkdir /efs/FactoryApp 0775 system system
 
 # IMEI folder
-	mkdir /efs/imei 0775 radio system
+    mkdir /efs/imei 0775 radio system
 
     # DRK permission
     mkdir /efs/prov 0770 radio system
@@ -263,12 +264,6 @@ on fs
     chmod 0755 /persdata
     chown system system /persdata/absolute
     chmod 0750 /persdata/absolute
-
-# Copy DRM Key
-    copy /system/app/wv.keys /factory/wv.keys
-
-# Permission for DRM Key
-    chmod 0644 /factory/wv.keys
 
 # Permissions for TouchScreen
     chown system radio /sys/class/sec/tsp/cmd
@@ -809,56 +804,12 @@ on fs
     chown system radio /sys/class/sensors/irled_remote/irled_send
     chown system radio /sys/class/sensors/irled_remote/irled_send_result
 
-# ARGOSD network_throughput
-    chown system system /dev/network_throughput
-
-# ARGOSD
-service argos-daemon /system/bin/argosd
-    class main
-    user system
-    group system radio
-
-# IPSec for VOLTE
-service ipsec-daemon /system/bin/IPSecService
-    class main
-    socket ipsec_socket stream 660 system system
-    user system
-    group system net_raw inet net_admin
-
 # GPS
 service gpsd /system/bin/gpsd -c /system/etc/gps.xml
     class main
     user gps
     group system wakelock inet net_raw
     ioprio be 0
-
-# SENSOR FRAMEWORK : starts fingerprintService
-service vcsFPService /system/bin/vcsFPService
-    class late_start
-    user system
-    group system
-
-# Blowfish tzdaemon
-service tz_service /system/bin/tzdaemon
-    class core
-    socket tz stream 0666 system system
-    user system
-    group system
-    disabled
-
-service taa_service /system/bin/taadaemon
-    class core
-    socket taa stream 0666 system system
-    user system
-    group system
-    disabled
-
-on property:sys.tzdaemon=Ready
-    start taa_service
-
-on property:init.svc.tz_service=stopped
-    setprop sys.tzdaemon NotReady
-
 
 # Set watchdog timer to 30 seconds and pet it every 10 seconds to get a 20 second margin
 service watchdogd /sbin/watchdogd 10 20
@@ -879,46 +830,14 @@ on property:sys.boot_completed=1
     write /proc/sys/vm/dirty_bytes 31457280
     write /proc/sys/vm/dirty_background_bytes 15728640
 
-# DIAG
-service DIAG-daemon /system/bin/diagexe
-    class main
-    user root
-    group system radio inet net_raw
-
 # Kick watchdogd if debug_level is low
 on property:ro.debug_level=0x4f4c
     start watchdogd
 
-# Secure Storage startup
-service secure_storage /system/bin/secure_storage_daemon
-    class core
-    user system
-    group system
-    disabled
-
-on property:ro.securestorage.support=true
-    mkdir /dev/.secure_storage
-    chmod 0711 /dev/.secure_storage
-    chown system system /dev/.secure_storage
-    restorecon -R /dev/.secure_storage
-    start secure_storage
-
-service battery_charger /sbin/healthd -c
-    class charger
-    critical
-    seclabel u:r:healthd:s0
-
 # LPM
 on property:ro.bootmode=charger
-    mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM /system wait ro
     wait /dev/block/platform/13540000.dwmmc0/by-name/EFS
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit
-
-on property:ro.bootmode=charger
-    class_start sec-charger
-
-on property:sys.tzdaemon=Ready
-    start taa_service
 
 on charger
     # Set cpu governor to powersave while in charging mode
@@ -933,6 +852,11 @@ on charger
     # Do not set any USB mode while charging
     setprop sys.usb.config charging
 
+service battery_charger /sbin/healthd -c
+    class charger
+    critical
+    seclabel u:r:healthd:s0
+
 # umount service
 service umount_service /system/bin/umount -D /preload
     disabled
@@ -945,13 +869,6 @@ on property:persist.sys.storage_preload=1
 
 on property:persist.sys.storage_preload=0
     start umount_service
-
-# DRK/CS service
-service cs_service /system/bin/cs
-    class main
-    user system
-    group system
-    disabled
 
 on property:sys.mobicoredaemon.enable=true
     start cs_service
