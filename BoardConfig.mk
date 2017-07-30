@@ -46,7 +46,6 @@ TARGET_KERNEL_SOURCE := kernel/samsung/a3xelte
 TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_HEADER_ARCH := arm64
 
-
 # Extracted with libbootimg
 #BOARD_KERNEL_SEPARATED_DT := true
 BOARD_MKBOOTIMG_ARGS := --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 --tags_offset 0x00000100 --dt $(DEVICE_PATH)/dt.img --board SRPOJ08A000KU
@@ -75,6 +74,10 @@ BOARD_MODEM_TYPE := tss310
 
 # LED
 BACKLIGHT_PATH := "/sys/class/backlight/panel/brightness"
+
+# NFC
+BOARD_NFC_HAL_SUFFIX := universal7580
+BOARD_HAVE_NFC := true
 
 # inherit from the proprietary version
 -include vendor/samsung/a3xeltexx/BoardConfigVendor.mk
