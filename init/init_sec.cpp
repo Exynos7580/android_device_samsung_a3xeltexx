@@ -57,8 +57,8 @@ void property_override(char const prop[], char const value[])
 void make_me_dual()
 {
 	property_set("rild.libpath2", "/system/lib/libsec-ril-dsds.so");
-	property_override("persist.radio.multisim.config", "dsds");
-	property_override("ro.multisim.simslotcount", "2");
+	property_set("persist.radio.multisim.config", "dsds");
+	property_set("ro.multisim.simslotcount", "2");
 }
 
 void vendor_load_properties()
