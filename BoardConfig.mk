@@ -27,6 +27,12 @@ TARGET_SPECIFIC_HEADER_PATH += $(DEVICE_PATH)/include
 # Bluetooth
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(DEVICE_PATH)/bluetooth
 
+# Charger
+BOARD_CHARGING_MODE_BOOTING_LPM := /sys/class/power_supply/battery/batt_lp_charging
+BOARD_CHARGER_ENABLE_SUSPEND := true
+BOARD_CHARGER_SHOW_PERCENTAGE := true
+CHARGING_ENABLED_PATH := /sys/class/power_supply/battery/batt_lp_charging
+
 # Hardware
 BOARD_HARDWARE_CLASS += $(DEVICE_PATH)/cmhw
 
