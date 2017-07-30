@@ -67,5 +67,8 @@ TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.samsungexynos7580
 BOARD_RIL_CLASS := ../../../$(DEVICE_PATH)/ril
 BOARD_MODEM_TYPE := tss310
 
+# LED
+BACKLIGHT_PATH := "/sys/class/backlight/panel/brightness"
+
 # inherit from the proprietary version
 -include vendor/samsung/a3xeltexx/BoardConfigVendor.mk
