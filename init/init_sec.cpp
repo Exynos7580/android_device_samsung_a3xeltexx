@@ -54,11 +54,26 @@ void property_override(char const prop[], char const value[])
 }
 
 
-void make_me_dual()
+void set_sim_info ()
 {
-	property_set("rild.libpath2", "/system/lib/libsec-ril-dsds.so");
-	property_set("persist.radio.multisim.config", "dsds");
-	property_set("ro.multisim.simslotcount", "2");
+	FILE *file;
+	char *simslot_count_path = "/proc/simslot_count";
+	char simslot_count[2] = "\0";
+	
+	file = fopen(simslot_count_path, "r");
+	
+	if (file != NULL) {
+		simslot_count[0] = fgetc(file);
+		property_set("ro.multisim.simslotcount", simslot_count);
+		if(strcmp(simslot_count, "2") == 0) {
+			property_set("rild.libpath2", "/system/lib/libsec-ril-dsds.so");
+			property_set("persist.radio.multisim.config", "dsds");
+		}
+		fclose(file);
+	}
+	else {
+		ERROR("Could not open '%s'\n", simslot_count_path);
+	}
 }
 
 void vendor_load_properties()
@@ -66,24 +81,29 @@ void vendor_load_properties()
 
     std::string bootloader = property_get("ro.bootloader");
 
-    if (bootloader.find("A310F") == 0) {
+    if (bootloader.find("A310F") != std::string::npos) {
+	/* SM-A310F */
         property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
         property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
         property_override("ro.product.model", "SM-A310F");
         property_override("ro.product.device", "a3xelte");
-    } else if (bootloader.find("A310M") == 0) {
+    } else if (bootloader.find("A310M") != std::string::npos) {
+	/* SM-A310M */
         property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
         property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
         property_override("ro.product.model", "SM-A310M");
         property_override("ro.product.device", "a3xelte");
     } else {
+	/* SM-A310Y */
         property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
         property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
         property_override("ro.product.model", "SM-A310Y");
         property_override("ro.product.device", "a3xeltexx");
     }
 
-    std::string device = property_get("ro.product.device");
-    std::string devicename = property_get("ro.product.model");
-    ERROR("Found bootloader id %s setting build properties for %s device\n", bootloader.c_str(), devicename.c_str());
+	set_sim_info();
+
+	std::string device = property_get("ro.product.device");
+	std::string devicename = property_get("ro.product.model");
+	ERROR("Found bootloader id %s setting build properties for %s device\n", bootloader.c_str(), devicename.c_str());
 }
