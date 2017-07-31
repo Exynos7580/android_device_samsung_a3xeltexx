@@ -27,12 +27,6 @@ TARGET_SPECIFIC_HEADER_PATH += $(DEVICE_PATH)/include
 # Bluetooth
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(DEVICE_PATH)/bluetooth
 
-# Charger
-BOARD_CHARGING_MODE_BOOTING_LPM := /sys/class/power_supply/battery/batt_lp_charging
-BOARD_CHARGER_ENABLE_SUSPEND := true
-BOARD_CHARGER_SHOW_PERCENTAGE := true
-CHARGING_ENABLED_PATH := /sys/class/power_supply/battery/batt_lp_charging
-
 # Hardware
 BOARD_HARDWARE_CLASS += $(DEVICE_PATH)/cmhw
 
@@ -71,12 +65,8 @@ TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.samsungexynos7580
 BOARD_RIL_CLASS := ../../../$(DEVICE_PATH)/ril
 BOARD_MODEM_TYPE := tss310
 
-# LED
-BACKLIGHT_PATH := "/sys/class/backlight/panel/brightness"
-
-# NFC
-BOARD_NFC_HAL_SUFFIX := universal7580
-BOARD_HAVE_NFC := true
+### NFC
+#BOARD_NFC_CHIPSET := xxx
 
 # inherit from the proprietary version
 -include vendor/samsung/a3xeltexx/BoardConfigVendor.mk
