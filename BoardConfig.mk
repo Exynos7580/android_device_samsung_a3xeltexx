@@ -35,7 +35,7 @@ TARGET_INIT_VENDOR_LIB := libinit_sec
 
 # Kernel
 TARGET_KERNEL_CONFIG := lineageos_a3xelte_defconfig
-TARGET_KERNEL_SOURCE := kernel/samsung/a3xelte
+TARGET_KERNEL_SOURCE := kernel/samsung/exynos7580-common
 TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_HEADER_ARCH := arm64
 
