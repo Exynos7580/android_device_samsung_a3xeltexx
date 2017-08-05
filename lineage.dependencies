@@ -10,7 +10,7 @@
     },
     {
          "repository": "Exynos7580/android_vendor_samsung_a3xeltexx",
-         "target_path": "vendor/samsung/a3xeltaxx"
+         "target_path": "vendor/samsung/a3xeltexx"
      },
     {
 	"repository": "Exynos7580/android_vendor_samsung_exynos7580-common",
