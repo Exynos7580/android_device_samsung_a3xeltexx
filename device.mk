@@ -67,10 +67,8 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/media/media_profiles.xml:system/etc/media_profiles.xml
 
 # Power
-TARGET_POWERHAL_VARIANT := samsung
 PRODUCT_PACKAGES += \
     power.universal7580
-#    power.exynos5
 
 # Shims
 PRODUCT_PACKAGES += \
