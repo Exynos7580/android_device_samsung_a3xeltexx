@@ -145,6 +145,7 @@ vendor/etc/nxp/mVoIPSec/Tx_ControlParams_WIDEBAND_WIRED_HEADSET.txt
 # opensource rild don't work well for dual sim
 bin/rild
 lib/libsecnativefeature.so
+lib/libfloatingfeature.so
 lib/libsec-ril.so
 lib/libsec-ril-dsds.so
 
@@ -152,9 +153,6 @@ lib/libsec-ril-dsds.so
 lib/hw/sensors.universal7580.so
 vendor/firmware/ram_patch.fw
 vendor/lib/libyasalgo.so
-
-### Widevine
-lib/libstagefright_hdcp.so
 
 ### Wifi
 etc/wifi/bcmdhd_apsta.bin
