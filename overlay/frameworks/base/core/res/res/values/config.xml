@@ -216,6 +216,9 @@
     -->
     <integer name="config_doubleTapOnHomeBehavior">2</integer>
 
+    <!-- Indicates whether round icons should be parsed from the application manifest. -->
+    <bool name="config_useRoundIcon">true</bool>
+
     <!-- These resources are around just to allow their values to be customized
      for different hardware and product builds. -->
     <string name="config_radio_access_family">GSM | WCDMA | LTE | CDMA | EVDO</string>
@@ -223,4 +226,7 @@
     <!-- If enabled, capacitive keys will only light up when pressed.
          Otherwise, the buttons will light up whenever the user interacts with the device -->
     <bool name="config_buttonLightOnKeypressOnly">true</bool>
+
+    <!-- Configuartion to support SIM contact batch operation.-->
+    <bool name="config_sim_phonebook_batch_operation">false</bool>    
 </resources>
