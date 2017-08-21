@@ -115,22 +115,6 @@ PRODUCT_PACKAGES += \
     libprotobuf-cpp-full \
     modemloader
 
-# Audio codecs
-PRODUCT_PACKAGES += \
-    libOMX.Exynos.AAC.Decoder \
-    libOMX.Exynos.FLAC.Decoder \
-    libOMX.Exynos.MP3.Decoder \
-    libOMX.Exynos.WMA.Encoder 
-
-# Video codecs
-PRODUCT_PACKAGES += \
-    libOMX.Exynos.AVC.Decoder \
-    libOMX.Exynos.HEVC.Decoder \
-    libOMX.Exynos.MPEG4.Decoder \
-    libOMX.Exynos.MPEG4.Encoder \
-    libOMX.Exynos.VP8.Decoder \
-    libOMX.Exynos.WMV.Decoder
-
 # cpboot-daemon for modem
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/ril/sbin/cbd:root/sbin/cbd
