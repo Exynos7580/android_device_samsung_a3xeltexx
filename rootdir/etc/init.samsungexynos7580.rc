@@ -834,6 +834,9 @@ on property:sys.boot_completed=1
     write /proc/sys/vm/dirty_bytes 41943040
     write /proc/sys/vm/dirty_background_bytes 20971520
 
+# Set preferred IO scheduler after boot
+    setprop sys.io.scheduler bfq
+
 # Set best cache size for internal and external storages
     write /sys/block/mmcblk0/bdi/read_ahead_kb 128
     write /sys/block/mmcblk1/bdi/read_ahead_kb 2048
