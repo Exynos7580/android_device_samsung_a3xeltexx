@@ -834,10 +834,6 @@ on property:sys.boot_completed=1
     write /proc/sys/vm/dirty_bytes 41943040
     write /proc/sys/vm/dirty_background_bytes 20971520
 
-on property:sys.boot_completed=1
-    write /proc/sys/vm/dirty_bytes 31457280
-    write /proc/sys/vm/dirty_background_bytes 15728640
-
 # rerun macloader to fix wifi after hotspot
 on property:wlan.driver.status=unloaded
     start macloader
