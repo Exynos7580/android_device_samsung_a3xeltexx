@@ -10,12 +10,12 @@
     <item name="wifi.active">290</item>
     <item name="gps.on">1</item>
     <item name="dsp.audio">40</item>
-    <item name="dsp.video">68</item>
-    <item name="radio.active">170</item>
-    <item name="radio.scanning">218</item>
+    <item name="dsp.video">196</item>
+    <item name="radio.active">177</item>
+    <item name="radio.scanning">132</item>
     <array name="radio.on">
-        <value>2</value>
-        <value>2</value>
+        <value>6.82</value>
+        <value>6.82</value>
     </array>
     <array name="cpu.speeds">
         <value>1500000</value>
