@@ -120,30 +120,30 @@ on boot
     # CPU Idle
     chown system system /sys/module/cpuidle_exynos64_smp/parameters/enable_mask
 
-    # Change permission for interactive governor
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_slack
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_slack
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/input_boost
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/input_boost
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse_duration
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse_duration
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/io_is_busy
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/io_is_busy
+    # Change permission for cafactive governor
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/timer_rate
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/timer_rate
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/timer_slack
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/timer_slack
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/min_sample_time
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/min_sample_time
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/hispeed_freq
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/hispeed_freq
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/target_loads
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/target_loads
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/go_hispeed_load
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/go_hispeed_load
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/above_hispeed_delay
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/above_hispeed_delay
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/boost
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/boost
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/boostpulse
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/input_boost
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/input_boost
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/boostpulse_duration
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/boostpulse_duration
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/cafactive/io_is_busy
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/cafactive/io_is_busy
 
     chown system log /proc/sec_log
 
