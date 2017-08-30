@@ -29,6 +29,9 @@ on post-fs-data
 
     setprop vold.post_fs_data_done 1
 
+# Create camera directory
+    mkdir /data/camera 0770 media system
+
 # Permissions for audio
     chown system radio /sys/class/audio/earjack/select_jack
     chown system radio /sys/class/audio/earjack/key_state
