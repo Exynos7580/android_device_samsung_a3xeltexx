@@ -74,6 +74,10 @@ on boot
     write /sys/class/mdnie/mdnie/scenario 0
     write /sys/class/mdnie/mdnie/mode 0
 
+    # Reduce Power Usage while booting
+    write /sys/class/backlight/panel/brightness 10
+    write /proc/sys/kernel/randomize_va_space 0
+
     # Set up kernel tracing, but disable it by default
     chmod 0222 /sys/kernel/debug/tracing/trace_marker
     write /sys/kernel/debug/tracing/tracing_on 0
