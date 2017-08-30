@@ -59,7 +59,7 @@
 /dev/HPD                  0660   system     system
 
 # mfc
-/dev/video6               0660   mediacodec      mediadrn
+/dev/video6               0660   mediacodec      mediadrm
 /dev/video7               0660   media      mediadrm
 /dev/video8               0660   media      mediadrm
 /dev/video9               0660   media      mediadrm
