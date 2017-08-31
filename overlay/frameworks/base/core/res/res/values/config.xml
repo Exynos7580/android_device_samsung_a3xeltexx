@@ -98,6 +98,10 @@
     <!-- The default iface on which to monitor data use -->
     <string name="config_datause_iface" translatable="false">rmnet0</string>
 
+    <!-- Power Management: Specifies whether to decouple the 
+	interactive state of the device from the display on/off state. -->
+    <bool name="config_powerDecoupleInteractiveModeFromDisplay">false</bool>
+
     <!-- ############################################################## -->
     <!-- ### HARDWARE KEYS                                              -->
     <!-- ############################################################## -->
