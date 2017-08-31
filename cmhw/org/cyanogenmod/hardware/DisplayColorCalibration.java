@@ -9,8 +9,7 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or 
-implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -30,8 +29,7 @@ public class DisplayColorCalibration {
 
     private static final String TAG = "DisplayColorCalibration";
 
-    private static final String RGB_FILE = 
-"/sys/class/lcd/panel/mdnie/sensorRGB";
+    private static final String RGB_FILE = "/sys/class/lcd/panel/mdnie/sensorRGB";
 
     private static final boolean sUseGPUMode;
 
@@ -41,11 +39,9 @@ public class DisplayColorCalibration {
     private static final int[] sCurColors = new int[] { MAX, MAX, MAX };
 
     static {
-        // We can also support GPU transform using RenderEngine. This is 
-not
+        // We can also support GPU transform using RenderEngine. This is not
         // preferred though, as it has a high power cost.
-        sUseGPUMode = 
-SystemProperties.getBoolean("debug.livedisplay.force_gpu", false);
+        sUseGPUMode = SystemProperties.getBoolean("debug.livedisplay.force_gpu", false);
     }
 
     public static boolean isSupported() {
@@ -121,18 +117,15 @@ SystemProperties.getBoolean("debug.livedisplay.force_gpu", false);
     }
 
     /**
-     * Sets the surface flinger's color transformation as a 4x4 matrix. 
-If the
+     * Sets the surface flinger's color transformation as a 4x4 matrix. If the
      * matrix is null, color transformations are disabled.
      *
-     * @param m the float array that holds the transformation matrix, or 
-null to
+     * @param m the float array that holds the transformation matrix, or null to
      *            disable transformation
      */
     private static boolean setColorTransform(float[] m) {
         try {
-            final IBinder flinger = 
-ServiceManager.getService("SurfaceFlinger");
+            final IBinder flinger = ServiceManager.getService("SurfaceFlinger");
             if (flinger != null) {
                 final Parcel data = Parcel.obtain();
                 data.writeInterfaceToken("android.ui.ISurfaceComposer");
