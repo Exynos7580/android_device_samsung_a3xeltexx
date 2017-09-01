@@ -22,7 +22,7 @@ $(call inherit-product, device/samsung/a3xeltexx/full_a3xeltexx.mk)
 $(call inherit-product, vendor/cm/config/common_full_phone.mk)
 
 # Set those variables here to overwrite the inherited values.
-PRODUCT_NAME := aosp_a3xeltexx
+PRODUCT_NAME := lineage_a3xeltexx
 PRODUCT_DEVICE := a3xeltexx
 PRODUCT_BRAND := samsung
 PRODUCT_MANUFACTURER := samsung
