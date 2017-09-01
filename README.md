@@ -28,6 +28,4 @@ Front Camera  | 5 MP, f/1.9, 23mm
 
 ![Galaxy A3 (2016)](http://drop.ndtv.com/TECH/product_database/images/1232015120413AM_635_samsung_galaxy_a3_2016.jpeg "Galaxy A3 (2016)")
 
-This branch is for building Lineage 14.1 Firmware.
-
 Model Supported : SM-A310F SM-A310M
