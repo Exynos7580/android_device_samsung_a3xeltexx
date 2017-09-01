@@ -14,7 +14,7 @@ vendor/firmware/setfile_3l2.bin
 vendor/firmware/setfile_5e3.bin
 
 # Gralloc
-lib/hw/gralloc.exynos5.so
+#lib/hw/gralloc.exynos5.so
 
 ### GPS
 bin/gps.cer
