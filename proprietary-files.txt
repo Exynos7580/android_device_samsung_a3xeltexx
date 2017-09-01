@@ -13,6 +13,9 @@ lib/libsensorlistener.so
 vendor/firmware/setfile_3l2.bin
 vendor/firmware/setfile_5e3.bin
 
+# Gralloc
+lib/hw/gralloc.exynos5.so
+
 ### GPS
 bin/gps.cer
 lib/hw/gps.default.so:lib/hw/gps.universal7580.so
