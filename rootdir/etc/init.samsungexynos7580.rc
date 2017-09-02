@@ -32,6 +32,10 @@ on post-fs-data
 # Create camera directory
     mkdir /data/camera 0770 media system
 
+# Permission for System LSI NFC
+    chmod 0660 /dev/sec-nfc
+    chmod nfc nfc /dev/sec-nfc
+
 # Permissions for audio
     chown system radio /sys/class/audio/earjack/select_jack
     chown system radio /sys/class/audio/earjack/key_state
