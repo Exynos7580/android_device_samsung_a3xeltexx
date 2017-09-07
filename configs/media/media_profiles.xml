@@ -295,7 +295,7 @@
              frameRate="30" />
 
       <Audio codec="aac"
-             bitRate="256000"
+             bitRate="128000"
              sampleRate="48000"
              channels="2" />
     </EncoderProfile>
@@ -309,7 +309,7 @@
              frameRate="30" />
 
       <Audio codec="aac"
-             bitRate="128000"
+             bitRate="256000"
              sampleRate="48000"
              channels="2" />
     </EncoderProfile>
@@ -558,6 +558,21 @@
     <VideoDecoderCap name="wmv" enabled="false"/>
     <AudioDecoderCap name="wma" enabled="false"/>
 
+  <!--
+        The VideoEditor Capability configuration:
+        - maxInputFrameWidth: maximum video width of imported video clip.
+        - maxInputFrameHeight: maximum video height of imported video clip.
+        - maxOutputFrameWidth: maximum video width of exported video clip.
+        - maxOutputFrameHeight: maximum video height of exported video clip.
+        - maxPrefetchYUVFrames: maximum prefetch YUV frames for encoder,
+        used to limit the amount of memory for prefetched YUV frames.
+        For this platform, it allows maximum 30MB(3MB per 1080p frame x 10
+        frames) memory.
+    -->
+    <VideoEditorCap  maxInputFrameWidth="1920"
+        maxInputFrameHeight="1088" maxOutputFrameWidth="1920"
+        maxOutputFrameHeight="1080" maxPrefetchYUVFrames="10"/>	
+	
 	<!--
         The VideoEditor Export codec profile and level values
         correspond to the values in OMX_Video.h.
