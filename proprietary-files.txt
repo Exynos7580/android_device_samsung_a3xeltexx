@@ -194,4 +194,4 @@ etc/wifi/nvram_mfg.txt
 etc/wifi/nvram_net.txt
 
 ### Samsung's sswap
-sbin/sswap
+bin/sswap
