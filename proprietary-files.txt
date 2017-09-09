@@ -151,11 +151,37 @@ lib/libsecnativefeature.so
 lib/libfloatingfeature.so
 lib/libsec-ril.so
 lib/libsec-ril-dsds.so
+lib/libsecril-client.so
 
 ### Sensors
 lib/hw/sensors.universal7580.so
 vendor/firmware/ram_patch.fw
 vendor/lib/libyasalgo.so
+
+### Audio
+lib/hw/audio.primary.universal7580.so
+lib/libSamsungPostProcess.so
+lib/libSamsungPostProcessConvertor.so
+lib/libSamsungPreProcess.so
+lib/lib_DNSe_EP_ver216c.so
+lib/lib_DNSe_NRSS_ver226.so
+lib/lib_SamsungRec_V04013.so
+lib/lib_SoundAlive_SRC384_ver300.so
+lib/lib_SoundBooster_ver610.so
+lib/lib_soundaliveresampler.so
+lib/libaudio-ril.so
+lib/libaudioroute.so
+lib/libcodecdump.so
+lib/libpreprocessing_nxp.so
+lib/libsamsungDiamondVoiceExtV2.so
+lib/libsamsungRecord.so
+lib/libsamsungRecord_ns.so
+lib/libsamsungSoundbooster_ext.so
+lib/libsamsungSoundbooster_pgb.so
+lib/libsecaudioinfo.so
+lib/libtinyalsa.so
+lib/libtinycompress.so
+lib/libunshorten.so
 
 ### Wifi
 etc/wifi/bcmdhd_apsta.bin
