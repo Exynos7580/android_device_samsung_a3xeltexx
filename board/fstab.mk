@@ -3,4 +3,4 @@
 ####################
 
 # fstab file
-TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.samsungexynos7580
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/fstab.samsungexynos7580

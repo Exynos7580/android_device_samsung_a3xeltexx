@@ -26,3 +26,4 @@ PRODUCT_NAME := lineage_a3xeltexx
 PRODUCT_DEVICE := a3xeltexx
 PRODUCT_BRAND := samsung
 PRODUCT_MANUFACTURER := samsung
+PRODUCT_GMS_CLIENTID_BASE := android-samsung

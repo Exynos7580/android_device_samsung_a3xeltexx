@@ -45,6 +45,3 @@ persist.data.netmgrd.qos.enable=false
 ro.ril.hsxpa=1
 ro.ril.gprsclass=10
 ro.smps.enable=true
-
-# Sdcardfs
-ro.sys.sdcardfs=true

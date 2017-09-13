@@ -4,7 +4,8 @@
 
 PRODUCT_PACKAGES += \
     libprotobuf-cpp-full \
-    modemloader
+    modemloader \
+    audio.primary.universal7580
 
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/etc/rild.rc:system/etc/init/rild.rc
+#PRODUCT_COPY_FILES += \
+#    $(LOCAL_PATH)/rootdir/etc/rild.rc:system/etc/init/rild.rc

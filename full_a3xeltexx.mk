@@ -30,6 +30,6 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 # Set those variables here to overwrite the inherited values.
 PRODUCT_NAME := a3xeltexx
 PRODUCT_DEVICE := a3xelte
-PRODUCT_BRAND := Samsung
+PRODUCT_BRAND := samsung
 PRODUCT_MANUFACTURER := samsung
 PRODUCT_MODEL := SM-A310F

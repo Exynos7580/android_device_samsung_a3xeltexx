@@ -48,10 +48,8 @@
 struct sec_power_module {
 	struct power_module base;
 	pthread_mutex_t lock;
-	int boostpulse_fd_b;
 	int boostpulse_fd_l;
 	int boostpulse_warned_l;
-	int boostpulse_warned_b;
 };
 
 #define container_of(addr, struct_name, field_name) \
@@ -161,7 +159,6 @@ static int interactive_boostpulse(struct sec_power_module *sec)
 {
 	char buf[80];
 	int len_l;
-	int len_b;
 
 	if (sec->boostpulse_fd_l < 0) {
 		sec->boostpulse_fd_l = open(INTERACTIVE_PATH_L_BOOSTPULSE, O_WRONLY);
@@ -174,21 +171,9 @@ static int interactive_boostpulse(struct sec_power_module *sec)
 		}
 	}
 
-	if (sec->boostpulse_fd_b < 0) {
-		sec->boostpulse_fd_b = open(INTERACTIVE_PATH_B_BOOSTPULSE, O_WRONLY);
-		if (sec->boostpulse_fd_b < 0) {
-			if (!sec->boostpulse_warned_b) {
-				strerror_r(errno, buf, sizeof(buf));
-				ALOGE("Error opening %s: %s\n", INTERACTIVE_PATH_B_BOOSTPULSE, buf);
-				sec->boostpulse_warned_b = 1;
-			}
-		}
-	}
-
 	len_l = write(sec->boostpulse_fd_l, "1", 1);
-	len_b = write(sec->boostpulse_fd_b, "1", 1);
 
-	if (len_l < 0 || len_b < 0) {
+	if (len_l < 0) {
 		return -1;
 	}
 
@@ -221,9 +206,6 @@ static void power_set_interactive(struct power_module __unused * module, int on)
 	ALOGV("power_set_interactive: %d\n", on);
 
 	set_input_device_state(on ? 1 : 0);
-
-	/* Plug out big cores when screen is off */
-	sysfs_write("/sys/module/lazyplug/parameters/nr_possible_cores", on ? "8" : "4");
 
 	/*
 	 * Switch to power-saving profile when screen is off.
