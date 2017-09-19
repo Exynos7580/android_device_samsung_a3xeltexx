@@ -92,8 +92,10 @@ static int power_open(const hw_module_t __unused * module, const char *name, hw_
 }
 
 static void power_init(struct power_module __unused * module) {
+	/*
 	if (!is_file(POWER_CONFIG_ALWAYS_ON_FP))
 		pfwrite(POWER_CONFIG_ALWAYS_ON_FP, false);
+	*/
 
 	if (!is_file(POWER_CONFIG_DT2W))
 		pfwrite(POWER_CONFIG_DT2W, false);
@@ -149,7 +151,7 @@ static void power_hint(struct power_module *module, power_hint_t hint, void *dat
 
 			power_set_profile(value ? PROFILE_HIGH_PERFORMANCE : requested_power_profile);
 			break;
-			
+
 		/***********************************
 		 * Boosting
 		 */
@@ -247,7 +249,7 @@ static void power_set_profile(int profile) {
 	 * Generic Settings
 	 */
 	pfwrite("/sys/power/enable_dm_hotplug", false);
-	pfwrite("/sys/power/ipa/control_temp", false);
+	pfwrite("/sys/power/ipa/control_temp", data.ipa_control_temp);
 	pfwrite("/sys/module/workqueue/parameters/power_efficient", data.power_efficient_workqueue);
 }
 
@@ -277,16 +279,17 @@ static void power_boostpulse(int duration) {
  * Inputs
  */
 static void power_input_device_state(int state) {
-	int dt2w = 0, dt2w_sysfs = 0, always_on_fp = 0;
+	int dt2w = 0, dt2w_sysfs = 0;
+	//int always_on_fp = 0;
 
 	pfread(POWER_CONFIG_DT2W, &dt2w);
 	pfread(POWER_DT2W_ENABLED, &dt2w_sysfs);
-	pfread(POWER_CONFIG_ALWAYS_ON_FP, &always_on_fp);
+	//pfread(POWER_CONFIG_ALWAYS_ON_FP, &always_on_fp);
 
 	ALOGD("%s: state         = %d", __func__, state);
 	ALOGD("%s: dt2w          = %d", __func__, dt2w);
 	ALOGD("%s: dt2w_sysfs    = %d", __func__, dt2w_sysfs);
-	ALOGD("%s: always_on_fp  = %d", __func__, always_on_fp);
+	//ALOGD("%s: always_on_fp  = %d", __func__, always_on_fp);
 
 	switch (state) {
 		case INPUT_STATE_DISABLE:
@@ -298,18 +301,19 @@ static void power_input_device_state(int state) {
 			pfwrite(POWER_TOUCHKEYS_ENABLED, false);
 			pfwrite(POWER_TOUCHKEYS_BRIGTHNESS, 0);
 
+			/*
 			if (always_on_fp) {
 				pfwrite(POWER_FINGERPRINT_ENABLED, true);
 			} else {
 				pfwrite(POWER_FINGERPRINT_ENABLED, false);
-			}
+			}*/
 
 			break;
 
 		case INPUT_STATE_ENABLE:
 
 			pfwrite(POWER_TOUCHSCREEN_ENABLED, true);
-			pfwrite(POWER_FINGERPRINT_ENABLED, true);
+			//pfwrite(POWER_FINGERPRINT_ENABLED, true);
 
 			if (input_state_touchkeys) {
 				pfwrite(POWER_TOUCHKEYS_ENABLED, true);
