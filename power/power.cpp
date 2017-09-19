@@ -433,15 +433,15 @@ static bool pfwritegov(int core, string file, string str) {
 	return pfwrite(path.str(), str);
 }
 
-static bool pfwritegov(core, string file, bool flag) {
+static bool pfwritegov(int core, string file, bool flag) {
 	return pfwritegov(core, file, flag ? 1 : 0);
 }
 
-static bool pfwritegov(core, string file, int value) {
+static bool pfwritegov(int core, string file, int value) {
 	return pfwritegov(core, file, to_string(value));
 }
 
-static bool pfwritegov(core, string file, unsigned int value) {
+static bool pfwritegov(int core, string file, unsigned int value) {
 	return pfwritegov(core, file, to_string(value));
 }
 
