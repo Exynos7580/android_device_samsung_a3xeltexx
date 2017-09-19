@@ -129,7 +129,7 @@ struct power_profile {
 		},
 		.gpu = {
 			.min_lock = 100,
-			.max_lock = 544,
+			.max_lock = 440,
 		},
 		.input = {
 			.booster = true,
@@ -167,7 +167,7 @@ struct power_profile {
 		},
 		.gpu = {
 			.min_lock = 100,
-			.max_lock = 600,
+			.max_lock = 534,
 		},
 		.input = {
 			.booster = true,
@@ -204,8 +204,8 @@ struct power_profile {
 			},
 		},
 		.gpu = {
-			.min_lock = 400,
-			.max_lock = 800,
+			.min_lock = 440,
+			.max_lock = 734,
 		},
 		.input = {
 			.booster = true,
@@ -243,7 +243,7 @@ struct power_profile {
 		},
 		.gpu = {
 			.min_lock = 100,
-			.max_lock = 600,
+			.max_lock = 350,
 		},
 		.input = {
 			.booster = true,
@@ -281,7 +281,7 @@ struct power_profile {
 		},
 		.gpu = {
 			.min_lock = 266,
-			.max_lock = 772,
+			.max_lock = 800,
 		},
 		.input = {
 			.booster = true,
