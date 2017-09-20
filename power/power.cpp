@@ -18,7 +18,7 @@
  */
 
 #define LOG_TAG "power.exynos5"
-#define LOG_NDEBUG 0
+#define LOG_NDEBUG 1
 
 #include <atomic>
 #include <cutils/properties.h>
@@ -95,6 +95,7 @@ static void power_init(struct power_module __unused * module) {
 	/*
 	if (!is_file(POWER_CONFIG_ALWAYS_ON_FP))
 		pfwrite(POWER_CONFIG_ALWAYS_ON_FP, false);
+
 	*/
 
 	if (!is_file(POWER_CONFIG_DT2W))
@@ -214,6 +215,7 @@ static void power_set_profile(int profile) {
 	pfwrite("/sys/devices/system/cpu/cpu1/online", data.cpu.cl0.cores.cpu1);
 	pfwrite("/sys/devices/system/cpu/cpu2/online", data.cpu.cl0.cores.cpu2);
 	pfwrite("/sys/devices/system/cpu/cpu3/online", data.cpu.cl0.cores.cpu3);
+
 	// settings
 	pfwritegov(0, "freq_min",     data.cpu.cl0.freq_min); /* Core, File, Value */
 	pfwritegov(0, "freq_max",     data.cpu.cl0.freq_max);
@@ -227,6 +229,7 @@ static void power_set_profile(int profile) {
 	pfwrite("/sys/devices/system/cpu/cpu5/online", data.cpu.cl1.cores.cpu1);
 	pfwrite("/sys/devices/system/cpu/cpu6/online", data.cpu.cl1.cores.cpu2);
 	pfwrite("/sys/devices/system/cpu/cpu7/online", data.cpu.cl1.cores.cpu3);
+
 	// Settings
 	pfwritegov(4, "freq_min",     data.cpu.cl1.freq_min); /* Core, File, Value */
 	pfwritegov(4, "freq_max",     data.cpu.cl1.freq_max);
@@ -292,7 +295,7 @@ static void power_input_device_state(int state) {
 	ALOGD("%s: dt2w_sysfs    = %d", __func__, dt2w_sysfs);
 	//ALOGD("%s: always_on_fp  = %d", __func__, always_on_fp);
 #endif
-	
+
 	switch (state) {
 		case INPUT_STATE_DISABLE:
 
@@ -340,7 +343,7 @@ static void power_set_interactive(struct power_module __unused * module, int on)
 #if LOG_NDEBUG
 	ALOGD("%s: on = %d", __func__, on);
 #endif
-	
+
 	if (!screen_is_on) {
 		power_set_profile(PROFILE_SCREEN_OFF);
 	} else {
@@ -378,7 +381,6 @@ static void power_set_feature(struct power_module *module, feature_t feature, in
 				pfwrite_legacy(POWER_DT2W_ENABLED, false);
 			}
 			break;
-
 		default:
 			ALOGW("Error setting the feature %d and state %d, it doesn't exist\n",
 				  feature, state);
