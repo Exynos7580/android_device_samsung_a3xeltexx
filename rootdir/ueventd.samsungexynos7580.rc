@@ -143,6 +143,18 @@
 /sys/devices/system/cpu/cpu4/cpufreq	cafactive/boostpulse_duration	0660	system	system
 /sys/devices/system/cpu/cpu4/cpufreq	cafactive/io_is_busy	0660	system	system
 
+
+# nexus governor parameters
+/sys/devices/system/cpu/cpu*   cpufreq/nexus/down_load                 0664    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/nexus/down_step                 0664    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/nexus/freq_max                  0664    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/nexus/freq_min                  0664    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/nexus/io_is_busy                0664    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/nexus/sampling_rate             0664    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/nexus/up_load                   0664    system  system
+/sys/devices/system/cpu/cpu*   cpufreq/nexus/up_step                   0664    system  system
+
+
 # Audio NXP AMP
 /dev/i2c-20                0660   system     system
 
