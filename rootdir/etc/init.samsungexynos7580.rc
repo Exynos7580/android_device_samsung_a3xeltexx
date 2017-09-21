@@ -47,6 +47,9 @@ on post-fs-data
 # Create camera directory
     mkdir /data/camera 0770 media system
 
+# Create power directory
+    mkdir /data/power 0771 system system
+
 # Permission for System LSI NFC
     chmod 0660 /dev/sec-nfc
     chmod nfc nfc /dev/sec-nfc

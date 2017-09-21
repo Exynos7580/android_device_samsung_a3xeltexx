@@ -1,6 +1,6 @@
 # Display
 ro.sf.lcd_density=320
-ro.bq.gpu_to_cpu_unsupported=1
+#ro.bq.gpu_to_cpu_unsupported=1
 
 # Games
 debug.egl.force_msaa=true

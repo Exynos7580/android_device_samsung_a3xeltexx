@@ -47,9 +47,8 @@ public class SlteRIL extends RIL {
     static final boolean RILJ_LOGV = true;
 
     private static final int RIL_REQUEST_DIAL_EMERGENCY_CALL = 10001;
-    private static final int RIL_UNSOL_STK_SEND_SMS_RESULT = 11002;
     private static final int RIL_UNSOL_STK_CALL_CONTROL_RESULT = 11003;
-
+    private static final int RIL_UNSOL_GPS_NOTI = 11009;
     private static final int RIL_UNSOL_DEVICE_READY_NOTI = 11008;
     private static final int RIL_UNSOL_AM = 11010;
     private static final int RIL_UNSOL_SIM_PB_READY = 11021;
@@ -338,22 +337,6 @@ public class SlteRIL extends RIL {
         rr.mParcel.writeString(pdu);
     }
 
-    /**
-     * The RIL can't handle the RIL_REQUEST_SEND_SMS_EXPECT_MORE
-     * request properly, so we use RIL_REQUEST_SEND_SMS instead.
-     */
-    @Override
-    public void sendSMSExpectMore(String smscPDU, String pdu, Message result) {
-        Rlog.v(RILJ_LOG_TAG, "XMM7260: sendSMSExpectMore");
-        
-        RILRequest rr = RILRequest.obtain(RIL_REQUEST_SEND_SMS, result);
-        constructGsmSendSmsRilRequest(rr, smscPDU, pdu);
-        
-        if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
-        
-        send(rr);
-    }
-
     // This method is used in the search network functionality.
     // See mobile network setting -> network operators
     @Override
@@ -401,6 +384,7 @@ public class SlteRIL extends RIL {
         switch (origResponse) {
             case 1041: //RIL_UNSOL_DC_RT_INFO_CHANGED
             case RIL_UNSOL_STK_CALL_CONTROL_RESULT:
+            case RIL_UNSOL_GPS_NOTI:
             case RIL_UNSOL_DEVICE_READY_NOTI: /* Registrant notification */
             case RIL_UNSOL_SIM_PB_READY: /* Registrant notification */
                 Rlog.v(RILJ_LOG_TAG,
@@ -421,9 +405,6 @@ public class SlteRIL extends RIL {
                 ret = responseString(p);
                 break;
             case RIL_UNSOL_WB_AMR_STATE:
-                ret = responseInts(p);
-                break;
-            case RIL_UNSOL_STK_SEND_SMS_RESULT:
                 ret = responseInts(p);
                 break;
             case RIL_UNSOL_RESPONSE_IMS_NETWORK_STATE_CHANGED:
