@@ -145,6 +145,12 @@
 /sys/devices/system/cpu/cpu4/cpufreq	cafactive/boostpulse_duration	0660	system	system
 /sys/devices/system/cpu/cpu4/cpufreq	cafactive/io_is_busy	0660	system	system
 
+/sys/devices/system/cpu/cpu*   cpufreq/scaling_max_freq   0660  system system
+/sys/devices/system/cpu/cpu*   cpufreq/scaling_min_freq   0660  system system
+
+
+
+
 
 # nexus governor parameters
 /sys/devices/system/cpu/cpu*   cpufreq/nexus/down_load                 0664    system  system

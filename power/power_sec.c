@@ -107,7 +107,7 @@ static int interactive_set_profile(int profile)
 		sysfs_write(INTERACTIVE_PATH_B_HISPEED_FREQ, INTERACTIVE_LOW_B_HISPEED_FREQ);
 		sysfs_write(INTERACTIVE_PATH_B_TARGET_LOADS, INTERACTIVE_LOW_B_TARGET_LOADS);
 		sysfs_write(NEXUS_FREQ_MAX_0,INTERACTIVE_LOW_L_HISPEED_FREQ);
-                sysfs_write(NEXUS_FREQ_MAX_4,INTERACTIVE_LOW_L_HISPEED_FREQ);    
+                sysfs_write(NEXUS_FREQ_MAX_4,INTERACTIVE_LOW_B_HISPEED_FREQ);    
                 sysfs_write(NEXUS_FREQ_MIN_0,LOW_MIN_FR);
                 sysfs_write(NEXUS_FREQ_MIN_4,LOW_MIN_FR);  
                 break;
@@ -121,7 +121,7 @@ static int interactive_set_profile(int profile)
 		sysfs_write(INTERACTIVE_PATH_B_GO_HISPEED_LOAD, INTERACTIVE_NORMAL_B_GO_HISPEED_LOAD);
 		sysfs_write(INTERACTIVE_PATH_B_HISPEED_FREQ, INTERACTIVE_NORMAL_B_HISPEED_FREQ);
 		sysfs_write(INTERACTIVE_PATH_B_TARGET_LOADS, INTERACTIVE_NORMAL_B_TARGET_LOADS);
-                sysfs_write(NEXUS_FREQ_MAX_0,INTERACTIVE_NORMAL_B_HISPEED_FREQ);
+                sysfs_write(NEXUS_FREQ_MAX_0,INTERACTIVE_NORMAL_L_HISPEED_FREQ);
                 sysfs_write(NEXUS_FREQ_MAX_4,INTERACTIVE_NORMAL_B_HISPEED_FREQ); 
                 sysfs_write(NEXUS_FREQ_MIN_0,NORM_MIN_FR);
                 sysfs_write(NEXUS_FREQ_MIN_4,NORM_MIN_FR);  
@@ -137,7 +137,7 @@ static int interactive_set_profile(int profile)
 		sysfs_write(INTERACTIVE_PATH_B_GO_HISPEED_LOAD, INTERACTIVE_HIGH_B_GO_HISPEED_LOAD);
 		sysfs_write(INTERACTIVE_PATH_B_HISPEED_FREQ, INTERACTIVE_HIGH_B_HISPEED_FREQ);
 		sysfs_write(INTERACTIVE_PATH_B_TARGET_LOADS, INTERACTIVE_HIGH_B_TARGET_LOADS);
-                sysfs_write(NEXUS_FREQ_MAX_0,INTERACTIVE_HIGH_B_HISPEED_FREQ);
+                sysfs_write(NEXUS_FREQ_MAX_0,INTERACTIVE_HIGH_L_HISPEED_FREQ);
                 sysfs_write(NEXUS_FREQ_MAX_4,INTERACTIVE_HIGH_B_HISPEED_FREQ); 
                 sysfs_write(NEXUS_FREQ_MIN_0,PERF_MIN_FR);
                 sysfs_write(NEXUS_FREQ_MIN_4,PERF_MIN_FR);  
