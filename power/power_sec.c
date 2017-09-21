@@ -59,8 +59,16 @@ static int current_power_profile;
 
 static int sysfs_write(const char *path, char *s)
 {
+	struct stat st;
+        int result = stat(path, &st);
 	char buf[80];
 	int len;
+        if (result < 0) {
+//                strerror_r(errno, buf, sizeof(buf));
+//                ALOGE("Error opening %s: %s\n", path, buf);
+                return result;
+
+	}
 	int fd = open(path, O_WRONLY);
 
 	if (fd < 0) {
@@ -97,6 +105,56 @@ static int interactive_set_profile(int profile)
 		return -EINVAL;
 
 	switch (profile) {
+<<<<<<< HEAD
+        case PROFILE_POWER_SAVE:
+                sysfs_write(INTERACTIVE_PATH_L_ABOVE_HISPEED_DELAY, INTERACTIVE_LOW_L_ABOVE_HISPEED_DELAY);
+                sysfs_write(INTERACTIVE_PATH_L_GO_HISPEED_LOAD, INTERACTIVE_LOW_L_GO_HISPEED_LOAD);
+                sysfs_write(INTERACTIVE_PATH_L_HISPEED_FREQ, INTERACTIVE_LOW_L_HISPEED_FREQ);
+                sysfs_write(INTERACTIVE_PATH_L_TARGET_LOADS, INTERACTIVE_LOW_L_TARGET_LOADS);
+                sysfs_write(INTERACTIVE_PATH_B_ABOVE_HISPEED_DELAY, INTERACTIVE_LOW_B_ABOVE_HISPEED_DELAY);
+                sysfs_write(INTERACTIVE_PATH_B_GO_HISPEED_LOAD, INTERACTIVE_LOW_B_GO_HISPEED_LOAD);
+                sysfs_write(INTERACTIVE_PATH_B_HISPEED_FREQ, INTERACTIVE_LOW_B_HISPEED_FREQ);
+                sysfs_write(INTERACTIVE_PATH_B_TARGET_LOADS, INTERACTIVE_LOW_B_TARGET_LOADS);
+                sysfs_write(CPU_FREQ_MAX_0,INTERACTIVE_LOW_L_HISPEED_FREQ);
+                sysfs_write(CPU_FREQ_MAX_4,INTERACTIVE_LOW_B_HISPEED_FREQ);    
+                sysfs_write(CPU_FREQ_MIN_0,LOW_MIN_FR);
+                sysfs_write(CPU_FREQ_MIN_4,LOW_MIN_FR);  
+                sysfs_write(LAZY_NR_POSS_CORES,NR_POSS_CORES_LOW);
+                break;
+
+        case PROFILE_NORMAL:
+                sysfs_write(INTERACTIVE_PATH_L_ABOVE_HISPEED_DELAY, INTERACTIVE_NORMAL_L_ABOVE_HISPEED_DELAY);
+                sysfs_write(INTERACTIVE_PATH_L_GO_HISPEED_LOAD, INTERACTIVE_NORMAL_L_GO_HISPEED_LOAD);
+                sysfs_write(INTERACTIVE_PATH_L_HISPEED_FREQ, INTERACTIVE_NORMAL_L_HISPEED_FREQ);
+                sysfs_write(INTERACTIVE_PATH_L_TARGET_LOADS, INTERACTIVE_NORMAL_L_TARGET_LOADS);
+                sysfs_write(INTERACTIVE_PATH_B_ABOVE_HISPEED_DELAY, INTERACTIVE_NORMAL_B_ABOVE_HISPEED_DELAY);
+                sysfs_write(INTERACTIVE_PATH_B_GO_HISPEED_LOAD, INTERACTIVE_NORMAL_B_GO_HISPEED_LOAD);
+                sysfs_write(INTERACTIVE_PATH_B_HISPEED_FREQ, INTERACTIVE_NORMAL_B_HISPEED_FREQ);
+                sysfs_write(INTERACTIVE_PATH_B_TARGET_LOADS, INTERACTIVE_NORMAL_B_TARGET_LOADS);
+                sysfs_write(CPU_FREQ_MAX_0,INTERACTIVE_NORMAL_L_HISPEED_FREQ);
+                sysfs_write(CPU_FREQ_MAX_4,INTERACTIVE_NORMAL_B_HISPEED_FREQ); 
+                sysfs_write(CPU_FREQ_MIN_0,NORM_MIN_FR);
+                sysfs_write(CPU_FREQ_MIN_4,NORM_MIN_FR);  
+                sysfs_write(LAZY_NR_POSS_CORES,NR_POSS_CORES_NORM);
+
+
+                break;
+
+        case PROFILE_HIGH_PERFORMANCE:
+                sysfs_write(INTERACTIVE_PATH_L_ABOVE_HISPEED_DELAY, INTERACTIVE_HIGH_L_ABOVE_HISPEED_DELAY);
+                sysfs_write(INTERACTIVE_PATH_L_GO_HISPEED_LOAD, INTERACTIVE_HIGH_L_GO_HISPEED_LOAD);
+                sysfs_write(INTERACTIVE_PATH_L_HISPEED_FREQ, INTERACTIVE_HIGH_L_HISPEED_FREQ);
+                sysfs_write(INTERACTIVE_PATH_L_TARGET_LOADS, INTERACTIVE_HIGH_L_TARGET_LOADS);
+                sysfs_write(INTERACTIVE_PATH_B_ABOVE_HISPEED_DELAY, INTERACTIVE_HIGH_B_ABOVE_HISPEED_DELAY);
+                sysfs_write(INTERACTIVE_PATH_B_GO_HISPEED_LOAD, INTERACTIVE_HIGH_B_GO_HISPEED_LOAD);
+                sysfs_write(INTERACTIVE_PATH_B_HISPEED_FREQ, INTERACTIVE_HIGH_B_HISPEED_FREQ);
+                sysfs_write(INTERACTIVE_PATH_B_TARGET_LOADS, INTERACTIVE_HIGH_B_TARGET_LOADS);
+                sysfs_write(CPU_FREQ_MAX_0,INTERACTIVE_HIGH_L_HISPEED_FREQ);
+                sysfs_write(CPU_FREQ_MAX_4,INTERACTIVE_HIGH_B_HISPEED_FREQ); 
+                sysfs_write(CPU_FREQ_MIN_0,PERF_MIN_FR);
+                sysfs_write(CPU_FREQ_MIN_4,PERF_MIN_FR);  
+                sysfs_write(LAZY_NR_POSS_CORES,NR_POSS_CORES_PERF);
+=======
 	case PROFILE_POWER_SAVE:
 		sysfs_write(INTERACTIVE_PATH_L_ABOVE_HISPEED_DELAY, INTERACTIVE_LOW_L_ABOVE_HISPEED_DELAY);
 		sysfs_write(INTERACTIVE_PATH_L_GO_HISPEED_LOAD, INTERACTIVE_LOW_L_GO_HISPEED_LOAD);
@@ -141,6 +199,7 @@ static int interactive_set_profile(int profile)
                 sysfs_write(NEXUS_FREQ_MAX_4,INTERACTIVE_HIGH_B_HISPEED_FREQ); 
                 sysfs_write(NEXUS_FREQ_MIN_0,PERF_MIN_FR);
                 sysfs_write(NEXUS_FREQ_MIN_4,PERF_MIN_FR);  
+>>>>>>> 45b783e8ee8aef70a3b0a0cd3eb2e0593dff5e5f
 
                 break;
 
