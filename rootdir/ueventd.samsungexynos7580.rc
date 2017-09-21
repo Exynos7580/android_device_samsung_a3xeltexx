@@ -147,14 +147,7 @@
 
 /sys/devices/system/cpu/cpu*   cpufreq/scaling_max_freq   0660  system system
 /sys/devices/system/cpu/cpu*   cpufreq/scaling_min_freq   0660  system system
-<<<<<<< HEAD
 /sys/module/lazyplug/parameters/nr_possible_cores   0660  system system
-=======
-
->>>>>>> 45b783e8ee8aef70a3b0a0cd3eb2e0593dff5e5f
-
-
-
 
 # nexus governor parameters
 /sys/devices/system/cpu/cpu*   cpufreq/nexus/down_load                 0664    system  system
