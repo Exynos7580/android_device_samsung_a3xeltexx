@@ -13,6 +13,13 @@ lib/libsensorlistener.so
 vendor/firmware/setfile_3l2.bin
 vendor/firmware/setfile_5e3.bin
 
+
+###scaler csc
+lib/libexynosscaler.so
+lib/libexynosgscaler.so
+lib/libcsc.so
+
+
 # Gralloc
 lib/hw/gralloc.exynos5.so
 
@@ -32,31 +39,30 @@ vendor/firmware/fimc_is_fd.bin
 vendor/firmware/fimc_is_fw2_3l2.bin
 
 ### Mobicore
-app/020a0000000000000000000000000000.drbin
 app/FFFFFFFF000000000000000000000001.drbin
-app/mcRegistry/00060308060501020000000000000000.tlbin
-app/mcRegistry/02010000080300030000000000000000.tlbin
-app/mcRegistry/07010000000000000000000000000000.tlbin
-app/mcRegistry/07060000000000000000000000000000.tlbin
-app/mcRegistry/08130000000000000000000000000000.tlbin
-app/mcRegistry/ffffffff00000000000000000000000a.tlbin
 app/mcRegistry/ffffffff00000000000000000000000c.tlbin
-app/mcRegistry/ffffffff00000000000000000000000d.tlbin
-app/mcRegistry/ffffffff00000000000000000000000f.tlbin
-app/mcRegistry/ffffffff000000000000000000000004.tlbin
-app/mcRegistry/ffffffff000000000000000000000005.tlbin
-app/mcRegistry/ffffffff000000000000000000000012.tlbin
-app/mcRegistry/ffffffff000000000000000000000013.tlbin
+app/mcRegistry/fffffffff0000000000000000000001e.tlbin
 app/mcRegistry/ffffffff000000000000000000000016.tlbin
-app/mcRegistry/ffffffff000000000000000000000017.tlbin
-app/mcRegistry/ffffffff000000000000000000000019.tlbin
+app/mcRegistry/ffffffff000000000000000000000004.tlbin
 app/mcRegistry/ffffffff000000000000000000000021.tlbin
 app/mcRegistry/ffffffff000000000000000000000041.tlbin
 app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
+app/mcRegistry/ffffffff000000000000000000000012.tlbin
+app/mcRegistry/07060000000000000000000000000000.tlbin
+app/mcRegistry/00060308060501020000000000000000.tlbin
+app/mcRegistry/ffffffff000000000000000000000005.tlbin
 app/mcRegistry/ffffffffd00000000000000000000004.tlbin
+app/mcRegistry/ffffffff000000000000000000000017.tlbin
+app/mcRegistry/08130000000000000000000000000000.tlbin
+app/mcRegistry/ffffffff000000000000000000000019.tlbin
+app/mcRegistry/ffffffff00000000000000000000000f.tlbin
+app/mcRegistry/ffffffff00000000000000000000000a.tlbin
+app/mcRegistry/ffffffff000000000000000000000013.tlbin
 app/mcRegistry/ffffffffd00000000000000000000016.tlbin
-app/mcRegistry/FFFFFFFFD00000000000000000000016.tlbin
-app/mcRegistry/fffffffff0000000000000000000001e.tlbin
+app/mcRegistry/07010000000000000000000000000000.tlbin
+app/mcRegistry/02010000080300030000000000000000.tlbin
+app/mcRegistry/ffffffff00000000000000000000000d.tlbin
+app/020a0000000000000000000000000000.drbin
 bin/cs
 bin/mcDriverDaemon
 vendor/lib/libMcClient.so:lib/libMcClient.so
@@ -276,3 +282,39 @@ etc/wifi/bcmdhd_sta.bin
 etc/wifi/nvram_mfg.txt
 etc/wifi/nvram_net.txt
 
+###SOMX
+
+lib/libarac.so
+lib/libsavsac.so
+lib/libsavscmn.so
+lib/libsavsff.so
+lib/libsavsmeta.so
+lib/libsavsvc.so
+lib/libsnaace.so
+lib/libsnamrnb.so
+lib/libsnamrwb.so
+lib/libsomx263dsw.so
+lib/libsomx264dsw.so
+lib/libsomxaacd.so
+lib/libsomxaace.so
+lib/libsomxadpcmd.so
+lib/libsomxamrd.so
+lib/libsomxcmn.so
+lib/libsomxcore.so
+lib/libsomxevrcd.so
+lib/libsomxevrce.so
+lib/libsomxflacd.so
+lib/libsomxhevcdsw.so
+lib/libsomxmp3d.so
+lib/libsomxmp43d.so
+lib/libsomxmp4vdsw.so
+lib/libsomxnaace.so
+lib/libsomxqcelpd.so
+lib/libsomxqcelpe.so
+lib/libsomxsr263d.so
+lib/libsomxvc1dsw.so
+lib/libsomxvp8d.so
+lib/libsomxwmad.so
+lib/libsomxwmv7d.so
+lib/libsomxwmv8d.so
+lib/libsxqk.so
