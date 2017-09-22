@@ -1,5 +1,5 @@
 /*
-   Copyright (c) 2016, The CyanogenMod Project. All rights reserved.
+   Copyright (c) 2015, The Dokdo Project. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -27,83 +27,73 @@
    IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
    File Name : init_sec.c
-   Create Date : 2016.04.13
+   Create Date : 2015.11.03
+   Author : Sunghun Ra
  */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "vendor_init.h"
-#include "property_service.h"
 #include "log.h"
+#include "property_service.h"
 #include "util.h"
+#include "vendor_init.h"
 
-#define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
-#include <sys/_system_properties.h>
+#include "init_sec.h"
 
-void property_override(char const prop[], char const value[])
+std::string bootloader;
+std::string device;
+char* devicename;
+
+device_variant check_device_and_get_variant()
 {
-    prop_info *pi;
+    std::string platform = property_get("ro.board.platform");
+    if (platform != ANDROID_TARGET) {
+        return UNKNOWN;
+    }
 
-    pi = (prop_info*) __system_property_find(prop);
-    if (pi)
-        __system_property_update(pi, value, strlen(value));
-    else
-        __system_property_add(prop, strlen(prop), value, strlen(value));
-}
-
-
-void set_sim_info ()
-{
-	FILE *file;
-	char *simslot_count_path = "/proc/simslot_count";
-	char simslot_count[2] = "\0";
-	
-	file = fopen(simslot_count_path, "r");
-	
-	if (file != NULL) {
-		simslot_count[0] = fgetc(file);
-		property_set("ro.multisim.simslotcount", simslot_count);
-		if(strcmp(simslot_count, "2") == 0) {
-			property_set("rild.libpath2", "/system/lib/libsec-ril-dsds.so");
-			property_set("persist.radio.multisim.config", "dsds");
-		}
-		fclose(file);
-	}
-	else {
-		ERROR("Could not open '%s'\n", simslot_count_path);
-	}
+    bootloader = property_get("ro.bootloader");
+    return match(bootloader);
 }
 
 void vendor_load_properties()
 {
+    device_variant variant = check_device_and_get_variant();
 
-    std::string bootloader = property_get("ro.bootloader");
-
-    if (bootloader.find("A310F") != std::string::npos) {
-	/* SM-A310F */
-        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
-        property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
-        property_override("ro.product.model", "SM-A310F");
-        property_override("ro.product.device", "a3xelte");
-    } else if (bootloader.find("A310M") != std::string::npos) {
-	/* SM-A310M */
-        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
-        property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
-        property_override("ro.product.model", "SM-A310M");
-        property_override("ro.product.device", "a3xelte");
-    } else {
-	/* SM-A310Y */
-        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
-        property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
-        property_override("ro.product.model", "SM-A310Y");
-        property_override("ro.product.device", "a3xeltexx");
+    switch (variant) {
+        case A310F:
+            /* a310f */
+            property_set("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:7.0/NRD90M/A310FXXU3CQH3:user/release-keys");
+            property_set("ro.build.description", "a3xeltexx-user 7.0 NRD90M A310FXXU3CQH3 release-keys");
+            property_set("ro.product.model", "SM-A310F");
+            property_set("ro.product.device", "a3xelte");
+            break;
+        case A310M:
+            /* a310m */
+            property_set("ro.build.fingerprint", "samsung/a3xelteub/a3xelte:7.0/NRD90M/A310MUBU2CQG1:user/release-keys");
+            property_set("ro.build.description", "a3xelteub-user 7.0 NRD90M A310MUBU2CQG1 release-keys");
+            property_set("ro.product.model", "SM-A310M");
+            property_set("ro.product.device", "a3xelte");
+            break;
+        case A310Y:
+            /* a310y */
+            property_set("ro.build.fingerprint", "samsung/a3xeltedo/a3xelte:7.0/NRD90M/A310YDVU3CQE2:user/release-keys");
+            property_set("ro.build.description", "a3xeltedo-user 7.0 NRD90M A310YDVU3CQE2 release-keys");
+            property_set("ro.product.model", "SM-A310Y");
+            property_set("ro.product.device", "a3xelte");
+            break;
+        case A310N0:
+            /* a310n0 */
+            property_set("ro.build.fingerprint", "samsung/a3xeltekx/a3xeltekx:7.0/NRD90M/A310N0KOU1CQF1:user/release-keys");
+            property_set("ro.build.description", "a3xeltekx-user 7.0 NRD90M A310N0KOU1CQF1 release-keys");
+            property_set("ro.product.model", "SM-A310N0");
+            property_set("ro.product.device", "a3xeltekx");
+            break;
+        default:
+            ERROR("Unknown bootloader id %s detected. bailing...\n", bootloader.c_str());
+            return;
     }
-
-	set_sim_info();
-
-	std::string device = property_get("ro.product.device");
-	std::string devicename = property_get("ro.product.model");
-	ERROR("Found bootloader id %s setting build properties for %s device\n", bootloader.c_str(), devicename.c_str());
+    device = property_get("ro.product.device");
+    INFO("Found bootloader id %s setting build properties for %s device\n", bootloader.c_str(), device.c_str());
 }
