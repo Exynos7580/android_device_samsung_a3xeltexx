@@ -926,6 +926,10 @@
 		<path name="media-mic" />
 	</path>
 
+	<path name="recording-bt-sco-headset-in">
+		<path name="media-bt-sco-headset-in" />
+	</path>
+
 	<!-- jam voice input -->
 	<path name="recording-jam-mic">
 		<path name="media-mic" />
@@ -2375,6 +2379,9 @@
 		<ctl name="MIC1 Boost Volume" value="1" />
 		<ctl name="ADC Left Gain" value="138" />
 		<ctl name="ADC Right Gain" value="138" />
+	</path>
+
+	<path name="gain-recording-bt-sco-headset-in">
 	</path>
 
 	<!-- jam voice input volume-->
