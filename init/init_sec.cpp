@@ -42,12 +42,46 @@
 
 #include "init_sec.h"
 
+#define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
+#include <sys/_system_properties.h>
+
+void property_override(char const prop[], char const value[])
+{
+    prop_info *pi;
+
+    pi = (prop_info*) __system_property_find(prop);
+    if (pi)
+        __system_property_update(pi, value, strlen(value));
+    else
+        __system_property_add(prop, strlen(prop), value, strlen(value));
+}
+
 std::string bootloader;
 std::string device;
 char* devicename;
 
 device_variant check_device_and_get_variant()
 {
+    FILE *file;
+	char *simslot_count_path = "/proc/simslot_count";
+	char simslot_count[2] = "\0";
+	
+	file = fopen(simslot_count_path, "r");
+	
+	if (file != NULL) {
+		simslot_count[0] = fgetc(file);
+		property_set("ro.multisim.simslotcount", simslot_count);
+        
+		if(strcmp(simslot_count, "2") == 0) {
+			property_set("rild.libpath2", "/system/lib/libsec-ril-dsds.so");
+			property_set("persist.radio.multisim.config", "dsds");
+		}
+        
+		fclose(file);
+	} else {
+		ERROR("Could not open '%s'\n", simslot_count_path);
+	}
+    
     std::string platform = property_get("ro.board.platform");
     if (platform != ANDROID_TARGET) {
         return UNKNOWN;
