@@ -83,8 +83,8 @@ void vendor_load_properties()
 
     if (bootloader.find("A310F") != std::string::npos) {
 	/* SM-A310F */
-        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
-        property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
+        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:7.0/NRD90M/A310FXXU3CQE6:user/test-keys");
+        property_override("ro.build.description", "a3xeltexx-user 7.0 NRD90M A310FXXU3CQE6 test-keys");
         property_override("ro.product.model", "SM-A310F");
         property_override("ro.product.device", "a3xelte");
     } else if (bootloader.find("A310M") != std::string::npos) {

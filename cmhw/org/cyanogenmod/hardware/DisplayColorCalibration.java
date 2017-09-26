@@ -29,7 +29,7 @@ public class DisplayColorCalibration {
 
     private static final String TAG = "DisplayColorCalibration";
 
-    private static final String RGB_FILE = "/sys/class/lcd/panel/mdnie/sensorRGB";
+    private static final String RGB_FILE = "/sys/class/mdnie/mdnie/sensorRGB";
 
     private static final boolean sUseGPUMode;
 

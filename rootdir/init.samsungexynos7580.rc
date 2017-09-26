@@ -197,6 +197,58 @@ on boot
     chown system system /sys/devices/system/cpu/cpu4/cpufreq/cafactive/io_is_busy
     chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/cafactive/io_is_busy
 
+    # Change permission for interactive governor
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_rate
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_slack
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/timer_slack
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/min_sample_time
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/hispeed_freq
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/target_loads
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/go_hispeed_load
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/above_hispeed_delay
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/boost
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/input_boost
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/input_boost
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse_duration
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/boostpulse_duration
+    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/io_is_busy
+    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/io_is_busy
+
+    # Change permission for interactive governor second cluster
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_rate
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_slack
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/timer_slack
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/min_sample_time
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/hispeed_freq
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/target_loads
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/go_hispeed_load
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/above_hispeed_delay
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/boost
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/input_boost
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/input_boost
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse_duration
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/boostpulse_duration
+    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/io_is_busy
+    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/io_is_busy
+
+
+
     chown system log /proc/sec_log
 
     chown bluetooth net_bt_stack /dev/ttySAC3
@@ -918,8 +970,37 @@ on property:ro.debug_level=0x4f4c
 
 # LPM
 on property:ro.bootmode=charger
+    mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM /system wait ro
     wait /dev/block/platform/13540000.dwmmc0/by-name/EFS
+    check_fs /dev/block/platform/13540000.dwmmc0/by-name/EFS ext4
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit
+
+on property:ro.bootmode=charger
+    class_start sec-charger
+
+on charger
+    chmod 0664 /sys/class/power_supply/battery/batt_temp_table
+    chown system radio /sys/class/power_supply/battery/batt_temp_table
+    chmod 0664 /sys/class/power_supply/battery/batt_capacity_max
+    chown system radio /sys/class/power_supply/battery/batt_capacity_max
+    chmod 0664 /sys/class/power_supply/battery/battery_cycle
+    chown system radio /sys/class/power_supply/battery/battery_cycle
+    chown system radio /sys/class/power_supply/battery/cisd_fullcaprep_max
+    chmod 0660 /sys/class/power_supply/battery/cisd_fullcaprep_max
+    chown system radio /sys/class/power_supply/battery/cisd_data
+    chmod 0660 /sys/class/power_supply/battery/cisd_data
+    chown system system /efs/FactoryApp/cisd_data
+    chmod 0640 /efs/FactoryApp/cisd_data
+    chown radio system /efs
+    chmod 0771 /efs
+    mkdir /efs/Battery 0775 radio system
+    chown radio system /efs/Battery
+    chmod 0775 /efs/Battery
+    copy /system/vendor/firmware/battery_data.dat /efs/Battery/battery_data.dat
+    chmod 0400 /efs/Battery/battery_data.dat
+    write /sys/class/power_supply/battery/batt_update_data "/efs/Battery/battery_data.dat"
+    class_start charger
+
 
 on charger
     # Set cpu governor to powersave while in charging mode
@@ -939,6 +1020,7 @@ service battery_charger /sbin/healthd -c
     critical
     seclabel u:r:healthd:s0
 
+
 # umount service
 service umount_service /system/bin/umount -D /preload
     disabled
@@ -956,7 +1038,7 @@ on property:sys.mobicoredaemon.enable=true
     start cs_service
     write /proc/iccc_ready 1
 
-service sswap /system/bin/sswap -s
+service sswap /sbin/sswap -s  -f 1024
       class core
       user root
       group root
