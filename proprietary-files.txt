@@ -18,7 +18,7 @@ vendor/firmware/setfile_5e3.bin
 lib/libexynosscaler.so
 lib/libexynosgscaler.so
 lib/libcsc.so
-
+lib/libexynosutils.so
 
 # Gralloc
 lib/hw/gralloc.exynos5.so
@@ -232,6 +232,8 @@ lib/libfloatingfeature.so
 lib/libsec-ril.so
 lib/libsec-ril-dsds.so
 lib/libsecril-client.so
+lib/libreference-ril.so
+lib/librilutils.so
 
 ### Sensors
 lib/hw/sensors.universal7580.so

@@ -24,8 +24,9 @@
 #define DTBH_SUBTYPE       "samsung"
 
  /* Hardcoded entry */
-#define DTBH_PLATFORM_CODE 0x347e
-#define DTBH_SUBTYPE_CODE  0x88668650
+#define DTBH_PLATFORM_CODE 0x50a6
+#define DTBH_SUBTYPE_CODE  0x217584da
+
 
 /* DTBH_MAGIC + DTBH_VERSION + DTB counts */
 #define DT_HEADER_PHYS_SIZE 12
