@@ -75,6 +75,7 @@ on post-fs-data
     chown media system /data/firmware
 
 on boot
+
     # Ensure all CPUs are online (big cluster)
     write /sys/devices/system/cpu/cpu4/online 1
 
@@ -961,8 +962,8 @@ on property:sys.boot_completed=1
     write /sys/block/mmcblk1/bdi/read_ahead_kb 2048
 
 # rerun macloader to fix wifi after hotspot
-on property:wlan.driver.status=unloaded
-    start macloader
+#on property:wlan.driver.status=unloaded
+#    start macloader
 
 # Kick watchdogd if debug_level is low
 on property:ro.debug_level=0x4f4c
@@ -976,7 +977,7 @@ on property:ro.bootmode=charger
     mount ext4 /dev/block/platform/13540000.dwmmc0/by-name/EFS /efs nosuid nodev noatime noauto_da_alloc,discard,journal_async_commit
 
 on property:ro.bootmode=charger
-    class_start sec-charger
+    class_start charger
 
 on charger
     chmod 0664 /sys/class/power_supply/battery/batt_temp_table
@@ -1001,26 +1002,6 @@ on charger
     write /sys/class/power_supply/battery/batt_update_data "/efs/Battery/battery_data.dat"
     class_start charger
 
-
-on charger
-    # Set cpu governor to powersave while in charging mode
-    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor powersave
-    write /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor powersave
-    write /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor powersave
-    write /sys/devices/system/cpu/cpu3/cpufreq/scaling_governor powersave
-
-    # EHCI runtime enable for LPA
-    write /sys/devices/platform/s5p-ehci/power/control auto
-
-    # Do not set any USB mode while charging
-    setprop sys.usb.config charging
-
-service battery_charger /sbin/healthd -c
-    class charger
-    critical
-    seclabel u:r:healthd:s0
-
-
 # umount service
 service umount_service /system/bin/umount -D /preload
     disabled
@@ -1044,3 +1025,9 @@ service sswap /sbin/sswap -s  -f 1024
       group root
       oneshot
       seclabel u:r:sswap:s0
+
+service battery_charger /sbin/healthd -c
+    class charger
+    critical
+    seclabel u:r:healthd:s0
+
