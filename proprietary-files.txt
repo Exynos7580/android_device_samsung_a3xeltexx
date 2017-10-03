@@ -227,6 +227,7 @@ vendor/etc/nxp/VideoTelephony/Tx_ControlParams_NARROWBAND_BLUETOOTH_SCO_HEADSET.
 ### RIL
 # opensource rild don't work well for dual sim
 bin/rild
+lib/libril.so
 lib/libsecnativefeature.so
 lib/libfloatingfeature.so
 lib/libsec-ril.so
