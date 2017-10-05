@@ -492,7 +492,6 @@ static void select_devices(struct audio_device *adev)
 
 
     if (output_device_id == OUT_DEVICE_NONE) {
-       ALOGV("*** %s: SEKIL OUT device none", __func__);
     }
 
     adev->cur_route_id = new_route_id;
@@ -861,7 +860,6 @@ static void stop_call(struct audio_device *adev)
         select_devices(adev);
     }
 
-    ALOGE("SEKIL stop_call useeee");
 
     adev->in_call = false;
     adev->in_comm_call = false;
@@ -1016,11 +1014,9 @@ static int start_input_stream(struct stream_in *in)
         adev->in_device = in->device;
         adev->in_channel_mask = in->channel_mask;
 
-        ALOGE("SEKIL incall----");
 
         select_devices(adev);
     }
-	else    ALOGE("SEKIL incall++++");
 
 
 
@@ -1966,20 +1962,12 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
 
     if (devices == AUDIO_DEVICE_NONE){
         devices = AUDIO_DEVICE_OUT_SPEAKER;
-    ALOGE("SEKIL devices == none   ");
-
 
     }
     out->device = devices;
 
-    if (flags & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
-    ALOGV("%s: SEKIL OFFLOAD FLAG GETTT ", __func__);
-
-    }
-
     if (flags & AUDIO_OUTPUT_FLAG_DIRECT &&
         devices == AUDIO_DEVICE_OUT_AUX_DIGITAL) {
-    ALOGV("%s: SEKIL DIRECT_FLAG and OUX DIGITAL", __func__);
         pthread_mutex_lock(&adev->lock);
         ret = read_hdmi_channel_masks(adev, out);
         pthread_mutex_unlock(&adev->lock);
@@ -1996,12 +1984,10 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         out->pcm_device = PCM_DEVICE;
         type = OUTPUT_HDMI;
     } else if (flags & AUDIO_OUTPUT_FLAG_FAST) {
-        ALOGV("*** %s: SEKIL Fast buffer pcm config", __func__);
         out->config = pcm_config_fast;
         out->pcm_device = PCM_DEVICE;
         type = OUTPUT_LOW_LATENCY;
     } else {
-        ALOGV("*** %s: SEKIL Deep buffer pcm config", __func__);
         out->config = pcm_config_deep;
         out->pcm_device = PCM_DEVICE_DEEP;
         type = OUTPUT_DEEP_BUF;
@@ -2200,8 +2186,7 @@ static int adev_set_mode(struct audio_hw_device *dev, audio_mode_t mode)
     }
     else if (adev->mode == AUDIO_MODE_IN_COMMUNICATION)
     {
-
-        ALOGE("SEKIL run start_comm_call   ");
+        ALOGV("*** %s: Entering IN_COMM_CALL mode", __func__);
         start_comm_call(adev);
     }
 
