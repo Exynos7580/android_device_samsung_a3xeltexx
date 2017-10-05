@@ -62,7 +62,7 @@
 #define PCM_CARD_SPDIF 1
 #define PCM_TOTAL 2
 
-#define PCM_DEVICE 5       /* Playback link */
+#define PCM_DEVICE 0       /* Playback link */
 #define PCM_DEVICE_VOICE 2 /* Baseband link */
 #define PCM_DEVICE_SCO 3   /* Bluetooth link */
 #define PCM_DEVICE_DEEP 1  /* Deep buffer */
