@@ -62,10 +62,13 @@
 #define PCM_CARD_SPDIF 1
 #define PCM_TOTAL 2
 
-#define PCM_DEVICE 0       /* Playback link */
+#define PCM_DEVICE 5       /* Playback link */
 #define PCM_DEVICE_VOICE 2 /* Baseband link */
 #define PCM_DEVICE_SCO 3   /* Bluetooth link */
 #define PCM_DEVICE_DEEP 1  /* Deep buffer */
+#define PCM_DEVICE_CAPTURE 0       /* Capture link */
+
+
 
 #define MIXER_CARD 0
 
@@ -511,7 +514,7 @@ static void select_devices(struct audio_device *adev)
                     output_device_id = OUT_DEVICE_BT_SCO_HEADSET_OUT;
                     break;
                 default:
-                    if (adev->input_source == AUDIO_SOURCE_VOICE_CALL || adev->input_source == AUDIO_SOURCE_VOICE_COMMUNICATION) {
+                    if (adev->input_source == AUDIO_SOURCE_VOICE_CALL) {
                         output_device_id = OUT_DEVICE_EARPIECE;
                     } else {
                         output_device_id = OUT_DEVICE_SPEAKER;
@@ -991,7 +994,7 @@ static int start_input_stream(struct stream_in *in)
     struct audio_device *adev = in->dev;
 
     in->pcm = pcm_open(PCM_CARD,
-                       PCM_DEVICE,
+                       PCM_DEVICE_CAPTURE,
                        PCM_IN | PCM_MONOTONIC,
                        in->config);
     if (in->pcm && !pcm_is_ready(in->pcm)) {
@@ -1402,7 +1405,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
                     start_call(adev);
                 }
             }
-            else if (adev->in_comm_call)  start_comm_call(adev);
+            //else if (adev->in_comm_call)  start_comm_call(adev);
             else {
                 select_devices(adev);
             }

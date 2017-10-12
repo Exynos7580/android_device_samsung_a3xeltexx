@@ -3,8 +3,8 @@
 ####################
 
 PRODUCT_PACKAGES += \
-    SamsungServiceMode
-
+    SamsungServiceMode \
+    dtbhtoolExynos
 #PRODUCT_COPY_FILES += \
 #    $(LOCAL_PATH)/rootdir/healthd:root/sbin/healthd
 
@@ -12,3 +12,4 @@ PRODUCT_PACKAGES += \
 # samsung's sswap
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/sswap:root/sbin/sswap
+
