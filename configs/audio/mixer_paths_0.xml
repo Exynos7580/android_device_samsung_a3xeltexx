@@ -42,6 +42,7 @@
 
 	<path name="route-ap-tx">
 		<path name="route-ap" />
+        	<ctl name="S2801 Mixer En" value="On" />
 		<ctl name="S2801 CH1 Mixer En" value="On" />
 		<ctl name="S2801 CH2 Mixer En" value="Off" />
 		<ctl name="S2801 CH3 Mixer En" value="Off" />

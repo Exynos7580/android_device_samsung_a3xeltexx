@@ -81,8 +81,18 @@
  * Set the deep-buffer and low-latency output buffer sizes to
  * integral multiple of msec. This reduces the variations in the writes.
  */
+//#define DEEP_BUFFER_OUTPUT_PERIOD_SIZE 480
+//#define DEEP_BUFFER_OUTPUT_PERIOD_COUNT 8
+
+
+
+#define DEEP_BUFFER_OUTPUT_SAMPLING_RATE 48000
 #define DEEP_BUFFER_OUTPUT_PERIOD_SIZE 960
-#define DEEP_BUFFER_OUTPUT_PERIOD_COUNT 5
+#define DEEP_BUFFER_OUTPUT_PERIOD_COUNT 8
+
+#define MAX_SUPPORTED_CHANNEL_MASKS 2
+
+
 
 #define LOW_LATENCY_OUTPUT_PERIOD_SIZE 240
 #define LOW_LATENCY_OUTPUT_PERIOD_COUNT 2
@@ -93,7 +103,7 @@
 #define AUDIO_CAPTURE_LOW_LATENCY_PERIOD_SIZE 240
 #define AUDIO_CAPTURE_LOW_LATENCY_PERIOD_COUNT 2
 
-#define SCO_CAPTURE_PERIOD_SIZE 240
+#define SCO_CAPTURE_PERIOD_SIZE 168
 #define SCO_CAPTURE_PERIOD_COUNT 2
 
 #define HDMI_MULTI_PERIOD_SIZE  336
@@ -110,6 +120,18 @@
 #define HDMI_MAX_SUPPORTED_CHANNEL_MASKS 2
 
 
+
+//test 
+#define PLAYBACK_PERIOD_SIZE 256  
+#define PLAYBACK_PERIOD_COUNT 2
+#define PLAYBACK_DEFAULT_CHANNEL_COUNT 2
+#define PLAYBACK_DEFAULT_SAMPLING_RATE 48000
+#define PLAYBACK_START_THRESHOLD(size, count) (((size) * (count)) - 1)
+#define PLAYBACK_STOP_THRESHOLD(size, count) ((size) * ((count) + 2))
+#define PLAYBACK_AVAILABLE_MIN 1
+
+
+
 struct pcm_config pcm_config_fast = {
     .channels = 2,
     .rate = 48000,
@@ -118,12 +140,32 @@ struct pcm_config pcm_config_fast = {
     .format = PCM_FORMAT_S16_LE,
 };
 
+
+/* TODO: the following PCM device profiles could be read from a config file */
+static struct pcm_config pcm_config_playback = {
+
+        .channels = PLAYBACK_DEFAULT_CHANNEL_COUNT,
+        .rate = PLAYBACK_DEFAULT_SAMPLING_RATE,
+        .period_size = PLAYBACK_PERIOD_SIZE,
+        .period_count = PLAYBACK_PERIOD_COUNT,
+        .format = PCM_FORMAT_S16_LE,
+        .start_threshold = PLAYBACK_START_THRESHOLD(PLAYBACK_PERIOD_SIZE, PLAYBACK_PERIOD_COUNT),
+        .stop_threshold = PLAYBACK_STOP_THRESHOLD(PLAYBACK_PERIOD_SIZE, PLAYBACK_PERIOD_COUNT),
+        .silence_threshold = 0,
+        .silence_size = UINT_MAX,
+        .avail_min = PLAYBACK_AVAILABLE_MIN,
+
+};
+
 struct pcm_config pcm_config_deep = {
-    .channels = 2,
-    .rate = 48000,
+    .channels = PLAYBACK_DEFAULT_CHANNEL_COUNT,
+    .rate = DEEP_BUFFER_OUTPUT_SAMPLING_RATE,
     .period_size = DEEP_BUFFER_OUTPUT_PERIOD_SIZE,
     .period_count = DEEP_BUFFER_OUTPUT_PERIOD_COUNT,
     .format = PCM_FORMAT_S16_LE,
+    .start_threshold = DEEP_BUFFER_OUTPUT_PERIOD_SIZE / 4,
+    .stop_threshold = INT_MAX,
+    .avail_min = DEEP_BUFFER_OUTPUT_PERIOD_SIZE / 4,
 };
 
 struct pcm_config pcm_config_in = {
@@ -143,7 +185,7 @@ struct pcm_config pcm_config_in_low_latency = {
 };
 
 struct pcm_config pcm_config_sco = {
-    .channels = 1,
+    .channels = 2,
     .rate = 8000,
     .period_size = SCO_CAPTURE_PERIOD_SIZE,
     .period_count = SCO_CAPTURE_PERIOD_COUNT,
@@ -151,7 +193,7 @@ struct pcm_config pcm_config_sco = {
 };
 
 struct pcm_config pcm_config_sco_wide = {
-    .channels = 1,
+    .channels = 2,
     .rate = 16000,
     .period_size = SCO_CAPTURE_PERIOD_SIZE,
     .period_count = SCO_CAPTURE_PERIOD_COUNT,
@@ -186,6 +228,7 @@ enum output_type {
     OUTPUT_DEEP_BUF,      // deep PCM buffers output stream
     OUTPUT_LOW_LATENCY,   // low latency output stream
     OUTPUT_HDMI,          // HDMI multi channel
+    OUTPUT_PRIMARY,
     OUTPUT_TOTAL
 };
 
@@ -1990,11 +2033,17 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         out->config = pcm_config_fast;
         out->pcm_device = PCM_DEVICE;
         type = OUTPUT_LOW_LATENCY;
-    } else {
+    } else if (flags & AUDIO_OUTPUT_FLAG_DEEP_BUFFER) {
         out->config = pcm_config_deep;
         out->pcm_device = PCM_DEVICE_DEEP;
         type = OUTPUT_DEEP_BUF;
     }
+      else {
+        out->config = pcm_config_playback;
+        out->pcm_device = PCM_DEVICE;
+	type = OUTPUT_PRIMARY;
+    }
+
 
     out->stream.common.get_sample_rate = out_get_sample_rate;
     out->stream.common.set_sample_rate = out_set_sample_rate;
