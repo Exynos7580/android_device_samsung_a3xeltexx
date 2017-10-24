@@ -101,7 +101,7 @@
 /dev/seiren               0660   system     audio
 
 # Secure MEM driver
-/dev/s5p-smem             0660   drm        drmrpc
+/dev/s5p-smem             0660   system        drmrpc
 
 # Modem Interface
 /dev/block/platform/13540000.dwmmc0/by-name/RADIO     0660   system     radio

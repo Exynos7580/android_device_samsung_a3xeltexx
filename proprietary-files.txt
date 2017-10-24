@@ -1,5 +1,14 @@
 ### Bluetooth
 vendor/firmware/bcm43438A1_V0051.0217.hcd
+vendor/lib/libbt-vendor.so
+etc/bluetooth/iop_device_list.conf
+etc/bluetooth/av_performance.conf
+etc/bluetooth/iop_bt.db
+etc/bluetooth/bt_did.conf
+etc/bluetooth/bt_stack.conf
+
+
+
 
 ### Camera
 cameradata/datapattern_420sp.yuv

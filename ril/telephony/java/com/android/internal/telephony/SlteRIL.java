@@ -53,14 +53,21 @@ public class SlteRIL extends RIL {
     private static final int RIL_UNSOL_STK_SEND_SMS_RESULT = 11002;
     private static final int RIL_UNSOL_STK_CALL_CONTROL_RESULT = 11003;
 
-    private static final int RIL_UNSOL_DEVICE_READY_NOTI = 11008;
-    private static final int RIL_UNSOL_AM = 11010;
     private static final int RIL_UNSOL_DUN_PIN_CONTROL_SIGNAL = 11011;
     private static final int RIL_UNSOL_SIM_PB_READY = 11021;
     private static final int RIL_UNSOL_SIM_SWAP_STATE_CHANGED = 11057;
 
-    private static final int RIL_UNSOL_WB_AMR_STATE = 11017;
     private static final int RIL_UNSOL_CLOCK_CTRL = 11022;
+    private static final int RIL_REQUEST_DIAL_EMERGENCY = 10016;
+    private static final int RIL_UNSOL_RESPONSE_IMS_NETWORK_STATE_CHANGED = 1036;
+    private static final int RIL_UNSOL_DEVICE_READY_NOTI = 11008;
+    private static final int RIL_UNSOL_AM = 11010;
+    private static final int RIL_UNSOL_WB_AMR_STATE = 11017;
+    private static final int RIL_UNSOL_RESPONSE_HANDOVER = 11021;
+    private static final int RIL_UNSOL_ON_SS_SAMSUNG = 1040;
+    private static final int RIL_UNSOL_STK_CC_ALPHA_NOTIFY_SAMSUNG = 1041;
+
+
 
     // Number of per-network elements expected in QUERY_AVAILABLE_NETWORKS's response.
     // 4 elements is default, but many RILs actually return 5, making it impossible to
@@ -357,64 +364,37 @@ public class SlteRIL extends RIL {
         return ret;
     }
 
+
     @Override
     protected void
-    processUnsolicited(Parcel p, int type) {
+    processUnsolicited (Parcel p, int type) {
         Object ret;
+        int dataPosition = p.dataPosition(); // save off position within the Parcel
+        int response = p.readInt();
 
-        int dataPosition = p.dataPosition();
-        int origResponse = p.readInt();
-        int newResponse = origResponse;
-
-        /* Remap incorrect respones or ignore them */
-        switch (origResponse) {
-            case RIL_UNSOL_STK_CALL_CONTROL_RESULT:
-            case RIL_UNSOL_CLOCK_CTRL: 
-            case RIL_UNSOL_DEVICE_READY_NOTI: /* Registrant notification */
-            case RIL_UNSOL_SIM_PB_READY: /* Registrant notification */
-                Rlog.v(RILJ_LOG_TAG,
-                       "XMM7260: ignoring unsolicited response " +
-                       origResponse);
-                return;
-            case RIL_UNSOL_SIM_SWAP_STATE_CHANGED:
-                newResponse = RIL_UNSOL_RESPONSE_SIM_STATUS_CHANGED;
+        switch(response) {
+            case RIL_UNSOL_RESPONSE_IMS_NETWORK_STATE_CHANGED:
+                ret = responseVoid(p);
                 break;
-            default:
-                if (origResponse >= SAMSUNG_UNSOL_RESPONSE_BASE) {
-                    Rlog.v(RILJ_LOG_TAG,
-                          "XMM7260: unknown unsolicited response " +
-                          origResponse);
-                }
+            case RIL_UNSOL_DEVICE_READY_NOTI:
+                ret = responseVoid(p);
                 break;
-        }
-
-        if (newResponse != origResponse) {
-            riljLog("SlteRIL: remap unsolicited response from " +
-                    origResponse + " to " + newResponse);
-            p.setDataPosition(dataPosition);
-            p.writeInt(newResponse);
-        }
-
-        switch (newResponse) {
             case RIL_UNSOL_AM:
                 ret = responseString(p);
-                // Add debug to check if this wants to execute any useful am command
-                Rlog.v(RILJ_LOG_TAG, "XMM7260: am=" + (String)ret);
                 break;
-            case RIL_UNSOL_STK_SEND_SMS_RESULT:
-                ret = responseInts(p);
-                if (mCatSendSmsResultRegistrant != null) {
-                    mCatSendSmsResultRegistrant.notifyRegistrant(
-                        new AsyncResult(null, ret, null));
-                }
-                break;
-
             case RIL_UNSOL_WB_AMR_STATE:
                 ret = responseInts(p);
                 break;
-
-            case RIL_UNSOL_DUN_PIN_CONTROL_SIGNAL:
+            case RIL_UNSOL_RESPONSE_HANDOVER:
                 ret = responseVoid(p);
+                break;
+            case RIL_UNSOL_ON_SS_SAMSUNG:
+                p.setDataPosition(dataPosition);
+                p.writeInt(RIL_UNSOL_ON_SS);
+                break;
+            case RIL_UNSOL_STK_CC_ALPHA_NOTIFY_SAMSUNG:
+                p.setDataPosition(dataPosition);
+                p.writeInt(RIL_UNSOL_STK_CC_ALPHA_NOTIFY);
                 break;
             default:
                 // Rewind the Parcel
@@ -425,4 +405,7 @@ public class SlteRIL extends RIL {
                 return;
         }
     }
+
+
+
 }
