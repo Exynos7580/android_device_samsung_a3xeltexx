@@ -88,8 +88,8 @@
 struct pcm_config pcm_config_fast = {
     .channels = 2,
     .rate = 48000,
-    .period_size = 960,
-    .period_count = 2,
+    .period_size = 240,
+    .period_count = 4,
     .format = PCM_FORMAT_S16_LE,
 };
 
@@ -97,8 +97,8 @@ struct pcm_config pcm_config_fast = {
 static struct pcm_config pcm_config_playback = {
     .channels = 2,
     .rate = 48000,
-    .period_size = 960,
-    .period_count = 2,
+    .period_size = 240,
+    .period_count = 4,
     .format = PCM_FORMAT_S16_LE,
 };
 
