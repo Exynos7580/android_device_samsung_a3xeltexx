@@ -240,6 +240,7 @@ lib/libril.so
 lib/libsecnativefeature.so
 lib/libfloatingfeature.so
 lib/libsec-ril.so
+lib/libsecril-client.so
 lib/libsec-ril-dsds.so
 lib/libreference-ril.so
 lib/librilutils.so
