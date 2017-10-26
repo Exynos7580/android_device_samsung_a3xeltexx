@@ -32,6 +32,9 @@ int ril_open(struct ril_handle *ril);
 
 int ril_close(struct ril_handle *ril);
 
+
+int ril_set_sound_clock_mode(struct ril_handle *ril,int mode);
+
 int ril_set_call_volume(struct ril_handle *ril,
                         enum _SoundType sound_type,
                         float volume);

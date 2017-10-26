@@ -129,7 +129,7 @@ struct pcm_config pcm_config_in_low_latency = {
 struct pcm_config pcm_config_sco = {
     .channels = 1,
     .rate = 8000,
-    .period_size = 2048,
+    .period_size = 128,
     .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -145,7 +145,7 @@ struct pcm_config pcm_config_sco_wide = {
 struct pcm_config pcm_config_voice = {
     .channels = 2,
     .rate = 8000,
-    .period_size = 2048,
+    .period_size = 128,
     .period_count = 6,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -201,6 +201,7 @@ struct audio_device {
     bool sco_act;
     bool tty_mode;
     bool bluetooth_nrec;
+    bool bt_wbs;
     bool wb_amr;
     bool two_mic_control;
     bool two_mic_disabled;
@@ -617,7 +618,6 @@ static void start_bt_sco(struct audio_device *adev)
     struct pcm_config *sco_config;
     
 
-    if (adev->sco_act) return;
     if (adev->pcm_sco_rx != NULL || adev->pcm_sco_tx != NULL) {
         ALOGW("%s: SCO PCMs already open!\n", __func__);
         return;
@@ -625,15 +625,12 @@ static void start_bt_sco(struct audio_device *adev)
 
     ALOGV("%s: Opening SCO PCMs", __func__);
     
-    if (adev->wb_amr) {
+    if (adev->bt_wbs) {
         sco_config = &pcm_config_sco_wide;
     } else {
         sco_config = &pcm_config_sco;
     }
-    adev->sco_act = true;
-    
 
-    
     adev->pcm_sco_rx = pcm_open(PCM_CARD,
                                 PCM_DEVICE_SCO,
                                 0x10000000,
@@ -738,7 +735,7 @@ static int start_voice_call(struct audio_device *adev)
 
     /* start SCO stream if needed */
     if (adev->out_device & AUDIO_DEVICE_OUT_ALL_SCO) {
-        start_bt_sco(adev);
+        //start_bt_sco(adev);
     }
 
     return 0;
@@ -779,7 +776,7 @@ static void stop_voice_call(struct audio_device *adev)
 
     /* End SCO stream if needed */
     if (adev->out_device & AUDIO_DEVICE_OUT_ALL_SCO) {
-        stop_bt_sco(adev);
+        //stop_bt_sco(adev);
         status++;
     }
 
@@ -851,7 +848,12 @@ static void start_call(struct audio_device *adev)
     adev_set_call_audio_path(adev);
     voice_set_volume(&adev->hw_device, adev->voice_volume);
 
+    // try set ril clock mode
+    ril_set_sound_clock_mode(&adev->ril,3);
+
+
     ril_set_call_clock_sync(&adev->ril, SOUND_CLOCK_START);
+
 }
 
 static void stop_call(struct audio_device *adev)
@@ -928,7 +930,16 @@ static void adev_set_call_audio_path(struct audio_device *adev)
         case AUDIO_DEVICE_OUT_BLUETOOTH_SCO:
         case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET:
         case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_CARKIT:
-            device_type = SOUND_AUDIO_PATH_BLUETOOTH;
+            if (adev->bt_wbs) {
+		if (adev->bluetooth_nrec) device_type = SOUND_AUDIO_PATH_BLUETOOTH_WB;
+                else
+                   device_type = SOUND_AUDIO_PATH_BLUETOOTH_WB_NO_NR;
+            }
+            if (!adev->bt_wbs) {
+                if (adev->bluetooth_nrec) device_type = SOUND_AUDIO_PATH_BLUETOOTH;
+                else
+                   device_type = SOUND_AUDIO_PATH_BLUETOOTH_NO_NR;
+            }
             break;
         default:
             /* if output device isn't supported, use handset by default */
@@ -1439,7 +1450,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 
             /* start SCO stream if needed */
             if (val & AUDIO_DEVICE_OUT_ALL_SCO) {
-                start_bt_sco(adev);
+                //start_bt_sco(adev);
             }
         }
 
@@ -2015,14 +2026,17 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         type = OUTPUT_HDMI;
     } else if (flags & AUDIO_OUTPUT_FLAG_FAST) {
         out->config = pcm_config_fast;
+        out->config.rate = config->sample_rate;
         out->pcm_device = PCM_DEVICE;
         type = OUTPUT_LOW_LATENCY;
     } else if (flags & AUDIO_OUTPUT_FLAG_DEEP_BUFFER){
         out->config = pcm_config_deep;
         out->pcm_device = PCM_DEVICE_DEEP;
+        out->config.rate = config->sample_rate;
         type = OUTPUT_DEEP_BUF;
     } else {
         out->config = pcm_config_playback;
+        out->config.rate = config->sample_rate;
         out->pcm_device = PCM_DEVICE;
         type = OUTPUT_PRIMARY;
     }
@@ -2112,6 +2126,8 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
     char value[32];
     int ret;
 
+    ALOGV("%s: key value pairs: %s", __func__, kvpairs);
+
     parms = str_parms_create_str(kvpairs);
     ret = str_parms_get_str(parms,
                             AUDIO_PARAMETER_KEY_BT_NREC,
@@ -2120,10 +2136,40 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
     if (ret >= 0) {
         if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0) {
             adev->bluetooth_nrec = true;
+
         } else {
             adev->bluetooth_nrec = false;
+
         }
     }
+
+    ret = str_parms_get_str(parms,
+                            AUDIO_PARAMETER_KEY_BT_SCO_WB,
+                            value,
+                            sizeof(value));
+    if (ret >= 0) {
+        if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0) {
+            adev->bt_wbs = true;
+        } else {
+            adev->bt_wbs = false;
+        }
+    }
+
+
+    ret = str_parms_get_str(parms,
+                            "BT_SCO",
+                            value,
+                            sizeof(value));
+    if (ret >= 0) {
+        if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0) {
+            start_bt_sco(adev);
+        } else {
+            
+            stop_bt_sco(adev);
+        }
+    }
+
+
 
     /* FIXME: This does not work with LL, see workaround in this HAL */
     ret = str_parms_get_str(parms, "noise_suppression", value, sizeof(value));
@@ -2334,6 +2380,7 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     struct pcm_config *pcm_config = flags & AUDIO_INPUT_FLAG_FAST ?
     &pcm_config_in_low_latency : &pcm_config_in;
     in->config = pcm_config;
+    in->config->rate = config->sample_rate;
 
     in->buffer = malloc(pcm_config->period_size * pcm_config->channels
                         * audio_stream_in_frame_size(&in->stream));
@@ -2491,6 +2538,7 @@ static int adev_open(const hw_module_t* module, const char* name,
     }
     if (property_get("audio_hal.in_period_size", value, NULL) > 0)
         pcm_config_in.period_size = atoi(value);
+
 
     return 0;
 }

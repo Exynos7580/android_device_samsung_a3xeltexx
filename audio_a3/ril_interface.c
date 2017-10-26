@@ -135,6 +135,27 @@ int ril_close(struct ril_handle *ril)
 }
 
 
+int ril_set_sound_clock_mode(struct ril_handle *ril,int mode)
+{
+
+    int rc;
+
+    rc = ril_connect_if_required(ril);
+    if (rc != 0) {
+        ALOGE("%s: Failed to connect to RIL (%s)", __func__, strerror(rc));
+        return 0;
+    }
+
+    rc = SetSoundClockMode(ril->client, mode);
+    if (rc != 0) {
+        ALOGE("%s: SetSoundClockMode() failed, rc=%d", __func__, rc);
+    }
+
+    return rc;
+
+}
+
+
 int ril_set_call_volume(struct ril_handle *ril,
                         enum _SoundType sound_type,
                         float volume)
