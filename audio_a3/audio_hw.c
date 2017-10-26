@@ -88,7 +88,7 @@
 struct pcm_config pcm_config_fast = {
     .channels = 2,
     .rate = 48000,
-    .period_size = 240,
+    .period_size = 960,
     .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -97,8 +97,8 @@ struct pcm_config pcm_config_fast = {
 static struct pcm_config pcm_config_playback = {
     .channels = 2,
     .rate = 48000,
-    .period_size = 240,
-    .period_count = 4,
+    .period_size = 960,
+    .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
 
@@ -121,7 +121,7 @@ struct pcm_config pcm_config_in = {
 struct pcm_config pcm_config_in_low_latency = {
     .channels = 2,
     .rate = 48000,
-    .period_size = 240,
+    .period_size = 960,
     .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -141,6 +141,16 @@ struct pcm_config pcm_config_sco_wide = {
     .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
+
+
+struct pcm_config pcm_config_voip = {
+    .channels = 2,
+    .rate = 48000,
+    .period_size = 960,
+    .period_count = 2,
+    .format = PCM_FORMAT_S16_LE,
+};
+
 
 struct pcm_config pcm_config_voice = {
     .channels = 2,
@@ -863,8 +873,11 @@ static void stop_call(struct audio_device *adev)
         return;
     }
 
+    if (adev->in_call) {
+
     ril_set_call_clock_sync(&adev->ril, SOUND_CLOCK_STOP);
     stop_voice_call(adev);
+    }
 
     /* Do not change devices if we are switching to WB */
     if (adev->mode != AUDIO_MODE_IN_CALL && adev->mode != AUDIO_MODE_IN_COMMUNICATION) {
@@ -2380,7 +2393,6 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     struct pcm_config *pcm_config = flags & AUDIO_INPUT_FLAG_FAST ?
     &pcm_config_in_low_latency : &pcm_config_in;
     in->config = pcm_config;
-    in->config->rate = config->sample_rate;
 
     in->buffer = malloc(pcm_config->period_size * pcm_config->channels
                         * audio_stream_in_frame_size(&in->stream));
