@@ -121,7 +121,7 @@ struct pcm_config pcm_config_in = {
 struct pcm_config pcm_config_in_low_latency = {
     .channels = 2,
     .rate = 48000,
-    .period_size = 960,
+    .period_size = 240,
     .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -406,6 +406,35 @@ static int open_hdmi_driver(struct audio_device *adev)
     }
     return adev->hdmi_drv_fd;
 }
+
+
+static int check_input_parameters(uint32_t sample_rate,
+                                  audio_format_t format,
+                                  int channel_count)
+{
+    if (format != AUDIO_FORMAT_PCM_16_BIT) return -EINVAL;
+
+    if ((channel_count < 1) || (channel_count > 2)) return -EINVAL;
+
+    switch (sample_rate) {
+    case 8000:
+    case 11025:
+    case 12000:
+    case 16000:
+    case 22050:
+    case 24000:
+    case 32000:
+    case 44100:
+    case 48000:
+        break;
+    default:
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
+
 
 /* must be called with hw device mutex locked */
 static int enable_hdmi_audio(struct audio_device *adev, int enable)
@@ -1035,7 +1064,23 @@ static int start_output_stream(struct stream_out *out)
 /* must be called with input stream and hw device mutexes locked */
 static int start_input_stream(struct stream_in *in)
 {
+    int ret;
     struct audio_device *adev = in->dev;
+
+    ALOGV("%s: start input stream enter:", __func__);
+
+
+
+    /* in call routing must go through set_parameters */
+    if (!adev->in_call) {
+        adev->input_source = in->input_source;
+        adev->in_device = in->device;
+        adev->in_channel_mask = in->channel_mask;
+
+
+        select_devices(adev);
+    }
+
 
     in->pcm = pcm_open(PCM_CARD,
                        PCM_DEVICE_CAPTURE,
@@ -1044,7 +1089,9 @@ static int start_input_stream(struct stream_in *in)
     if (in->pcm && !pcm_is_ready(in->pcm)) {
         ALOGE("pcm_open() failed: %s", pcm_get_error(in->pcm));
         pcm_close(in->pcm);
-        return -ENOMEM;
+        in->pcm = NULL;
+        ret = -EIO;
+        goto error_open;
     }
 
     /* if no supported sample rate is available, use the resampler */
@@ -1056,14 +1103,14 @@ static int start_input_stream(struct stream_in *in)
     in->buffer_size = 0;
 
     /* in call routing must go through set_parameters */
-    if (!adev->in_call && !adev->in_comm_call) {
-        adev->input_source = in->input_source;
-        adev->in_device = in->device;
-        adev->in_channel_mask = in->channel_mask;
-
-
-        select_devices(adev);
-    }
+//    if (!adev->in_call && !adev->in_comm_call) {
+//        adev->input_source = in->input_source;
+//        adev->in_device = in->device;
+//        adev->in_channel_mask = in->channel_mask;
+//
+//
+//       select_devices(adev);
+//    }
 
 
 
@@ -1073,6 +1120,14 @@ static int start_input_stream(struct stream_in *in)
     in->ramp_vol = 0;
 
     return 0;
+
+error_open:
+    if (in->resampler) {
+        release_resampler(in->resampler);
+        in->resampler = NULL;
+    }
+    ALOGV("%s: exit: status(%d)", __func__, ret);
+    return ret;
 }
 
 static size_t get_input_buffer_size(unsigned int sample_rate,
@@ -1736,12 +1791,6 @@ static void do_in_standby(struct stream_in *in)
         return;
     }
 
-    if (adev->in_comm_call) {
-        ALOGV("%s: input standby in-comm-call, exiting...", __func__);
-        return;
-    }
-
-
     if (!in->standby) {
         in->standby = true;
         if (in->pcm != NULL) {
@@ -2039,17 +2088,14 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         type = OUTPUT_HDMI;
     } else if (flags & AUDIO_OUTPUT_FLAG_FAST) {
         out->config = pcm_config_fast;
-        out->config.rate = config->sample_rate;
         out->pcm_device = PCM_DEVICE;
         type = OUTPUT_LOW_LATENCY;
     } else if (flags & AUDIO_OUTPUT_FLAG_DEEP_BUFFER){
         out->config = pcm_config_deep;
         out->pcm_device = PCM_DEVICE_DEEP;
-        out->config.rate = config->sample_rate;
         type = OUTPUT_DEEP_BUF;
     } else {
         out->config = pcm_config_playback;
-        out->config.rate = config->sample_rate;
         out->pcm_device = PCM_DEVICE;
         type = OUTPUT_PRIMARY;
     }
@@ -2353,11 +2399,15 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
 
     *stream_in = NULL;
 
-    /* Respond with a request for stereo if a different format is given. */
-    if (config->channel_mask != AUDIO_CHANNEL_IN_STEREO) {
-        config->channel_mask = AUDIO_CHANNEL_IN_STEREO;
+    if (check_input_parameters(config->sample_rate, config->format,
+                               audio_channel_count_from_in_mask(config->channel_mask)) != 0)
         return -EINVAL;
-    }
+
+    /* Respond with a request for stereo if a different format is given. */
+//    if (config->channel_mask != AUDIO_CHANNEL_IN_STEREO) {
+//        config->channel_mask = AUDIO_CHANNEL_IN_STEREO;
+//        return -EINVAL;
+//    }
 
     in = (struct stream_in *)calloc(1, sizeof(struct stream_in));
     if (in == NULL) {

@@ -3,6 +3,8 @@
  *
  * @author  Myeongcheol Kim (mcmount.kim@samsung.com)
  *
+ * @copyright 2017 Stenkin Evgeniy (stenkinevgeniy@gmail.com)
+ *
  * @brief   RIL client library for multi-client support
  */
 
