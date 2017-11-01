@@ -71,7 +71,8 @@ const struct route_config voice_earpiece_wb = {
 
 const struct route_config voice_headphones = {
     "incall_nb-headset",
-    "incall_nb-headset-mic"
+//    "incall_nb-headset-mic"
+    "incall_nb-speaker-mic"
 };
 
 const struct route_config voice_headphones_wb = {

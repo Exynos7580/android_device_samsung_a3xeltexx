@@ -310,9 +310,6 @@ static int get_output_device_id(audio_devices_t device)
             (device == (AUDIO_DEVICE_OUT_SPEAKER |
                         AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
             return OUT_DEVICE_SPEAKER_AND_HEADSET;
-        } else if (device == (AUDIO_DEVICE_OUT_SPEAKER |
-                              AUDIO_DEVICE_OUT_EARPIECE)) {
-            return OUT_DEVICE_SPEAKER_AND_EARPIECE;
 	}
           else if (device == (AUDIO_DEVICE_OUT_EARPIECE | AUDIO_DEVICE_OUT_BLUETOOTH_SCO)) {
             return OUT_DEVICE_BT_SCO;
@@ -854,7 +851,7 @@ static void start_call(struct audio_device *adev)
         adev->in_device == AUDIO_DEVICE_NONE) {
         ALOGV("%s: No device selected, use earpiece as the default",
               __func__);
-//        adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
+        adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     }
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
@@ -865,6 +862,7 @@ static void start_call(struct audio_device *adev)
     switch (adev->out_device) {
         case AUDIO_DEVICE_OUT_EARPIECE:
         case AUDIO_DEVICE_OUT_SPEAKER:
+	case AUDIO_DEVICE_OUT_WIRED_HEADPHONE:
             adev->two_mic_control = true;
             break;
         default:
@@ -878,10 +876,10 @@ static void start_call(struct audio_device *adev)
 
     if (adev->two_mic_control) {
         ALOGV("%s: enabling two mic control", __func__);
-        //ril_set_two_mic_control(&adev->ril, AUDIENCE, TWO_MIC_SOLUTION_ON);
+        ril_set_two_mic_control(&adev->ril, AUDIENCE, TWO_MIC_SOLUTION_ON);
     } else {
         ALOGV("%s: disabling two mic control", __func__);
-        //ril_set_two_mic_control(&adev->ril, AUDIENCE, TWO_MIC_SOLUTION_OFF);
+        ril_set_two_mic_control(&adev->ril, AUDIENCE, TWO_MIC_SOLUTION_OFF);
     }
 
     adev_set_call_audio_path(adev);
@@ -1001,8 +999,19 @@ static void adev_set_call_audio_path(struct audio_device *adev)
 static int start_output_stream(struct stream_out *out)
 {
     struct audio_device *adev = out->dev;
+    struct pcm_config *pcm_config = NULL;
+
 
     ALOGV("%s: starting stream", __func__);
+
+
+    if (adev->in_comm_call)  {
+       pcm_config = &pcm_config_voip;
+        ALOGV("%s: SOUND_DBG : use voip pcm config!!", __func__);
+    }
+    else 
+       pcm_config = &out->config; 
+
 
     if (out == adev->outputs[OUTPUT_HDMI]) {
         force_non_hdmi_out_standby(adev);
@@ -1022,7 +1031,7 @@ static int start_output_stream(struct stream_out *out)
         out->pcm[PCM_CARD] = pcm_open(PCM_CARD,
                                       out->pcm_device,
                                       PCM_OUT | PCM_MONOTONIC,
-                                      &out->config);
+                                      pcm_config);
         if (out->pcm[PCM_CARD] && !pcm_is_ready(out->pcm[PCM_CARD])) {
             ALOGE("pcm_open(PCM_CARD) failed: %s",
                   pcm_get_error(out->pcm[PCM_CARD]));
@@ -1340,11 +1349,11 @@ static void do_out_standby(struct stream_out *out)
     /* if in-call, dont turn off PCM */
     if (adev->in_call) {
         ALOGV("%s: output standby in-call, exiting...", __func__);
-        return;
+        //return;
     }
     if (adev->in_comm_call) {
         ALOGV("%s: output standby in-call, exiting...", __func__);
-        return;
+        //return;
     }
 
 
@@ -1788,7 +1797,7 @@ static void do_in_standby(struct stream_in *in)
     /* if in-call, dont turn off PCM */
     if (adev->in_call) {
         ALOGV("%s: input standby in-call, exiting...", __func__);
-        return;
+        //return;
     }
 
     if (!in->standby) {
@@ -2100,12 +2109,18 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         type = OUTPUT_PRIMARY;
     }
 
+
+    if (adev->in_comm_call)  {
+
+        out->config = pcm_config_voip;
+        out->pcm_device = PCM_DEVICE;
+
+        ALOGV("%s: SOUND_DBG : use voip pcm config!!", __func__);
+   }
+
+
     ALOGV("%s: SOUND_DBG : need flags - (%#x) ||||| use device - (%#x)",
           __func__, flags, out->pcm_device);
-
-
-    
-      
 
 
     out->stream.common.get_sample_rate = out_get_sample_rate;
