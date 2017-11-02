@@ -39,6 +39,7 @@ enum {
     IN_SOURCE_VOICE_COMMUNICATION,
     IN_SOURCE_VOICE_CALL,
     IN_SOURCE_VOICE_CALL_WB,
+    IN_SOURCE_FM_TUNER,
     IN_SOURCE_TAB_SIZE,            /* number of lines in route_configs[][] */
     IN_SOURCE_NONE,
     IN_SOURCE_CNT
@@ -200,6 +201,21 @@ const struct route_config bt_sco_carkit = {
     "media-bt-sco-headset-in"
 };
 
+const struct route_config fm_speaker = {
+    "fm_radio-speaker",
+    "fm_radio-fm-recording"
+};
+
+const struct route_config fm_speaker_headset = {
+    "fm_radio-speaker-headset",
+    "fm_radio-fm-recording"
+};
+
+const struct route_config fm_headset = {
+    "fm_radio-headset",
+    "fm_radio-fm-recording"
+};
+
 const struct route_config none = {
     "none",
     "none"
@@ -273,6 +289,19 @@ const struct route_config * const route_configs[IN_SOURCE_TAB_SIZE]
         &voice_headphones_wb,       /* OUT_DEVICE_SPEAKER_AND_HEADSET */
         &voice_earpiece_wb          /* OUT_DEVICE_SPEAKER_AND_EARPIECE */
     },
+    {   /* IN_SOURCE_FM_TUNER */
+        &fm_speaker,          /* OUT_DEVICE_SPEAKER */
+        &fm_headset,         /* OUT_DEVICE_EARPIECE */
+        &fm_headset,          /* OUT_DEVICE_HEADSET */
+        &fm_headset,       /* OUT_DEVICE_HEADPHONES */
+        &media_bt_sco,              /* OUT_DEVICE_BT_SCO */
+        &media_bt_sco_headset_out,  /* OUT_DEVICE_BT_SCO_HEADSET_OUT */
+        &bt_sco_carkit,             /* OUT_DEVICE_BT_SCO_CARKIT */
+        &fm_speaker_headset,       /* OUT_DEVICE_SPEAKER_AND_HEADSET */
+        &fm_speaker_headset          /* OUT_DEVICE_SPEAKER_AND_EARPIECE */
+    },
+
+
 };
 
 #endif

@@ -66,6 +66,7 @@
 #define PCM_DEVICE_VOICE 2 /* Baseband link */
 #define PCM_DEVICE_SCO 3   /* Bluetooth link */
 #define PCM_DEVICE_DEEP 1  /* Deep buffer */
+#define PCM_DEVICE_FM 4  /* FM link */
 #define PCM_DEVICE_CAPTURE 0       /* Capture link */
 
 
@@ -142,6 +143,14 @@ struct pcm_config pcm_config_sco_wide = {
     .format = PCM_FORMAT_S16_LE,
 };
 
+struct pcm_config pcm_config_fm = {
+    .channels = 2,
+    .rate = 48000,
+    .period_size = 256,
+    .period_count = 4,
+    .format = PCM_FORMAT_S16_LE,
+};
+
 
 struct pcm_config pcm_config_voip = {
     .channels = 2,
@@ -204,6 +213,11 @@ struct audio_device {
     /* SCO audio */
     struct pcm *pcm_sco_rx;
     struct pcm *pcm_sco_tx;
+
+
+    /* FM audio */
+    struct pcm *pcm_fm_rx;
+    struct pcm *pcm_fm_tx;
 
     float voice_volume;
     bool in_call;
@@ -367,6 +381,8 @@ static int get_input_source_id(audio_source_t source, bool wb_amr)
             return IN_SOURCE_VOICE_RECOGNITION;
         case AUDIO_SOURCE_VOICE_COMMUNICATION:
             return IN_SOURCE_VOICE_COMMUNICATION;
+	case AUDIO_SOURCE_FM_TUNER:
+            return IN_SOURCE_FM_TUNER;
         case AUDIO_SOURCE_VOICE_CALL:
             if (wb_amr) {
                 return IN_SOURCE_VOICE_CALL_WB;
@@ -645,6 +661,41 @@ static void force_non_hdmi_out_standby(struct audio_device *adev)
 }
 
 /**********************************************************
+ * FM functions
+ **********************************************************/
+
+/* must be called with the hw device mutex locked, OK to hold other mutexes */
+static void start_fm(struct audio_device *adev)
+{
+
+    if (adev->pcm_fm_rx != NULL || adev->pcm_fm_tx != NULL) {
+        ALOGW("%s: FM PCMs already open!\n", __func__);
+        return;
+    }
+
+    ALOGV("%s: Opening FM PCMs", __func__);
+
+    adev->pcm_fm_tx = pcm_open(PCM_CARD,
+                                PCM_DEVICE_FM,
+                                0x8,
+                                &pcm_config_fm);
+    if (adev->pcm_fm_tx && !pcm_is_ready(adev->pcm_fm_tx)) {
+        ALOGE("%s: cannot open PCM FM TX stream: %s",
+              __func__, pcm_get_error(adev->pcm_fm_tx));
+        goto err_fm_tx;
+    }
+
+    pcm_start(adev->pcm_fm_tx);
+
+    return;
+
+err_fm_tx:
+    pcm_close(adev->pcm_fm_tx);
+    adev->pcm_fm_tx = NULL;
+}
+
+
+/**********************************************************
  * BT SCO functions
  **********************************************************/
 
@@ -698,6 +749,17 @@ err_sco_tx:
 err_sco_rx:
     pcm_close(adev->pcm_sco_rx);
     adev->pcm_sco_rx = NULL;
+}
+
+/* must be called with the hw device mutex locked, OK to hold other mutexes */
+static void stop_fm(struct audio_device *adev) {
+    ALOGV("%s: Closing FM PCMs", __func__);
+
+    if (adev->pcm_fm_tx != NULL) {
+        pcm_stop(adev->pcm_fm_tx);
+        pcm_close(adev->pcm_fm_tx);
+        adev->pcm_fm_tx = NULL;
+    }
 }
 
 /* must be called with the hw device mutex locked, OK to hold other mutexes */
@@ -2240,6 +2302,19 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
         } else {
             
             stop_bt_sco(adev);
+        }
+    }
+
+    ret = str_parms_get_str(parms,
+                            "fmradio",
+                            value,
+                            sizeof(value));
+    if (ret >= 0) {
+        if (strcmp(value, AUDIO_PARAMETER_VALUE_ON) == 0) {
+            start_fm(adev);
+        } else {
+
+            stop_fm(adev);
         }
     }
 
