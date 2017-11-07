@@ -681,7 +681,7 @@ static void start_fm(struct audio_device *adev)
 
     adev->pcm_fm_tx = pcm_open(PCM_CARD,
                                 PCM_DEVICE_FM,
-                                0x8,
+                                PCM_OUT | PCM_MONOTONIC,
                                 &pcm_config_fm);
     if (adev->pcm_fm_tx && !pcm_is_ready(adev->pcm_fm_tx)) {
         ALOGE("%s: cannot open PCM FM TX stream: %s",
@@ -724,7 +724,7 @@ static void start_bt_sco(struct audio_device *adev)
 
     adev->pcm_sco_rx = pcm_open(PCM_CARD,
                                 PCM_DEVICE_SCO,
-                                0x10000000,
+                                PCM_IN,
                                 sco_config);
     if (adev->pcm_sco_rx != NULL && !pcm_is_ready(adev->pcm_sco_rx)) {
         ALOGE("%s: cannot open PCM SCO RX stream: %s",
@@ -734,7 +734,7 @@ static void start_bt_sco(struct audio_device *adev)
 
     adev->pcm_sco_tx = pcm_open(PCM_CARD,
                                 PCM_DEVICE_SCO,
-                                0x8,
+                                PCM_OUT | PCM_MONOTONIC,
                                 sco_config);
     if (adev->pcm_sco_tx && !pcm_is_ready(adev->pcm_sco_tx)) {
         ALOGE("%s: cannot open PCM SCO TX stream: %s",
@@ -921,7 +921,7 @@ static void start_call(struct audio_device *adev)
               __func__);
         adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     }
-    adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
+    //adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
     select_devices(adev);
@@ -1161,10 +1161,10 @@ static int start_input_stream(struct stream_in *in)
     }
 
 
-    if (!adev->fm_mode) {
+    //if (!adev->fm_mode) {
     in->pcm = pcm_open(PCM_CARD,
                        PCM_DEVICE_CAPTURE,
-                       PCM_IN | PCM_MONOTONIC,
+                       PCM_IN,
                        in->config);
     if (in->pcm && !pcm_is_ready(in->pcm)) {
         ALOGE("pcm_open() failed: %s", pcm_get_error(in->pcm));
@@ -1173,7 +1173,7 @@ static int start_input_stream(struct stream_in *in)
         ret = -EIO;
         goto error_open;
     }
-    }
+    //}
 
     /* if no supported sample rate is available, use the resampler */
     if (in->resampler) {
@@ -1593,10 +1593,10 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
             //}
 
             if (adev->in_call) {
-                if (route_changed(adev)) {
+                //if (route_changed(adev)) {
                     stop_call(adev);
                     start_call(adev);
-                }
+                //}
             }
             //else if (adev->in_comm_call)  start_comm_call(adev);
             else {

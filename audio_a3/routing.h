@@ -203,17 +203,17 @@ const struct route_config bt_sco_carkit = {
 };
 
 const struct route_config fm_speaker = {
-    "fm_radio-speaker",
+    "media-speaker",
     "fm_radio-fm-recording"
 };
 
 const struct route_config fm_speaker_headset = {
-    "fm_radio-speaker-headset",
+    "media-speaker-headset",
     "fm_radio-fm-recording"
 };
 
 const struct route_config fm_headset = {
-    "fm_radio-headset",
+    "media-speaker-headset",
     "fm_radio-fm-recording"
 };
 
