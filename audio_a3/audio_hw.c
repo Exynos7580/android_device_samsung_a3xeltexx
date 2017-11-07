@@ -222,6 +222,7 @@ struct audio_device {
     float voice_volume;
     bool in_call;
     bool in_comm_call;
+    bool fm_mode;
     bool sco_act;
     bool tty_mode;
     bool bluetooth_nrec;
@@ -668,10 +669,13 @@ static void force_non_hdmi_out_standby(struct audio_device *adev)
 static void start_fm(struct audio_device *adev)
 {
 
+    
     if (adev->pcm_fm_rx != NULL || adev->pcm_fm_tx != NULL) {
         ALOGW("%s: FM PCMs already open!\n", __func__);
         return;
     }
+
+    adev->fm_mode=true;
 
     ALOGV("%s: Opening FM PCMs", __func__);
 
@@ -760,6 +764,8 @@ static void stop_fm(struct audio_device *adev) {
         pcm_close(adev->pcm_fm_tx);
         adev->pcm_fm_tx = NULL;
     }
+
+    adev->fm_mode = false;
 }
 
 /* must be called with the hw device mutex locked, OK to hold other mutexes */
@@ -915,6 +921,7 @@ static void start_call(struct audio_device *adev)
               __func__);
         adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     }
+    adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
     select_devices(adev);
@@ -1142,6 +1149,7 @@ static int start_input_stream(struct stream_in *in)
 
 
 
+    
     /* in call routing must go through set_parameters */
     if (!adev->in_call) {
         adev->input_source = in->input_source;
@@ -1153,6 +1161,7 @@ static int start_input_stream(struct stream_in *in)
     }
 
 
+    if (!adev->fm_mode) {
     in->pcm = pcm_open(PCM_CARD,
                        PCM_DEVICE_CAPTURE,
                        PCM_IN | PCM_MONOTONIC,
@@ -1163,6 +1172,7 @@ static int start_input_stream(struct stream_in *in)
         in->pcm = NULL;
         ret = -EIO;
         goto error_open;
+    }
     }
 
     /* if no supported sample rate is available, use the resampler */
@@ -1417,6 +1427,12 @@ static void do_out_standby(struct stream_out *out)
         ALOGV("%s: output standby in-call, exiting...", __func__);
         //return;
     }
+
+    if (adev->fm_mode) {
+        ALOGV("%s: skip standby mode!! in fm_radio mode", __func__);
+        return;
+    }
+
 
 
     if (!out->standby) {
