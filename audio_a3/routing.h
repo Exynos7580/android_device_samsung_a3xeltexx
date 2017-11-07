@@ -113,12 +113,12 @@ const struct route_config voice_bt_sco_headset_out_wb = {
 
 const struct route_config media_speaker = {
     "media-speaker",
-    "voice_control-mic"
+    "media-mic"
 };
 
 const struct route_config media_earpiece = {
     "media-handset",
-    "voice_control-mic"
+    "media-mic"
 };
 
 const struct route_config media_headphones = {
@@ -208,12 +208,12 @@ const struct route_config fm_speaker = {
 };
 
 const struct route_config fm_speaker_headset = {
-    "media-speaker-headset",
+    "media-headset",
     "fm_radio-fm-recording"
 };
 
 const struct route_config fm_headset = {
-    "media-speaker-headset",
+    "media-headset",
     "fm_radio-fm-recording"
 };
 
@@ -276,7 +276,7 @@ const struct route_config * const route_configs[IN_SOURCE_TAB_SIZE]
         &voice_bt_sco,              /* OUT_DEVICE_BT_SCO */
         &voice_bt_sco_headset_out,  /* OUT_DEVICE_BT_SCO_HEADSET_OUT */
         &bt_sco_carkit,             /* OUT_DEVICE_BT_SCO_CARKIT */
-        &voice_headphones,          /* OUT_DEVICE_SPEAKER_AND_HEADSET */
+        &voice_headset,          /* OUT_DEVICE_SPEAKER_AND_HEADSET */
         &voice_earpiece             /* OUT_DEVICE_SPEAKER_AND_EARPIECE */
     },
     {   /* IN_SOURCE_VOICE_CALL_WB */
@@ -287,7 +287,7 @@ const struct route_config * const route_configs[IN_SOURCE_TAB_SIZE]
         &voice_bt_sco_wb,           /* OUT_DEVICE_BT_SCO */
         &voice_bt_sco_headset_out_wb, /* OUT_DEVICE_BT_SCO_HEADSET_OUT */
         &bt_sco_carkit,             /* OUT_DEVICE_BT_SCO_CARKIT */
-        &voice_headphones_wb,       /* OUT_DEVICE_SPEAKER_AND_HEADSET */
+        &voice_headset_wb,       /* OUT_DEVICE_SPEAKER_AND_HEADSET */
         &voice_earpiece_wb          /* OUT_DEVICE_SPEAKER_AND_EARPIECE */
     },
     {   /* IN_SOURCE_FM_TUNER */

@@ -163,8 +163,8 @@ struct pcm_config pcm_config_voip = {
 
 struct pcm_config pcm_config_voice = {
     .channels = 2,
-    .rate = 8000,
-    .period_size = 128,
+    .rate = 16000,
+    .period_size = 2048,
     .period_count = 6,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -172,7 +172,7 @@ struct pcm_config pcm_config_voice = {
 struct pcm_config pcm_config_voice_wide = {
     .channels = 2,
     .rate = 16000,
-    .period_size = 128,
+    .period_size = 2048,
     .period_count = 6,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -542,9 +542,6 @@ static void select_devices(struct audio_device *adev)
 
 
 
-
-    if (adev->hdmi_drv_fd == 0)
-        enable_hdmi_audio(adev, adev->out_device & AUDIO_DEVICE_OUT_AUX_DIGITAL);
 
     new_route_id = (1 << (input_source_id + OUT_DEVICE_CNT)) + (1 << output_device_id);
     if (new_route_id == adev->cur_route_id) {
@@ -921,7 +918,6 @@ static void start_call(struct audio_device *adev)
               __func__);
         adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     }
-    //adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
     select_devices(adev);
@@ -955,7 +951,7 @@ static void start_call(struct audio_device *adev)
     voice_set_volume(&adev->hw_device, adev->voice_volume);
 
     // try set ril clock mode
-    ril_set_sound_clock_mode(&adev->ril,3);
+    //ril_set_sound_clock_mode(&adev->ril,3);
 
 
     ril_set_call_clock_sync(&adev->ril, SOUND_CLOCK_START);
@@ -1150,17 +1146,6 @@ static int start_input_stream(struct stream_in *in)
 
 
     
-    /* in call routing must go through set_parameters */
-    if (!adev->in_call) {
-        adev->input_source = in->input_source;
-        adev->in_device = in->device;
-        adev->in_channel_mask = in->channel_mask;
-
-
-        select_devices(adev);
-    }
-
-
     //if (!adev->fm_mode) {
     in->pcm = pcm_open(PCM_CARD,
                        PCM_DEVICE_CAPTURE,
@@ -1184,14 +1169,14 @@ static int start_input_stream(struct stream_in *in)
     in->buffer_size = 0;
 
     /* in call routing must go through set_parameters */
-//    if (!adev->in_call && !adev->in_comm_call) {
-//        adev->input_source = in->input_source;
-//        adev->in_device = in->device;
-//        adev->in_channel_mask = in->channel_mask;
-//
-//
-//       select_devices(adev);
-//    }
+    if (!adev->in_call) {
+        adev->input_source = in->input_source;
+        adev->in_device = in->device;
+        adev->in_channel_mask = in->channel_mask;
+
+
+       select_devices(adev);
+    }
 
 
 
