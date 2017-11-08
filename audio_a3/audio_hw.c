@@ -122,7 +122,7 @@ struct pcm_config pcm_config_in = {
 struct pcm_config pcm_config_in_low_latency = {
     .channels = 2,
     .rate = 48000,
-    .period_size = 240,
+    .period_size = 960,
     .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -1573,9 +1573,9 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
              * If we switch from earpiece to speaker, we need to fully reset the
              * modem audio path.
              */
-            //if ((adev->mode == AUDIO_MODE_IN_CALL) && !adev->in_call) {
-            //    start_call(adev);
-            //}
+            if ((adev->mode == AUDIO_MODE_IN_CALL) && !adev->in_call) {
+                start_call(adev);
+            }
 
             if (adev->in_call) {
                 //if (route_changed(adev)) {
