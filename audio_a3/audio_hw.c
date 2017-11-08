@@ -1043,7 +1043,8 @@ static void adev_set_call_audio_path(struct audio_device *adev)
             if (!adev->bt_wbs) {
                 if (adev->bluetooth_nrec) device_type = SOUND_AUDIO_PATH_BLUETOOTH;
                 else
-                   device_type = SOUND_AUDIO_PATH_BLUETOOTH_NO_NR;
+                     device_type = SOUND_AUDIO_PATH_BLUETOOTH;
+//                   device_type = SOUND_AUDIO_PATH_BLUETOOTH_NO_NR;
             }
             break;
         default:
