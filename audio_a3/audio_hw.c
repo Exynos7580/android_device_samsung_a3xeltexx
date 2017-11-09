@@ -22,8 +22,8 @@
  */
 
 #define LOG_TAG "audio_hw_primary"
-#define LOG_NDEBUG 0
-#define ALOG_TRACE 1
+//#define LOG_NDEBUG 0
+//#define ALOG_TRACE 1
 
 #include <errno.h>
 #include <pthread.h>
@@ -316,8 +316,15 @@ const struct string_to_enum out_channels_name_to_enum_table[] = {
 
 static int get_output_device_id(audio_devices_t device)
 {
-    if (device == AUDIO_DEVICE_NONE)
+
+    ALOGV("%s: enter: get_output   devices(%#x)", __func__, device);
+    if (device == AUDIO_DEVICE_NONE ||
+        device & AUDIO_DEVICE_BIT_IN) {
+        ALOGV("%s: Invalid output devices (%#x)", __func__, device);
         return OUT_DEVICE_NONE;
+    }
+
+
 
     if (popcount(device) == 2) {
         if ((device == (AUDIO_DEVICE_OUT_SPEAKER |
@@ -325,7 +332,10 @@ static int get_output_device_id(audio_devices_t device)
             (device == (AUDIO_DEVICE_OUT_SPEAKER |
                         AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
             return OUT_DEVICE_SPEAKER_AND_HEADSET;
-	}
+	} else if (device == (AUDIO_DEVICE_OUT_SPEAKER |
+                              AUDIO_DEVICE_OUT_EARPIECE)) {
+            return OUT_DEVICE_SPEAKER_AND_EARPIECE;
+        }
           else if (device == (AUDIO_DEVICE_OUT_EARPIECE | AUDIO_DEVICE_OUT_BLUETOOTH_SCO)) {
             return OUT_DEVICE_BT_SCO;
 	} 
@@ -551,7 +561,10 @@ static void select_devices(struct audio_device *adev)
 
 
     if (output_device_id == OUT_DEVICE_NONE) {
+        ALOGV("*** %s: out device id = NONE!", __func__);
+
     }
+
 
     adev->cur_route_id = new_route_id;
 
@@ -569,6 +582,7 @@ static void select_devices(struct audio_device *adev)
                 case AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET & ~AUDIO_DEVICE_BIT_IN:
                     output_device_id = OUT_DEVICE_BT_SCO_HEADSET_OUT;
                     break;
+                
                 default:
                     if (adev->input_source == AUDIO_SOURCE_VOICE_CALL) {
                         output_device_id = OUT_DEVICE_EARPIECE;
@@ -769,7 +783,7 @@ static void stop_fm(struct audio_device *adev) {
 static void stop_bt_sco(struct audio_device *adev) {
     ALOGV("%s: Closing SCO PCMs", __func__);
 
-    if (!adev->sco_act) return;
+//    if (!adev->sco_act) return;
 
     if (adev->pcm_sco_rx != NULL) {
         pcm_stop(adev->pcm_sco_rx);
@@ -823,7 +837,7 @@ static int start_voice_call(struct audio_device *adev)
 
     adev->pcm_voice_tx = pcm_open(PCM_CARD,
                                   PCM_DEVICE_VOICE,
-                                  PCM_IN | PCM_MONOTONIC,
+                                  PCM_IN,
                                   voice_config);
     if (adev->pcm_voice_tx != NULL && !pcm_is_ready(adev->pcm_voice_tx)) {
         ALOGE("%s: cannot open PCM voice TX stream: %s",
@@ -906,9 +920,8 @@ static void start_comm_call(struct audio_device *adev)
 
 static void start_call(struct audio_device *adev)
 {
-    if (adev->in_call) {
-        return;
-    }
+
+    if (adev->in_call) return;
 
     adev->in_call = true;
 
@@ -951,7 +964,7 @@ static void start_call(struct audio_device *adev)
     voice_set_volume(&adev->hw_device, adev->voice_volume);
 
     // try set ril clock mode
-    //ril_set_sound_clock_mode(&adev->ril,3);
+    ril_set_sound_clock_mode(&adev->ril,3);
 
 
     ril_set_call_clock_sync(&adev->ril, SOUND_CLOCK_START);
@@ -961,9 +974,9 @@ static void start_call(struct audio_device *adev)
 static void stop_call(struct audio_device *adev)
 {
    
-    if (!adev->in_call && !adev->in_comm_call) {
-        return;
-    }
+//    if (!adev->in_call && !adev->in_comm_call) {
+//        return;
+//    }
 
     if (adev->in_call) {
 
@@ -972,6 +985,7 @@ static void stop_call(struct audio_device *adev)
     }
 
     /* Do not change devices if we are switching to WB */
+
     if (adev->mode != AUDIO_MODE_IN_CALL && adev->mode != AUDIO_MODE_IN_COMMUNICATION) {
         /* Use speaker as the default. We do not want to stay in earpiece mode */
         if (adev->out_device == AUDIO_DEVICE_NONE ||
@@ -1211,10 +1225,28 @@ static size_t get_input_buffer_size(unsigned int sample_rate,
      * multiple of 16 frames, as audioflinger expects audio buffers to
      * be a multiple of 16 frames
      */
-    size = (config->period_size * sample_rate) / config->rate;
-    size = ((size + 15) / 16) * 16;
 
-    return size * channel_count * audio_bytes_per_sample(format);
+
+    size = (sample_rate * 20) / 1000;
+    if (is_low_latency)
+        size = config->period_size;
+
+    size *= channel_count * audio_bytes_per_sample(format);
+
+    /* make sure the size is multiple of 32 bytes
+     * At 48 kHz mono 16-bit PCM:
+     *  5.000 ms = 240 frames = 15*16*1*2 = 480, a whole multiple of 32 (15)
+     *  3.333 ms = 160 frames = 10*16*1*2 = 320, a whole multiple of 32 (10)
+     */
+    size += 0x1f;
+    size &= ~0x1f;
+
+    return size;
+
+    //size = (config->period_size * sample_rate) / config->rate;
+    //size = ((size + 15) / 16) * 16;
+
+    //return size * channel_count * audio_bytes_per_sample(format);
 }
 
 static int get_next_buffer(struct resampler_buffer_provider *buffer_provider,
@@ -1407,7 +1439,7 @@ static void do_out_standby(struct stream_out *out)
     /* if in-call, dont turn off PCM */
     if (adev->in_call) {
         ALOGV("%s: output standby in-call, exiting...", __func__);
-        //return;
+        return;
     }
     if (adev->in_comm_call) {
         ALOGV("%s: output standby in-call, exiting...", __func__);
@@ -1525,8 +1557,8 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
     struct audio_device *adev = out->dev;
     struct str_parms *parms;
     char value[32];
-    int ret;
-    unsigned int val;
+    int ret = 0;
+    unsigned int val = 0;
 
     ALOGV("%s: key value pairs: %s", __func__, kvpairs);
 
@@ -1542,6 +1574,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 
 
 
+    ALOGV("%s: AUD_DBG val =  %d", __func__, val);
 
         if ((out->device != val) && (val != 0)) {
             /* Force standby if moving to/from SPDIF or if the output
@@ -1568,7 +1601,11 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
             }
 
             out->device = val;
-            adev->out_device = output_devices(out) | val;
+            adev->out_device = out->device;
+            //adev->out_device = output_devices(out) | val;
+
+    ALOGV("%s: AUD_DBG adev->out_device =  %d", __func__, adev->out_device);
+
 
             /*
              * If we switch from earpiece to speaker, we need to fully reset the
@@ -1578,21 +1615,23 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
                 start_call(adev);
             }
 
+            if ((adev->mode != AUDIO_MODE_IN_CALL) && adev->in_call) {
+		stop_call(adev);
+            }
+
+
+
             if (adev->in_call) {
-                //if (route_changed(adev)) {
+                if (route_changed(adev)) {
                     stop_call(adev);
                     start_call(adev);
-                //}
+                }
             }
             //else if (adev->in_comm_call)  start_comm_call(adev);
             else {
                 select_devices(adev);
             }
 
-            /* start SCO stream if needed */
-            if (val & AUDIO_DEVICE_OUT_ALL_SCO) {
-                //start_bt_sco(adev);
-            }
         }
 
         unlock_all_outputs(adev, NULL);
@@ -1857,12 +1896,6 @@ static int in_set_format(struct audio_stream *stream __unused,
 static void do_in_standby(struct stream_in *in)
 {
     struct audio_device *adev = in->dev;
-
-    /* if in-call, dont turn off PCM */
-    if (adev->in_call) {
-        ALOGV("%s: input standby in-call, exiting...", __func__);
-        //return;
-    }
 
     if (!in->standby) {
         in->standby = true;
@@ -2688,10 +2721,14 @@ static int adev_open(const hw_module_t* module, const char* name,
     char value[PROPERTY_VALUE_MAX];
     if (property_get("audio_hal.period_size", value, NULL) > 0) {
         pcm_config_fast.period_size = atoi(value);
+        pcm_config_playback.period_size = pcm_config_fast.period_size;
         pcm_config_in.period_size = pcm_config_fast.period_size;
+        pcm_config_in_low_latency.period_size = pcm_config_fast.period_size;
     }
     if (property_get("audio_hal.in_period_size", value, NULL) > 0)
         pcm_config_in.period_size = atoi(value);
+        pcm_config_in_low_latency.period_size = pcm_config_in.period_size;
+
 
 
     return 0;

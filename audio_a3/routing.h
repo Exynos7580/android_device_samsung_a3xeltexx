@@ -217,6 +217,11 @@ const struct route_config fm_headset = {
     "fm_radio-fm-recording"
 };
 
+const struct route_config fm_bt_headset = {
+    "media-bt-sco-headset",
+    "fm_radio-fm-recording"
+};
+
 const struct route_config none = {
     "none",
     "none"
@@ -295,9 +300,9 @@ const struct route_config * const route_configs[IN_SOURCE_TAB_SIZE]
         &fm_headset,         /* OUT_DEVICE_EARPIECE */
         &fm_headset,          /* OUT_DEVICE_HEADSET */
         &fm_headset,       /* OUT_DEVICE_HEADPHONES */
-        &media_bt_sco,              /* OUT_DEVICE_BT_SCO */
-        &media_bt_sco_headset_out,  /* OUT_DEVICE_BT_SCO_HEADSET_OUT */
-        &bt_sco_carkit,             /* OUT_DEVICE_BT_SCO_CARKIT */
+        &fm_bt_headset,              /* OUT_DEVICE_BT_SCO */
+        &fm_bt_headset,  /* OUT_DEVICE_BT_SCO_HEADSET_OUT */
+        &fm_bt_headset,             /* OUT_DEVICE_BT_SCO_CARKIT */
         &fm_headset,       /* OUT_DEVICE_SPEAKER_AND_HEADSET */
         &fm_headset          /* OUT_DEVICE_SPEAKER_AND_EARPIECE */
     },
