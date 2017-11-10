@@ -62,7 +62,7 @@
 #define PCM_CARD_SPDIF 1
 #define PCM_TOTAL 2
 
-#define PCM_DEVICE 5       /* Playback link */
+#define PCM_DEVICE 0       /* Playback link */
 #define PCM_DEVICE_VOICE 2 /* Baseband link */
 #define PCM_DEVICE_SCO 3   /* Bluetooth link */
 #define PCM_DEVICE_DEEP 1  /* Deep buffer */
@@ -122,7 +122,7 @@ struct pcm_config pcm_config_in = {
 struct pcm_config pcm_config_in_low_latency = {
     .channels = 2,
     .rate = 48000,
-    .period_size = 960,
+    .period_size = 1024,
     .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
@@ -246,6 +246,7 @@ struct stream_out {
 
     pthread_mutex_t lock; /* see note below on mutex acquisition order */
     pthread_mutex_t pre_lock;   /* acquire before lock to prevent playback thread DOS */
+    audio_output_flags_t flags;
     struct pcm *pcm[PCM_TOTAL];
     struct pcm_config config;
     unsigned int pcm_device;
@@ -2173,6 +2174,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         devices = AUDIO_DEVICE_OUT_SPEAKER;
 
     }
+    out->flags = flags;
     out->device = devices;
 
     if (flags & AUDIO_OUTPUT_FLAG_DIRECT &&
