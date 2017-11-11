@@ -294,7 +294,7 @@ struct stream_in {
     size_t ramp_frames;
 
     audio_channel_mask_t channel_mask;
-    audio_input_flags_t flags;
+//    audio_input_flags_t flags;
     struct pcm_config *config;
 
     struct audio_device *dev;
@@ -1876,10 +1876,15 @@ static size_t in_get_buffer_size(const struct audio_stream *stream)
 {
     struct stream_in *in = (struct stream_in *)stream;
 
-    return get_input_buffer_size(in->requested_rate,
-                                 AUDIO_FORMAT_PCM_16_BIT,
-                                 audio_channel_count_from_in_mask(in_get_channels(stream)),
-                                 (in->flags & AUDIO_INPUT_FLAG_FAST) != 0);
+//    return get_input_buffer_size(in->requested_rate,
+//                                 AUDIO_FORMAT_PCM_16_BIT,
+//                                 audio_channel_count_from_in_mask(in_get_channels(stream)),
+//                                 (in->flags & AUDIO_INPUT_FLAG_FAST) != 0);
+
+    return in->config->period_size *
+                audio_stream_in_frame_size((const struct audio_stream_in *)stream);
+
+
 }
 
 static audio_format_t in_get_format(const struct audio_stream *stream __unused)
@@ -2516,7 +2521,7 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
                                   audio_devices_t devices,
                                   struct audio_config *config,
                                   struct audio_stream_in **stream_in,
-                                  audio_input_flags_t flags,
+                                  audio_input_flags_t flags __unused,
                                   const char *address __unused,
                                   audio_source_t source __unused)
 {
@@ -2566,7 +2571,7 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     in->device = devices & ~AUDIO_DEVICE_BIT_IN;
     in->io_handle = handle;
     in->channel_mask = config->channel_mask;
-    in->flags = flags;
+    //in->flags = flags;
     struct pcm_config *pcm_config = flags & AUDIO_INPUT_FLAG_FAST ?
     &pcm_config_in_low_latency : &pcm_config_in;
     in->config = pcm_config;
