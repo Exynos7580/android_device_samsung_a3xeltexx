@@ -24,6 +24,6 @@
 // Networking, Capturing, Object Transfer
 // MAJOR CLASS: COMPUTER
 // MINOR CLASS: LAPTOP
-//#define BTA_DISABLE_DELAY 1000
+#define BTA_DISABLE_DELAY 1000
 
 #endif
