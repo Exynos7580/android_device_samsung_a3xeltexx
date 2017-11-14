@@ -91,7 +91,7 @@ struct pcm_config pcm_config_fast = {
     .channels = 2,
     .rate = 48000,
     .period_size = 240,
-    .period_count = 4,
+    .period_count = 2,
     .format = PCM_FORMAT_S16_LE,
 };
 
@@ -289,13 +289,16 @@ struct stream_in {
     audio_source_t input_source;
     audio_io_handle_t io_handle;
     audio_devices_t device;
+    audio_format_t format;
+
 
     uint16_t ramp_vol;
     uint16_t ramp_step;
     size_t ramp_frames;
 
     audio_channel_mask_t channel_mask;
-//    audio_input_flags_t flags;
+    audio_input_flags_t flags;
+
     struct pcm_config *config;
 
     struct audio_device *dev;
@@ -992,7 +995,7 @@ static void stop_call(struct audio_device *adev)
         /* Use speaker as the default. We do not want to stay in earpiece mode */
         if (adev->out_device == AUDIO_DEVICE_NONE ||
             adev->out_device == AUDIO_DEVICE_OUT_EARPIECE) {
-            adev->out_device = AUDIO_DEVICE_OUT_SPEAKER;
+            //adev->out_device = AUDIO_DEVICE_OUT_SPEAKER;
         }
         adev->input_source = AUDIO_SOURCE_DEFAULT;
 
@@ -1001,7 +1004,7 @@ static void stop_call(struct audio_device *adev)
               adev->out_device,
               adev->input_source);
 
-        select_devices(adev);
+        //select_devices(adev);
     }
 
 
@@ -2522,7 +2525,7 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
                                   audio_devices_t devices,
                                   struct audio_config *config,
                                   struct audio_stream_in **stream_in,
-                                  audio_input_flags_t flags __unused,
+                                  audio_input_flags_t flags,
                                   const char *address __unused,
                                   audio_source_t source __unused)
 {
@@ -2572,7 +2575,7 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     in->device = devices & ~AUDIO_DEVICE_BIT_IN;
     in->io_handle = handle;
     in->channel_mask = config->channel_mask;
-    //in->flags = flags;
+    in->flags = flags;
     struct pcm_config *pcm_config = flags & AUDIO_INPUT_FLAG_FAST ?
     &pcm_config_in_low_latency : &pcm_config_in;
     in->config = pcm_config;
