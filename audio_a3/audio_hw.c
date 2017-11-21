@@ -23,8 +23,8 @@
 
 
 #define LOG_TAG "audio_hw_primary"
-//#define LOG_NDEBUG 0
-//#define ALOG_TRACE 1
+#define LOG_NDEBUG 0
+#define ALOG_TRACE 1
 
 #include <errno.h>
 #include <pthread.h>
@@ -63,7 +63,7 @@
 #define PCM_CARD_SPDIF 1
 #define PCM_TOTAL 2
 
-#define PCM_DEVICE 0       /* Playback link */
+#define PCM_DEVICE 5       /* Playback link */
 #define PCM_DEVICE_VOICE 2 /* Baseband link */
 #define PCM_DEVICE_SCO 3   /* Bluetooth link */
 #define PCM_DEVICE_DEEP 1  /* Deep buffer */
@@ -424,6 +424,13 @@ static void unlock_output_stream(struct stream_out *out);
  */
 
 /* Helper functions */
+
+
+bool voice_is_in_call(struct audio_device *adev)
+{
+    return adev->in_call;
+}
+
 
 static int open_hdmi_driver(struct audio_device *adev)
 {
@@ -930,16 +937,25 @@ static void start_call(struct audio_device *adev)
 
     adev->in_call = true;
 
+/*
     if (adev->out_device == AUDIO_DEVICE_NONE &&
         adev->in_device == AUDIO_DEVICE_NONE) {
         ALOGV("%s: No device selected, use earpiece as the default",
               __func__);
         adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     }
+*/
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
-    select_devices(adev);
-    start_voice_call(adev);
+    if (adev->out_device & 0x70) {
+       start_voice_call(adev);
+       select_devices(adev);
+
+    }
+    else {
+       select_devices(adev);
+       start_voice_call(adev);
+    }
 
     /* FIXME: Turn on two mic control for earpiece and speaker */
     switch (adev->out_device) {
@@ -971,7 +987,6 @@ static void start_call(struct audio_device *adev)
     // try set ril clock mode
     ril_set_sound_clock_mode(&adev->ril,3);
 
-
     ril_set_call_clock_sync(&adev->ril, SOUND_CLOCK_START);
 
 }
@@ -991,11 +1006,11 @@ static void stop_call(struct audio_device *adev)
 
     /* Do not change devices if we are switching to WB */
 
-    if (adev->mode != AUDIO_MODE_IN_CALL && adev->mode != AUDIO_MODE_IN_COMMUNICATION) {
+    if (adev->mode == AUDIO_MODE_NORMAL) {
         /* Use speaker as the default. We do not want to stay in earpiece mode */
         if (adev->out_device == AUDIO_DEVICE_NONE ||
             adev->out_device == AUDIO_DEVICE_OUT_EARPIECE) {
-            //adev->out_device = AUDIO_DEVICE_OUT_SPEAKER;
+            adev->out_device = AUDIO_DEVICE_OUT_SPEAKER;
         }
         adev->input_source = AUDIO_SOURCE_DEFAULT;
 
@@ -1442,13 +1457,13 @@ static void do_out_standby(struct stream_out *out)
     ALOGV("%s: output standby: %d", __func__, out->standby);
 
     /* if in-call, dont turn off PCM */
-    if (adev->in_call) {
-        ALOGV("%s: output standby in-call, exiting...", __func__);
-        return;
-    }
+    //if (adev->in_call) {
+    //    ALOGV("%s: output standby in-call, exiting...", __func__);
+        //return;
+    //}
     if (adev->in_comm_call) {
         ALOGV("%s: output standby in-call, exiting...", __func__);
-        //return;
+        return;
     }
 
     if (adev->fm_mode) {
@@ -1465,7 +1480,14 @@ static void do_out_standby(struct stream_out *out)
                 out->pcm[i] = NULL;
             }
         }
+
         out->standby = true;
+
+        if (adev->in_call) {
+            ALOGV("%s: after pcm_close skip standby mode!! in IN_CALL", __func__);
+            return;
+        }
+
 
         if (out == adev->outputs[OUTPUT_HDMI]) {
             /* force standby on low latency output stream so that it can reuse HDMI driver if
@@ -1474,11 +1496,13 @@ static void do_out_standby(struct stream_out *out)
         }
 
         /* re-calculate the set of active devices from other streams */
-        adev->out_device = output_devices(out);
+        //adev->out_device = output_devices(out);
 
         /* Skip resetting the mixer if no output device is active */
-        if (adev->out_device)
+        if (!output_devices(out)) {
+            adev->out_device = 0;
             select_devices(adev);
+        }
     }
 }
 
@@ -1581,14 +1605,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 
     ALOGV("%s: AUD_DBG val =  %d", __func__, val);
 
-        if ((out->device != val) && (val != 0)) {
-            /* Force standby if moving to/from SPDIF or if the output
-             * device changes when in SPDIF mode */
-            if (((val & AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET) ^
-                 (adev->out_device & AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET)) ||
-                (adev->out_device & AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET)) {
-                do_out_standby(out);
-            }
+        if ((out->device != val) ) {
 
             /* force output standby to start or stop SCO pcm stream if needed */
             if ((val & AUDIO_DEVICE_OUT_ALL_SCO) ^
@@ -1596,18 +1613,9 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
                 do_out_standby(out);
             }
 
-            if (adev->hdmi_drv_fd == 0) {
-                if (!out->standby && (out == adev->outputs[OUTPUT_HDMI] ||
-                                      !adev->outputs[OUTPUT_HDMI] ||
-                                      adev->outputs[OUTPUT_HDMI]->standby)) {
-                    adev->out_device = output_devices(out) | val;
-                    select_devices(adev);
-                }
-            }
-
             out->device = val;
             adev->out_device = out->device;
-            //adev->out_device = output_devices(out) | val;
+            //adev->out_device = output_devices(out);
 
     ALOGV("%s: AUD_DBG adev->out_device =  %d", __func__, adev->out_device);
 
@@ -1618,27 +1626,19 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
              */
             if ((adev->mode == AUDIO_MODE_IN_CALL) && !adev->in_call) {
                 start_call(adev);
-            }
-
-            if ((adev->mode != AUDIO_MODE_IN_CALL) && adev->in_call) {
-		stop_call(adev);
-            }
-
-
-
+            } 
+            
             if (adev->in_call) {
-                if (route_changed(adev)) {
+//                if (route_changed(adev)) {
                     stop_call(adev);
                     start_call(adev);
-                }
+//                }
             }
-            //else if (adev->in_comm_call)  start_comm_call(adev);
-            else {
+            else  {
                 select_devices(adev);
             }
 
-        }
-
+       }
         unlock_all_outputs(adev, NULL);
     }
 
@@ -2475,7 +2475,8 @@ static int adev_set_mode(struct audio_hw_device *dev, audio_mode_t mode)
         start_comm_call(adev);
     }
 
-    else {
+    else if (adev->mode != AUDIO_MODE_IN_CALL && adev->in_call)
+    {
         ALOGV("*** %s: Leaving IN_CALL mode", __func__);
         stop_call(adev);
     }
