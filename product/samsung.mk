@@ -8,6 +8,8 @@ PRODUCT_PACKAGES += \
     FMRadio
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/healthd:root/sbin/healthd
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/init.rc:root/
 
 
 # samsung's sswap
