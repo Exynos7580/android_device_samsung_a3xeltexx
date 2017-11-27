@@ -19,7 +19,6 @@ lib/libexynoscamera.so
 lib/libhwjpeg.so
 lib/libuniplugin.so
 lib/libsensorlistener.so
-lib/libcamera_metadata.so
 vendor/firmware/setfile_3l2.bin
 vendor/firmware/setfile_5e3.bin
 
@@ -247,6 +246,8 @@ lib/libreference-ril.so
 lib/librilutils.so
 lib/libxml2.so
 lib/libprotobuf-cpp-full.so
+etc/plmn_delta.bin
+etc/plmn_se13.bin
 
 ### Sensors
 lib/hw/sensors.universal7580.so

@@ -627,6 +627,7 @@ on property:vold.decrypt=trigger_shutdown_framework
     class_reset main
 
 on property:sys.powerctl=*
+    rm /efs/Battery/batt_capacity_max
     copy /sys/class/power_supply/battery/batt_capacity_max /efs/Battery/batt_capacity_max
     powerctl ${sys.powerctl}
 

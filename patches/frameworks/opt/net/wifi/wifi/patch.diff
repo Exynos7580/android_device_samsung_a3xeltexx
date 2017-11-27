@@ -1,0 +1,13 @@
+diff --git a/service/java/com/android/server/wifi/WifiStateMachine.java b/service/java/com/android/server/wifi/WifiStateMachine.java
+index f34d0b1..d698d21 100644
+--- a/service/java/com/android/server/wifi/WifiStateMachine.java
++++ b/service/java/com/android/server/wifi/WifiStateMachine.java
+@@ -4621,7 +4621,7 @@ public class WifiStateMachine extends StateMachine implements WifiNative.WifiRss
+                     initializeWpsDetails();
+                     mWifiNative.enableTdlsExtControl();
+                     mWifiNative.disableScanOffload();
+-                    mWifiNative.setP2pDisable();
++                    //mWifiNative.setP2pDisable();
+ 
+                     sendSupplicantConnectionChangedBroadcast(true);
+                     transitionTo(mDriverStartedState);

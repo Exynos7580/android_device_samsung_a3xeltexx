@@ -1,2 +1,1 @@
-add_lunch_combo lineage_a3xeltexx-eng
 add_lunch_combo lineage_a3xeltexx-userdebug

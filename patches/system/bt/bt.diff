@@ -1,0 +1,1025 @@
+diff --git a/Android.mk b/Android.mk
+index b370cc0..c42736e 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -48,14 +48,18 @@ bluetooth_CFLAGS += \
+   -DLOG_NDEBUG=1
+ 
+ ifeq ($(strip $(AUDIO_FEATURE_ENABLED_SPLIT_A2DP)),true)
+-bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
+-bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
+-bluetooth_CFLAGS += -DAPTX_48000
++#bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
++#bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
++#bluetooth_CFLAGS += -DAPTX_48000
+ endif
+ 
+ bluetooth_CONLYFLAGS += -std=c99
+ bluetooth_CPPFLAGS :=
+ 
++ifeq ($(strip $(BOARD_HAVE_FMRADIO_BCM)),true)
++bluetooth_CFLAGS += -DBOARD_HAVE_FMRADIO_BCM
++endif
++
+ include $(call all-subdir-makefiles)
+ 
+ # Cleanup our locals
+diff --git a/bta/sys/bta_sys_main.c b/bta/sys/bta_sys_main.c
+index 6bb64c6..0c8db58 100644
+--- a/bta/sys/bta_sys_main.c
++++ b/bta/sys/bta_sys_main.c
+@@ -54,6 +54,12 @@ tBTA_SYS_CB bta_sys_cb;
+ fixed_queue_t *btu_bta_alarm_queue;
+ extern thread_t *bt_workqueue_thread;
+ 
++#ifdef BOARD_HAVE_FMRADIO_BCM
++static hash_map_t *bta_alarm_hash_map;
++static const size_t BTA_ALARM_HASH_MAP_SIZE = 17;
++static pthread_mutex_t bta_alarm_lock;
++#endif
++
+ /* trace level */
+ /* TODO Hard-coded trace levels -  Needs to be configurable */
+ UINT8 appl_trace_level = BT_TRACE_LEVEL_WARNING; //APPL_INITIAL_TRACE_LEVEL;
+@@ -175,6 +181,13 @@ void bta_sys_init(void)
+ {
+     memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
+ 
++#ifdef BOARD_HAVE_FMRADIO_BCM
++    pthread_mutex_init(&bta_alarm_lock, NULL);
++
++    bta_alarm_hash_map = hash_map_new(BTA_ALARM_HASH_MAP_SIZE,
++            hash_function_pointer, NULL, (data_free_fn)alarm_free, NULL);
++#endif
++
+     btu_bta_alarm_queue = fixed_queue_new(SIZE_MAX);
+ 
+     alarm_register_processing_queue(btu_bta_alarm_queue, bt_workqueue_thread);
+@@ -197,6 +210,10 @@ void bta_sys_free(void) {
+     alarm_unregister_processing_queue(btu_bta_alarm_queue);
+     fixed_queue_free(btu_bta_alarm_queue, NULL);
+     btu_bta_alarm_queue = NULL;
++#ifdef BOARD_HAVE_FMRADIO_BCM
++    hash_map_free(bta_alarm_hash_map);
++    pthread_mutex_destroy(&bta_alarm_lock);
++#endif
+ }
+ 
+ /*******************************************************************************
+@@ -600,6 +617,38 @@ void bta_sys_start_timer(alarm_t *alarm, period_ms_t interval, uint16_t event,
+                        btu_bta_alarm_queue);
+ }
+ 
++#ifdef BOARD_HAVE_FMRADIO_BCM
++void fmr_sys_start_timer(void *p_tle, UINT16 type, INT32 timeout_ms) {
++    assert(p_tle != NULL);
++
++    // Get the alarm for this p_tle.
++    pthread_mutex_lock(&bta_alarm_lock);
++    if (!hash_map_has_key(bta_alarm_hash_map, p_tle)) {
++      hash_map_set(bta_alarm_hash_map, p_tle, alarm_new("fmradio.legacy"));
++    }
++    pthread_mutex_unlock(&bta_alarm_lock);
++
++    alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
++    if (alarm == NULL) {
++      LOG_ERROR("%s unable to create alarm.", __func__);
++      return;
++    }
++
++    bta_sys_start_timer(alarm, timeout_ms, type, 0);
++}
++
++void fmr_sys_stop_timer(void *p_tle) {
++    assert(p_tle != NULL);
++
++    alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
++    if (alarm == NULL) {
++        LOG_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
++        return;
++    }
++    alarm_cancel(alarm);
++}
++#endif
++
+ /*******************************************************************************
+ **
+ ** Function         bta_sys_disable
+@@ -627,7 +676,7 @@ void bta_sys_disable(tBTA_SYS_HW_MODULE module)
+             return;
+     }
+ 
+-    for ( ; bta_id <= bta_id_max; bta_id++)
++    for ( ; bta_id < bta_id_max; bta_id++)
+     {
+         if (bta_sys_cb.reg[bta_id] != NULL)
+         {
+diff --git a/btcore/src/module.c b/btcore/src/module.c
+index ab7710a..07b3dd0 100644
+--- a/btcore/src/module.c
++++ b/btcore/src/module.c
+@@ -33,8 +33,7 @@
+ typedef enum {
+   MODULE_STATE_NONE = 0,
+   MODULE_STATE_INITIALIZED = 1,
+-  MODULE_STATE_STARTED = 2,
+-  MODULE_STATE_STARTUP_ERROR = 3
++  MODULE_STATE_STARTED = 2
+ } module_state_t;
+ 
+ static const size_t number_of_metadata_buckets = 42;
+@@ -101,8 +100,8 @@ bool module_start_up(const module_t *module) {
+ 
+   LOG_INFO(LOG_TAG, "%s Starting module \"%s\"", __func__, module->name);
+   if (!call_lifecycle_function(module->start_up)) {
+-    LOG_ERROR(LOG_TAG, "%s failed to start up \"%s\"", __func__, module->name);
+-    set_module_state(module, MODULE_STATE_STARTUP_ERROR);
++    LOG_ERROR(LOG_TAG, "%s Failed to start up module \"%s\"",
++              __func__, module->name);
+     return false;
+   }
+   LOG_INFO(LOG_TAG, "%s Started module \"%s\"", __func__, module->name);
+@@ -115,6 +114,7 @@ void module_shut_down(const module_t *module) {
+   assert(metadata != NULL);
+   assert(module != NULL);
+   module_state_t state = get_module_state(module);
++  assert(state <= MODULE_STATE_STARTED);
+ 
+   // Only something to do if the module was actually started
+   if (state < MODULE_STATE_STARTED)
+diff --git a/btif/include/btif_api.h b/btif/include/btif_api.h
+index 14e16cb..bde9881 100644
+--- a/btif/include/btif_api.h
++++ b/btif/include/btif_api.h
+@@ -431,4 +431,10 @@ bt_status_t btif_config_hci_snoop_log(uint8_t enable);
+ **
+ *******************************************************************************/
+ void btif_debug_bond_event_dump(int fd);
++
++#ifdef BOARD_HAVE_FMRADIO_BCM
++void btif_enable_radio();
++void btif_disable_radio();
++#endif
++
+ #endif /* BTIF_API_H */
+diff --git a/btif/include/stack_manager.h b/btif/include/stack_manager.h
+index 97fd02f..81d087a 100644
+--- a/btif/include/stack_manager.h
++++ b/btif/include/stack_manager.h
+@@ -29,6 +29,13 @@ typedef struct {
+   void (*clean_up_stack)(void);
+ 
+   bool (*get_stack_is_running)(void);
++
++#ifdef BOARD_HAVE_FMRADIO_BCM
++  bool (*start_up_radio)(void);
++  bool (*shut_down_radio)(void);
++
++  bool (*get_radio_is_running)(void);
++#endif
+ } stack_manager_t;
+ 
+ const stack_manager_t *stack_manager_get_interface();
+diff --git a/btif/src/bluetooth.c b/btif/src/bluetooth.c
+index eaa8cd8..5c5d3be 100644
+--- a/btif/src/bluetooth.c
++++ b/btif/src/bluetooth.c
+@@ -25,7 +25,6 @@
+  ***********************************************************************************/
+ 
+ #define LOG_TAG "bt_btif"
+-
+ #include <assert.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -43,6 +42,10 @@
+ #include <hardware/bt_rc.h>
+ #include <hardware/bt_sdp.h>
+ #include <hardware/bt_sock.h>
++#ifdef BOARD_HAVE_FMRADIO_BCM
++#include <hardware/bt_fm.h>
++#endif
++
+ #include <hardware/vendor.h>
+ 
+ #include "bt_utils.h"
+@@ -117,6 +120,13 @@ extern btrc_interface_t *btif_rc_get_interface();
+ extern btrc_interface_t *btif_rc_ctrl_get_interface();
+ /*SDP search client*/
+ extern btsdp_interface_t *btif_sdp_get_interface();
++
++#ifdef BOARD_HAVE_FMRADIO_BCM
++/* fm */
++extern btfm_interface_t *btif_fm_get_interface();
++#endif
++
++
+ /* vendor  */
+ extern btvendor_interface_t *btif_vendor_get_interface();
+ 
+@@ -436,6 +446,11 @@ static const void* get_profile_interface (const char *profile_id)
+     if (is_profile(profile_id, BT_PROFILE_VENDOR_ID))
+         return btif_vendor_get_interface();
+ 
++#ifdef BOARD_HAVE_FMRADIO_BCM
++    if (is_profile(profile_id, BT_PROFILE_FM_ID))
++        return btif_fm_get_interface();
++#endif
++
+     return NULL;
+ }
+ 
+diff --git a/btif/src/btif_core.c b/btif/src/btif_core.c
+index 0938f01..ef301c3 100644
+--- a/btif/src/btif_core.c
++++ b/btif/src/btif_core.c
+@@ -262,6 +262,14 @@ int btif_is_enabled(void)
+ 
+ void btif_init_ok(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param) {
+   BTIF_TRACE_DEBUG("btif_task: received trigger stack init event");
++
++#ifdef BOARD_HAVE_FMRADIO_BCM
++  if (!event && stack_manager_get_interface()->get_radio_is_running()) {
++    future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
++    return;
++  }
++#endif
++
+ #if (BLE_INCLUDED == TRUE)
+   btif_dm_load_ble_local_keys();
+ #endif
+@@ -670,11 +678,22 @@ bt_status_t btif_disable_bluetooth(void)
+ void btif_disable_bluetooth_evt(void)
+ {
+     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
++
++#ifdef BOARD_HAVE_FMRADIO_BCM
++    if (stack_manager_get_interface()->get_radio_is_running()) {
++        future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
++        return;
++    }
++#endif
++
++
++
+     if (ssr_triggered == TRUE)
+     {
+-        BTIF_TRACE_DEBUG("%s SSR triggered,Ignore EVT",__FUNCTION__);
+-        return;
++       BTIF_TRACE_DEBUG("%s SSR triggered,Ignore EVT",__FUNCTION__);
++       return;
+     }
++
+ #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
+     bte_main_enable_lpm(FALSE);
+ #endif
+diff --git a/btif/src/stack_manager.c b/btif/src/stack_manager.c
+index 031faa9..13db7b1 100644
+--- a/btif/src/stack_manager.c
++++ b/btif/src/stack_manager.c
+@@ -21,7 +21,6 @@
+ #include "stack_manager.h"
+ 
+ #include <hardware/bluetooth.h>
+-
+ #include "btcore/include/module.h"
+ #include "btcore/include/osi_module.h"
+ #include "btif_api.h"
+@@ -36,6 +35,7 @@
+ #include "btif_config.h"
+ #include "btif_profile_queue.h"
+ #include "bt_utils.h"
++#include "btif_sock.h"
+ 
+ static thread_t *management_thread;
+ 
+@@ -44,6 +44,9 @@ static thread_t *management_thread;
+ static bool stack_is_initialized;
+ // If running, the stack is fully up and able to bluetooth.
+ static bool stack_is_running;
++#ifdef BOARD_HAVE_FMRADIO_BCM
++static bool radio_is_running;
++#endif
+ 
+ static void event_init_stack(void *context);
+ static void event_start_up_stack(void *context);
+@@ -53,6 +56,13 @@ static void event_clean_up_stack(void *context);
+ static void event_signal_stack_up(void *context);
+ static void event_signal_stack_down(void *context);
+ 
++#ifdef BOARD_HAVE_FMRADIO_BCM
++static void event_start_up_radio(void *context);
++static void event_shut_down_radio(void *context);
++
++static future_t *radio_future;
++#endif
++
+ // Unvetted includes/imports, etc which should be removed or vetted in the future
+ static future_t *hack_future;
+ void bte_main_enable();
+@@ -93,6 +103,26 @@ static bool get_stack_is_running(void) {
+   return stack_is_running;
+ }
+ 
++#ifdef BOARD_HAVE_FMRADIO_BCM
++static bool start_up_radio(void) {
++  radio_future = future_new();
++  thread_post(management_thread, event_start_up_radio, NULL);
++  future_await(radio_future);
++  return radio_is_running;
++}
++
++static bool shut_down_radio(void) {
++  radio_future = future_new();
++  thread_post(management_thread, event_shut_down_radio, NULL);
++  future_await(radio_future);
++  return !radio_is_running;
++}
++
++static bool get_radio_is_running(void) {
++  return radio_is_running;
++}
++#endif
++
+ // Internal functions
+ 
+ // Synchronous function to initialize the stack
+@@ -114,6 +144,11 @@ static void event_init_stack(void *context) {
+ 
+     // stack init is synchronous, so no waiting necessary here
+     stack_is_initialized = true;
++
++    stack_is_running = false;
++#ifdef BOARD_HAVE_FMRADIO_BCM
++    radio_is_running = false;
++#endif
+   }
+ 
+   LOG_INFO(LOG_TAG, "%s finished", __func__);
+@@ -143,17 +178,25 @@ static void event_start_up_stack(UNUSED_ATTR void *context) {
+   future_t *local_hack_future = future_new();
+   hack_future = local_hack_future;
+ 
+-  // Include this for now to put btif config into a shutdown-able state
+-  module_start_up(get_module(BTIF_CONFIG_MODULE));
+-  bte_main_enable();
++  if (!radio_is_running) {
++    LOG_INFO(LOG_TAG, "%s FM_DBG radio_is_not running", __func__);
++    // Include this for now to put btif config into a shutdown-able state
++    module_start_up(get_module(BTIF_CONFIG_MODULE));
++    bte_main_enable();
++  } else {
++    LOG_INFO(LOG_TAG, "%s FM_DBG radio is running", __func__);
++    btif_transfer_context(btif_init_ok, 1, NULL, 0, NULL);
++  }
+ 
+   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
+-    LOG_ERROR(LOG_TAG, "%s failed to start up the stack", __func__);
++    LOG_INFO(LOG_TAG, "%s FM_DBG failed to start up the stack", __func__);
+     stack_is_running = true; // So stack shutdown actually happens
+     event_shut_down_stack(NULL);
+     return;
+   }
+ 
++
++
+   stack_is_running = true;
+   LOG_INFO(LOG_TAG, "%s finished", __func__);
+   btif_thread_post(event_signal_stack_up, NULL);
+@@ -171,16 +214,24 @@ static void event_shut_down_stack(UNUSED_ATTR void *context) {
+   hack_future = local_hack_future;
+   stack_is_running = false;
+ 
+-  btif_disable_bluetooth();
+-  module_shut_down(get_module(BTIF_CONFIG_MODULE));
++  if (!radio_is_running) {
++    LOG_INFO(LOG_TAG, "%s FM_DBG radio is not running", __func__);
++    btif_disable_bluetooth();
++    module_shut_down(get_module(BTIF_CONFIG_MODULE));
++
++    future_await(hack_future);
++    module_shut_down(get_module(CONTROLLER_MODULE)); // Doesn't do any work, just puts it in a restartable state
++  } else {
+ 
+-  future_await(local_hack_future);
+-  module_shut_down(get_module(CONTROLLER_MODULE)); // Doesn't do any work, just puts it in a restartable state
++    LOG_INFO(LOG_TAG, "%s FM_DBG radio running", __func__);
++    btif_disable_bluetooth();
++    future_await(hack_future);
++  }
+ 
+   LOG_INFO(LOG_TAG, "%s finished", __func__);
+-  hack_future = future_new();
++//  hack_future = future_new();
+   btif_thread_post(event_signal_stack_down, NULL);
+-  future_await(hack_future);
++//  future_await(hack_future);
+ }
+ 
+ static void ensure_stack_is_not_running(void) {
+@@ -200,6 +251,8 @@ static void event_clean_up_stack(void *context) {
+   ensure_stack_is_not_running();
+ 
+   LOG_INFO(LOG_TAG, "%s is cleaning up the stack", __func__);
++  future_t *local_hack_future = future_new();
++  hack_future = local_hack_future;
+   stack_is_initialized = false;
+ 
+   btif_cleanup_bluetooth();
+@@ -224,9 +277,66 @@ static void event_signal_stack_up(UNUSED_ATTR void *context) {
+ 
+ static void event_signal_stack_down(UNUSED_ATTR void *context) {
+   HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_OFF);
+-  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
++//  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
+ }
+ 
++#ifdef BOARD_HAVE_FMRADIO_BCM
++static void event_start_up_radio(void *context) {
++  if (radio_is_running) {
++    LOG_DEBUG("%s radio already brought up.", __func__);
++    return;
++  }
++
++  if (!stack_is_running) {
++  ensure_stack_is_initialized();
++  }
++
++  LOG_INFO(LOG_TAG,"%s FM_DBG is bringing up the radio.", __func__);
++  radio_is_running = true;
++
++  if (!stack_is_running) {
++    hack_future = future_new();
++
++    // Include this for now to put btif config into a shutdown-able state
++    module_start_up(get_module(BTIF_CONFIG_MODULE));
++    bte_main_enable();
++
++    if (future_await(hack_future) != FUTURE_SUCCESS) {
++      LOG_INFO(LOG_TAG, "%s FM_DBG await not disable radio", __func__);
++      event_shut_down_radio(NULL);
++      return;
++    }
++  }
++
++//  future_ready(hack_future);
++
++  LOG_DEBUG("%s finished", __func__);
++  future_ready(radio_future, FUTURE_SUCCESS);
++}
++
++static void event_shut_down_radio(void *context) {
++  if (!radio_is_running) {
++    LOG_INFO(LOG_TAG, "%s radio is already brought down.", __func__);
++    return;
++  }
++
++  LOG_INFO(LOG_TAG, "%s is bringing down the radio.", __func__);
++  radio_is_running = false;
++
++  if (!stack_is_running) {
++    hack_future = future_new();
++    btif_disable_bluetooth_evt();
++    future_await(hack_future);
++
++    module_shut_down(get_module(BTIF_CONFIG_MODULE));
++    module_shut_down(get_module(CONTROLLER_MODULE)); // Doesn't do any work, just puts it in a restartable state
++  }
++
++  LOG_INFO(LOG_TAG, "%s finished.", __func__);
++  future_ready(radio_future, FUTURE_SUCCESS);
++}
++#endif
++
+ static void ensure_manager_initialized(void) {
+   if (management_thread)
+     return;
+@@ -244,7 +354,14 @@ static const stack_manager_t interface = {
+   shut_down_stack_async,
+   clean_up_stack,
+ 
+-  get_stack_is_running
++  get_stack_is_running,
++
++#ifdef BOARD_HAVE_FMRADIO_BCM
++  start_up_radio,
++  shut_down_radio,
++
++  get_radio_is_running,
++#endif
+ };
+ 
+ const stack_manager_t *stack_manager_get_interface() {
+diff --git a/hci/src/btsnoop.c b/hci/src/btsnoop.c
+index 0ef6fe0..961a86b 100644
+--- a/hci/src/btsnoop.c
++++ b/hci/src/btsnoop.c
+@@ -17,10 +17,8 @@
+  ******************************************************************************/
+ 
+ #define LOG_TAG "bt_snoop"
+-
+ #include <arpa/inet.h>
+ #include <assert.h>
+-#include <cutils/properties.h>
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
+@@ -30,10 +28,8 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <time.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+-#include <sys/poll.h>
+ #include <unistd.h>
+ 
+ #include "bt_types.h"
+@@ -54,19 +50,6 @@ typedef enum {
+ static const uint64_t BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000ULL;
+ 
+ static const stack_config_t *stack_config;
+-extern int client_socket_btsnoop;
+-static long int gmt_offset;
+-#define USEC_PER_SEC 1000000L
+-#define MAX_SNOOP_BUF_SIZE 1200
+-
+-// External BT snoop
+-bool hci_ext_dump_enabled = false;
+-
+-/* snoop config from the config file, required for userdebug
+-   build where snoop is enabled by default.
+-   power/perf measurements need the snoop to be disabled.
+-*/
+-bool btsnoop_conf_from_file = false;
+ 
+ static int logfile_fd = INVALID_FD;
+ static bool module_started;
+@@ -84,20 +67,7 @@ static void update_logging();
+ // Module lifecycle functions
+ 
+ static future_t *start_up(void) {
+-  time_t t = time(NULL);
+-  struct tm tm_cur;
+-
+-  localtime_r (&t, &tm_cur);
+-  LOG_INFO(LOG_TAG, "%s Time GMT offset %ld\n", __func__, tm_cur.tm_gmtoff);
+-  gmt_offset = tm_cur.tm_gmtoff;
+-
+   module_started = true;
+-  stack_config->get_btsnoop_ext_options(&hci_ext_dump_enabled, &btsnoop_conf_from_file);
+-#if (BTSNOOP_DEFAULT == TRUE)
+-  if (btsnoop_conf_from_file == false) {
+-    hci_ext_dump_enabled = true;
+-  }
+-#endif
+   update_logging();
+ 
+   return NULL;
+@@ -105,9 +75,6 @@ static future_t *start_up(void) {
+ 
+ static future_t *shut_down(void) {
+   module_started = false;
+-  if (hci_ext_dump_enabled == true) {
+-    property_set("bluetooth.startbtsnoop", "false");
+-  }
+   update_logging();
+ 
+   return NULL;
+@@ -173,7 +140,6 @@ const btsnoop_t *btsnoop_get_interface() {
+ static uint64_t btsnoop_timestamp(void) {
+   struct timeval tv;
+   gettimeofday(&tv, NULL);
+-  tv.tv_sec += gmt_offset;
+ 
+   // Timestamp is in microseconds.
+   uint64_t timestamp = tv.tv_sec * 1000 * 1000LL;
+@@ -184,7 +150,7 @@ static uint64_t btsnoop_timestamp(void) {
+ 
+ static void update_logging() {
+   bool should_log = module_started &&
+-    (logging_enabled_via_api || stack_config->get_btsnoop_turned_on() || hci_ext_dump_enabled);
++    (logging_enabled_via_api || stack_config->get_btsnoop_turned_on());
+ 
+   if (should_log == is_logging)
+     return;
+@@ -193,9 +159,6 @@ static void update_logging() {
+   if (should_log) {
+     btsnoop_net_open();
+ 
+-    if (hci_ext_dump_enabled == true) {
+-      property_set("bluetooth.startbtsnoop", "true");
+-    }
+     const char *log_path = stack_config->get_btsnoop_log_path();
+ 
+     // Save the old log if configured to do so
+@@ -228,37 +191,17 @@ static void update_logging() {
+ }
+ 
+ static void btsnoop_write(const void *data, size_t length) {
+-  if (client_socket_btsnoop != -1) {
+-    btsnoop_net_write(data, length);
+-    /* skip writing to file if external client is connected*/
+-    return;
+-  }
+-
+   if (logfile_fd != INVALID_FD)
+     write(logfile_fd, data, length);
+-}
+ 
+-#ifdef DEBUG_SNOOP
+-static uint64_t time_now_us() {
+-    struct timespec ts_now;
+-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
+-    return ((uint64_t)ts_now.tv_sec * USEC_PER_SEC) + ((uint64_t)ts_now.tv_nsec / 1000);
++  btsnoop_net_write(data, length);
+ }
+-#endif
+ 
+ static void btsnoop_write_packet(packet_type_t type, const uint8_t *packet, bool is_received) {
+   int length_he = 0;
+   int length;
+   int flags;
+   int drops = 0;
+-  struct pollfd pfd;
+-#ifdef DEBUG_SNOOP
+-  uint64_t ts_begin;
+-  uint64_t ts_end, ts_diff;
+-#endif
+-  uint8_t snoop_buf[MAX_SNOOP_BUF_SIZE] = {0};
+-  uint32_t offset = 0;
+-
+   switch (type) {
+     case kCommandPacket:
+       length_he = packet[2] + 4;
+@@ -288,73 +231,12 @@ static void btsnoop_write_packet(packet_type_t type, const uint8_t *packet, bool
+   time_hi = htonl(time_hi);
+   time_lo = htonl(time_lo);
+ 
+-  /* store the length in both original and included fields */
+-  memcpy(snoop_buf + offset, &length, 4);
+-  offset += 4;
+-  memcpy(snoop_buf + offset, &length, 4);
+-  offset += 4;
+-
+-  /* flags:  */
+-  memcpy(snoop_buf + offset, &flags, 4);
+-  offset += 4;
+-
+-  /* drops: none */
+-  memcpy(snoop_buf + offset, &drops, 4);
+-  offset += 4;
+-
+-  /* time */
+-  memcpy(snoop_buf + offset, &time_hi, 4);
+-  offset += 4;
+-  memcpy(snoop_buf + offset, &time_lo, 4);
+-  offset = offset + 4;
+-
+-  snoop_buf[offset] = type;
+-  offset += 1;
+-  if (offset + length_he + 1 > MAX_SNOOP_BUF_SIZE) {
+-    LOG_ERROR(LOG_TAG, "Bad packet length, downgrading the length to %d from %d",
+-                                      MAX_SNOOP_BUF_SIZE - offset - 1, length_he);
+-    length_he = MAX_SNOOP_BUF_SIZE - offset - 1;
+-  }
+-  memcpy(snoop_buf + offset, packet, length_he - 1);
+-
+-  if (client_socket_btsnoop != -1) {
+-    pfd.fd = client_socket_btsnoop;
+-    pfd.events = POLLOUT;
+-#ifdef DEBUG_SNOOP
+-    ts_begin = time_now_us();
+-#endif
+-
+-    if (poll(&pfd, 1, 10) == 0) {
+-      LOG_ERROR(LOG_TAG, "btsnoop poll : Taking more than 10 ms : skip dump");
+-#ifdef DEBUG_SNOOP
+-      ts_end = time_now_us();
+-      ts_diff = ts_end - ts_begin;
+-      if (ts_diff > 10000) {
+-        LOG_ERROR(LOG_TAG, "btsnoop poll T/O : took more time %08lld us", ts_diff);
+-      }
+-#endif
+-      return;
+-    }
+-
+-#ifdef DEBUG_SNOOP
+-    ts_end = time_now_us();
+-    ts_diff = ts_end - ts_begin;
+-    if (ts_diff > 10000) {
+-      LOG_ERROR(LOG_TAG, "btsnoop poll : took more time %08lld us", ts_diff);
+-    }
+-#endif
+-  }
+-#ifdef DEBUG_SNOOP
+-  ts_begin = time_now_us();
+-#endif
+-
+-  btsnoop_write(snoop_buf, offset + length_he - 1);
+-
+-#ifdef DEBUG_SNOOP
+-  ts_end = time_now_us();
+-  ts_diff = ts_end - ts_begin;
+-  if (ts_diff > 10000) {
+-    LOG_ERROR(LOG_TAG, "btsnoop write : Write took more time %08lld us", ts_diff);
+-  }
+-#endif
++  btsnoop_write(&length, 4);
++  btsnoop_write(&length, 4);
++  btsnoop_write(&flags, 4);
++  btsnoop_write(&drops, 4);
++  btsnoop_write(&time_hi, 4);
++  btsnoop_write(&time_lo, 4);
++  btsnoop_write(&type, 1);
++  btsnoop_write(packet, length_he - 1);
+ }
+diff --git a/hci/src/btsnoop_net.c b/hci/src/btsnoop_net.c
+index 274b546..7f1b02f 100644
+--- a/hci/src/btsnoop_net.c
++++ b/hci/src/btsnoop_net.c
+@@ -19,9 +19,6 @@
+ #define LOG_TAG "bt_snoop_net"
+ 
+ #include <assert.h>
+-#include <cutils/sockets.h>
+-#include <sys/un.h>
+-#include <sys/poll.h>
+ #include <errno.h>
+ #include <netinet/in.h>
+ #include <pthread.h>
+@@ -35,6 +32,7 @@
+ #include "osi/include/log.h"
+ #include "osi/include/osi.h"
+ 
++
+ static void safe_close_(int *fd);
+ static void *listen_fn_(void *context);
+ 
+@@ -46,37 +44,12 @@ static pthread_t listen_thread_;
+ static bool listen_thread_valid_ = false;
+ static pthread_mutex_t client_socket_lock_ = PTHREAD_MUTEX_INITIALIZER;
+ static int listen_socket_ = -1;
+-int client_socket_btsnoop = -1;
+-
+-/*
+-    local socket for writing from different process
+-    to limit blocking of HCI threads.
+-*/
+-#define LOCAL_SOCKET_NAME "bthcitraffic"
+-static int listen_socket_local_ = -1;
+-
+-static int local_socket_create(void) {
+-
+-  listen_socket_local_ = socket(AF_LOCAL, SOCK_STREAM, 0);
+-  if(listen_socket_local_ < 0) {
+-    return -1;
+-  }
+-
+-  if(socket_local_server_bind(listen_socket_local_, LOCAL_SOCKET_NAME,
+-      ANDROID_SOCKET_NAMESPACE_ABSTRACT) < 0) {
+-    LOG_ERROR(LOG_TAG, "Failed to create Local Socket (%s)", strerror(errno));
+-    return -1;
+-  }
+-
+-  if (listen(listen_socket_local_, 1) < 0) {
+-    LOG_ERROR(LOG_TAG, "Local socket listen failed (%s)", strerror(errno));
+-    close(listen_socket_local_);
+-    return -1;
+-  }
+-  return listen_socket_local_;
+-}
++static int client_socket_ = -1;
+ 
+ void btsnoop_net_open() {
++#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
++  return;               // Disable using network sockets for security reasons
++#endif
+ 
+   listen_thread_valid_ = (pthread_create(&listen_thread_, NULL, listen_fn_, NULL) == 0);
+   if (!listen_thread_valid_) {
+@@ -87,55 +60,44 @@ void btsnoop_net_open() {
+ }
+ 
+ void btsnoop_net_close() {
++#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
++  return;               // Disable using network sockets for security reasons
++#endif
+ 
+   if (listen_thread_valid_) {
+-#if (defined(BT_NET_DEBUG) && (NET_DEBUG == TRUE))
+-    // Disable using network sockets for security reasons
+     shutdown(listen_socket_, SHUT_RDWR);
+-#endif
+-    shutdown(listen_socket_local_, SHUT_RDWR);
+     pthread_join(listen_thread_, NULL);
+-    safe_close_(&client_socket_btsnoop);
++    safe_close_(&client_socket_);
+     listen_thread_valid_ = false;
+   }
+ }
+ 
+ void btsnoop_net_write(const void *data, size_t length) {
+-  ssize_t ret;
++#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
++  return;               // Disable using network sockets for security reasons
++#endif
+ 
+   pthread_mutex_lock(&client_socket_lock_);
+-  if (client_socket_btsnoop != -1) {
+-    do {
+-      if ((ret = send(client_socket_btsnoop, data, length, 0)) == -1 && errno == ECONNRESET) {
+-        safe_close_(&client_socket_btsnoop);
+-        LOG_INFO(LOG_TAG, "%s conn closed", __func__);
+-      }
+-      if ((size_t) ret < length) {
+-        LOG_ERROR(LOG_TAG, "%s: send : not able to write complete packet", __func__);
+-      }
+-      length -= ret;
+-    } while ((length > 0) && (ret != -1));
+-  }
++  if (client_socket_ != -1) {
++    ssize_t ret;
++    OSI_NO_INTR(ret = send(client_socket_, data, length, 0));
+ 
++    if (ret == -1 && errno == ECONNRESET) {
++      safe_close_(&client_socket_);
++    }
++  }
+   pthread_mutex_unlock(&client_socket_lock_);
+ }
+ 
+ static void *listen_fn_(UNUSED_ATTR void *context) {
+-  fd_set sock_fds;
+-  int fd_max = -1, retval;
+ 
+   prctl(PR_SET_NAME, (unsigned long)LISTEN_THREAD_NAME_, 0, 0, 0);
+ 
+-  FD_ZERO(&sock_fds);
+-
+-  // Disable using network sockets for security reasons
+   listen_socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+   if (listen_socket_ == -1) {
+     LOG_ERROR(LOG_TAG, "%s socket creation failed: %s", __func__, strerror(errno));
+     goto cleanup;
+   }
+-  FD_SET(listen_socket_, &sock_fds);
+-  fd_max = listen_socket_;
+ 
+   int enable = 1;
+   if (setsockopt(listen_socket_, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
+@@ -157,73 +119,29 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
+     goto cleanup;
+   }
+ 
+-  if (local_socket_create() != -1) {
+-    if (listen_socket_local_ > fd_max) {
+-      fd_max = listen_socket_local_;
+-    }
+-    FD_SET(listen_socket_local_, &sock_fds);
+-  }
+-
+-  if (fd_max == -1) {
+-    LOG_ERROR(LOG_TAG, "%s No sockets to wait for conn..", __func__);
+-    return NULL;
+-  }
+-
+   for (;;) {
+-    int client_socket = -1;
+-
+-    LOG_DEBUG(LOG_TAG, "waiting for client connection");
+-
+-    if ((retval = select(fd_max + 1, &sock_fds, NULL, NULL, NULL)) == -1) {
+-      LOG_ERROR(LOG_TAG, "%s select failed %s", __func__, strerror(errno));
+-      goto cleanup;
+-    }
+-
+-    if ((listen_socket_ != -1) && FD_ISSET(listen_socket_, &sock_fds)) {
+-      client_socket = accept(listen_socket_, NULL, NULL);
+-      if (client_socket == -1) {
+-        if (errno == EINVAL || errno == EBADF) {
+-          LOG_WARN(LOG_TAG, "%s error accepting TCP socket: %s", __func__, strerror(errno));
+-          break;
+-        }
+-        LOG_WARN(LOG_TAG, "%s error accepting TCP socket: %s", __func__, strerror(errno));
+-        continue;
+-      }
+-    } else if ((listen_socket_local_ != -1) && FD_ISSET(listen_socket_local_, &sock_fds)){
+-      struct sockaddr_un cliaddr;
+-      int length;
+-
+-      client_socket = accept(listen_socket_local_, (struct sockaddr *)&cliaddr, (socklen_t *)&length);
+-      if (client_socket == -1) {
+-        if (errno == EINVAL || errno == EBADF) {
+-          LOG_WARN(LOG_TAG, "%s error accepting LOCAL socket: %s", __func__, strerror(errno));
+-          break;
+-        }
+-        LOG_WARN(LOG_TAG, "%s error accepting LOCAL socket: %s", __func__, strerror(errno));
+-        continue;
++    int client_socket;
++    OSI_NO_INTR(client_socket = accept(listen_socket_, NULL, NULL));
++    if (client_socket == -1) {
++      if (errno == EINVAL || errno == EBADF) {
++        break;
+       }
++      LOG_WARN(LOG_TAG, "%s error accepting socket: %s", __func__, strerror(errno));
++      continue;
+     }
+ 
+     /* When a new client connects, we have to send the btsnoop file header. This allows
+        a decoder to treat the session as a new, valid btsnoop file. */
+     pthread_mutex_lock(&client_socket_lock_);
+-    safe_close_(&client_socket_btsnoop);
+-    client_socket_btsnoop = client_socket;
+-    send(client_socket_btsnoop, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16, 0);
+-    pthread_mutex_unlock(&client_socket_lock_);
++    safe_close_(&client_socket_);
++    client_socket_ = client_socket;
+ 
+-    FD_ZERO(&sock_fds);
+-    if(listen_socket_ != -1) {
+-      FD_SET(listen_socket_, &sock_fds);
+-    }
+-    if(listen_socket_local_ != -1) {
+-        FD_SET(listen_socket_local_, &sock_fds);
+-    }
++    OSI_NO_INTR(send(client_socket_, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16, 0));
++    pthread_mutex_unlock(&client_socket_lock_);
+   }
+ 
+ cleanup:
+   safe_close_(&listen_socket_);
+-  safe_close_(&listen_socket_local_);
+   return NULL;
+ }
+ 
+diff --git a/hci/src/hci_layer.c b/hci/src/hci_layer.c
+index 10172d4..9a0f649 100644
+--- a/hci/src/hci_layer.c
++++ b/hci/src/hci_layer.c
+@@ -320,7 +320,12 @@ static future_t *start_up(void) {
+   power_state = BT_VND_PWR_ON;
+   vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
+ 
+-  LOG_DEBUG(LOG_TAG, "%s starting async portion", __func__);
++  LOG_INFO(LOG_TAG, "%s PIN_DBG start pcm pin config", __func__);
++
++  //int test_parm = 0x503;
++  //vendor->send_command(11, &test_parm);
++
++  LOG_INFO(LOG_TAG, "%s starting async portion", __func__);
+   thread_post(thread, event_finish_startup, NULL);
+   hci_state = HCI_STARTED;
+   return local_startup_future;
+diff --git a/main/Android.mk b/main/Android.mk
+index 2286997..6d1070b 100644
+--- a/main/Android.mk
++++ b/main/Android.mk
+@@ -1,5 +1,29 @@
+ LOCAL_PATH:= $(call my-dir)
+ 
++ifeq ($(strip $(BOARD_HAVE_FMRADIO_BCM)),true)
++
++#
++# FM core lib
++#
++include $(CLEAR_VARS)
++LOCAL_MODULE := libbt-fmcore
++LOCAL_MODULE_CLASS :=  STATIC_LIBRARIES
++LOCAL_SRC_FILES := ../bta/fm/libbt-fmcore.a
++LOCAL_MODULE_SUFFIX := .a
++include $(BUILD_PREBUILT)
++
++#
++# FM rds lib
++#
++include $(CLEAR_VARS)
++LOCAL_MODULE := libbt-fmrds
++LOCAL_MODULE_CLASS :=  STATIC_LIBRARIES
++LOCAL_SRC_FILES := ../bta/fm/libbt-fmrds.a
++LOCAL_MODULE_SUFFIX := .a
++include $(BUILD_PREBUILT)
++
++endif
++
+ # Bluetooth main HW module / shared library for target
+ # ========================================================
+ include $(CLEAR_VARS)
+@@ -83,6 +107,16 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
+     libbtcore \
+     libosi
+ 
++ifeq ($(strip $(BOARD_HAVE_FMRADIO_BCM)),true)
++LOCAL_CFLAGS += -DBOARD_HAVE_FMRADIO_BCM
++LOCAL_SRC_FILES += \
++    ../btif/src/btif_fm.c \
++    ../btif/co/bta_fm_co.c \
++    ../bta/fm/bta_fm_legacy.c \
++    ../gki_legacy/legacy.c
++LOCAL_STATIC_LIBRARIES += libbt-fmcore libbt-fmrds
++endif
++
+ LOCAL_MODULE := bluetooth.default
+ LOCAL_MODULE_RELATIVE_PATH := hw
+ LOCAL_MODULE_TAGS := optional

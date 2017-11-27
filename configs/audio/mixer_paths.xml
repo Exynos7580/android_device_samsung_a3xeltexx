@@ -3468,7 +3468,7 @@
 	<!-- FM Playback/Recording -->
 	<path name="gain-fm_radio-speaker" >
 		<ctl name="Speaker Volume" value="6" />
-		<ctl name="DAC Gain" value="109" />
+		<ctl name="DAC Gain" value="115" />
 	</path>
 
 	<path name="gain-fm_radio-headset" >
@@ -3477,7 +3477,6 @@
 
 	<path name="gain-fm_radio-speaker-headset" >
 		<ctl name="Speaker Volume" value="6" />
-		<ctl name="DAC Gain" value="109" />
 		<ctl name="DAC Gain" value="115" />
 	</path>
 
