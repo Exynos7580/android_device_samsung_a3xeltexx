@@ -1561,22 +1561,23 @@
 
 	<!-- FM Playback/Recording -->
 	<path name="fm_radio-speaker" >
-		<path name="route-ap-fm-tx" />
-		<path name="dev-speaker" />
+		<path name="media-speaker" />
 	</path>
 
 	<path name="fm_radio-speaker-headset" >
-		<path name="route-ap-fm-tx" />
-		<path name="dev-speaker" />
-		<path name="dev-headset" />
+	    	<path name="media-speaker" />
 	</path>
 
 	<path name="fm_radio-headset" >
-		<path name="route-ap-fm-tx" />
-		<path name="dev-headset" />
+	    	<path name="media-headset" />
 	</path>
 
 	<path name="fm_radio-fm-recording" >
+		<path name="route-ap-fm-rx" />
+		<ctl name="S2801 CH3 Rec En" value="On" />
+	</path>
+	
+    	<path name="recording-fm-recording" >
 		<path name="route-ap-fm-rx" />
 		<ctl name="S2801 CH3 Rec En" value="On" />
 	</path>
@@ -3472,15 +3473,13 @@
 	</path>
 
 	<path name="gain-fm_radio-headset" >
-		<ctl name="DAC Gain" value="115" />
-	</path>
-
-	<path name="gain-fm_radio-speaker-headset" >
-		<ctl name="Speaker Volume" value="6" />
-		<ctl name="DAC Gain" value="115" />
+		<ctl name="DAC Gain" value="109" />
 	</path>
 
 	<path name="gain-fm_radio-fm-recording" >
+		<ctl name="DAC Gain" value="127" />
+	</path>
+	<path name="gain-recording-fm-recording" >
 		<ctl name="DAC Gain" value="127" />
 	</path>
 </mixer>

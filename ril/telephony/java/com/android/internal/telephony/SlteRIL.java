@@ -22,6 +22,8 @@ import static com.android.internal.telephony.RILConstants.*;
 
 import android.content.Context;
 import android.telephony.Rlog;
+import android.media.AudioManager;
+import android.os.Handler;
 import android.os.AsyncResult;
 import android.os.Message;
 import android.os.Parcel;
@@ -67,7 +69,24 @@ public class SlteRIL extends RIL {
     private static final int RIL_UNSOL_ON_SS_SAMSUNG = 1040;
     private static final int RIL_UNSOL_STK_CC_ALPHA_NOTIFY_SAMSUNG = 1041;
 
+    protected static final int EVENT_RIL_CONNECTED = 1;
+    private AudioManager mAudioManager;
+    private ConnectionStateListener mConnectionStateListener;
 
+    private class ConnectionStateListener extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case EVENT_RIL_CONNECTED:
+                    riljLogv("RIL connected");
+                    mAudioManager.setParameters("ril_state_connected=1");
+                    break;
+                default:
+                    riljLogv("Unknown connection event");
+                    break;
+            }
+        }
+    }
 
     // Number of per-network elements expected in QUERY_AVAILABLE_NETWORKS's response.
     // 4 elements is default, but many RILs actually return 5, making it impossible to
@@ -81,7 +100,11 @@ public class SlteRIL extends RIL {
     public SlteRIL(Context context, int preferredNetworkType,
                    int cdmaSubscription, Integer instanceId) {
         super(context, preferredNetworkType, cdmaSubscription, instanceId);
-    }
+        mAudioManager = (AudioManager)mContext.getSystemService(Context.AUDIO_SERVICE);
+        mConnectionStateListener = new ConnectionStateListener();
+        registerForRilConnected(mConnectionStateListener, EVENT_RIL_CONNECTED, null);    
+
+ 	}
 
     public void
     acceptCall(int index, Message result) {
