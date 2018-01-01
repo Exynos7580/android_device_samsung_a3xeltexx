@@ -1,4 +1,6 @@
 ```
+Manifest for syncing: https://github.com/Exynos7580/android_device_samsung_a3xeltexx/wiki/Manifest
+
 device-tree: a3xeltexx
 Base: Android O (8.1)
 type: phone
