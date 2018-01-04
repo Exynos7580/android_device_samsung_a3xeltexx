@@ -1,68 +1,117 @@
-#include <stdio.h>
-#include <stdlib.h>
+/*
+   Copyright (c) 2016, The CyanogenMod Project. All rights reserved.
 
+   Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are
+   met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+      copyright notice, this list of conditions and the following
+      disclaimer in the documentation and/or other materials provided
+      with the distribution.
+    * Neither the name of The Linux Foundation nor the names of its
+      contributors may be used to endorse or promote products derived
+      from this software without specific prior written permission.
+
+   THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+   WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+   ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+   BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+   BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+   WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+   OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <stdlib.h>
+#include <string.h>
 #define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
 #include <sys/_system_properties.h>
 
 #include <android-base/properties.h>
+#include <android-base/logging.h>
 
-#include "log.h"
 #include "property_service.h"
-#include "util.h"
 #include "vendor_init.h"
 
-#include "init_sec.h"
+using android::base::GetProperty;
+using android::init::property_set;
 
-#define MODEL_NAME_LEN 5  // e.g. "A310F"
-#define BUILD_NAME_LEN 8  // e.g. "XXU3CQI2"
-#define CODENAME_LEN   9  // e.g. "a3xeltexx"
+void property_override(char const prop[], char const value[])
+{
+	prop_info *pi;
 
+	pi = (prop_info*) __system_property_find(prop);
+	if (pi)
+		__system_property_update(pi, value, strlen(value));
+	else
+		__system_property_add(prop, strlen(prop), value, strlen(value));
+}
 
-static void property_override(char const prop[], char const value[]) {
-    prop_info *pi;
+void set_sim_info ()
+{
+	FILE *file;
+	const char *simslot_count_path = "/proc/simslot_count";
+	char simslot_count[2] = "\0";
 
-    pi = (prop_info*) __system_property_find(prop);
-    if (pi)
-        __system_property_update(pi, value, strlen(value));
-    else
-        __system_property_add(prop, strlen(prop), value, strlen(value));
+	file = fopen(simslot_count_path, "r");
+
+	if (file != NULL) {
+		simslot_count[0] = fgetc(file);
+		property_override("ro.multisim.simslotcount", simslot_count);
+		if(strcmp(simslot_count, "2") == 0) {
+			property_override("rild.libpath2", "/system/lib/libsec-ril-dsds.so");
+			property_override("persist.radio.multisim.config", "dsds");
+		}
+		fclose(file);
+	}
+	else {
+		LOG(ERROR) << "Could not open '" << simslot_count_path << "'\n";
+	}
 }
 
 void vendor_load_properties()
 {
-    const std::string bootloader = android::base::GetProperty("ro.bootloader", "");
-    const std::string bl_model = bootloader.substr(0, MODEL_NAME_LEN);
-    const std::string bl_build = bootloader.substr(MODEL_NAME_LEN);
+	std::string platform;
+	std::string bootloader = GetProperty("ro.bootloader", "");
+	std::string device;
 
-    std::string model;  // A310F
-    std::string device; // a3xelte
-    std::string name;    // a3xeltexx
-    std::string description;
-    std::string fingerprint;
+	platform = GetProperty("ro.board.platform", "");
+	if (platform != ANDROID_TARGET)
+		return;
 
-    model = "SM-" + bl_model;
+	if (bootloader.find("A310F") != std::string::npos) {
 
-    for (size_t i = 0; i < VARIANT_MAX; i++) {
-        std::string model_ = all_variants[i]->model;
-        if (model.compare(model_) == 0) {
-            device = all_variants[i]->codename;
-            break;
-        }
+	    /* SM-A310F */
+        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:7.0/NRD90M/A310FXXU3CQE6:user/test-keys");
+        property_override("ro.build.description", "a3xeltexx-user 7.0 NRD90M A310FXXU3CQE6 test-keys");
+        property_override("ro.product.model", "SM-A310F");
+        property_override("ro.product.device", "a3xelte");
+
+    } else if (bootloader.find("A310M") != std::string::npos) {
+
+	    /* SM-A310M */
+        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
+        property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
+        property_override("ro.product.model", "SM-A310M");
+        property_override("ro.product.device", "a3xelte");
+
+    } else {
+
+	    /* SM-A310Y */
+        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:6.0.1/MMB29K/A310FXXU3BQC2:user/release-keys");
+        property_override("ro.build.description", "a3xeltexx-user 6.0.1 MMB29K A310FXXU3BQC2 release-keys");
+        property_override("ro.product.model", "SM-A310Y");
+        property_override("ro.product.device", "a3xeltexx");
+
     }
 
-    if (device.size() == 0) {
-        device = "a3xeltexx";
-    }
+	set_sim_info();
 
-    name = device + "xx";
-
-    description = name + "-user 7.0 NRD90M " + bl_model + bl_build + " release-keys";
-    fingerprint = "samsung/" + name + "/" + device + ":7.0/NRD90M/" + bl_model + bl_build + ":user/release-keys";
-
-    property_override("ro.product.model", model.c_str());
-    property_override("ro.product.device", device.c_str());
-    property_override("ro.product.name", name.c_str());
-    property_override("ro.build.product", device.c_str());
-    property_override("ro.build.description", description.c_str());
-    property_override("ro.build.fingerprint", fingerprint.c_str());
+	device = GetProperty("ro.product.device", "");
+	LOG(ERROR) << "Found bootloader id '" << bootloader.c_str() << "' setting build properties for '" << device.c_str() << "' device\n";
 }
