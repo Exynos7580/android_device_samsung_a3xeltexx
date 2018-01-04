@@ -15,7 +15,7 @@
 #
 
 # Include OSS Samsung Hardware-Projects (except ril)
-include $(SAM_ROOT)/AdvancedDisplay/Android.mk
+# include $(SAM_ROOT)/AdvancedDisplay/Android.mk
 include $(SAM_ROOT)/audio/Android.mk
 include $(SAM_ROOT)/consumerir/Android.mk
 include $(SAM_ROOT)/dtbhtool/Android.mk
