@@ -1,9 +1,4 @@
-# Wi-Fi init file
-
 on post-fs-data
-    #Create directory for hostapd
-    mkdir /data/hostapd 0770 system wifi
-	
     # give system access to wpa_supplicant.conf for backup and restore
     mkdir /data/misc/wifi 0770 wifi system
     chmod 0660 /data/misc/wifi/wpa_supplicant.conf
@@ -32,31 +27,21 @@ on post-fs-data
     mkdir /efs/wifi 0775 radio system
     chown system wifi /efs/wifi/.mac.info
     chmod 0660 /efs/wifi/.mac.info
-    start macloader
-    # Create netmgr log dir
-    mkdir /data/vendor/netmgr 0770 radio radio
-    chmod 0770 /data/vendor/netmgr
 
-    # Create directory for radio
-    mkdir /data/vendor/radio 0770 system radio
+    # Set permissions for firmware path control
+    chown wifi wifi /sys/module/dhd/parameters/firmware_path
 
 on boot
     # Pcie WiFi T-put setting
     write /sys/class/net/wlan0/queues/rx-0/rps_cpus 00
 
     #write /proc/sys/net/ipv4/tcp_adv_win_scale 2
-    # Set permissions for firmware path control
-    chown wifi wifi /sys/module/dhd/parameters/firmware_path
 
 # Run deferred initcalls of builtin kernel modules (bcmdhd)
-service wifiloader /vendor/bin/wifiloader
+service wifiloader /system/bin/wifiloader
     class main
+    seclabel u:r:wifiloader:s0
     oneshot
-
-service netmgrd /system/bin/netmgrd
-    class main
-    user root
-    group root wifi wakelock radio inet
 
 service p2p_supplicant /vendor/bin/hw/wpa_supplicant -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf -I/system/etc/wifi/p2p_supplicant_overlay.conf -puse_p2p_group_interface=1p2p_device=1 -m/data/misc/wifi/p2p_supplicant.conf -e/data/misc/wifi/entropy.bin -g@android:wpa_wlan0
     class main
@@ -70,7 +55,7 @@ service wpa_supplicant /vendor/bin/hw/wpa_supplicant -iwlan0 -Dnl80211 -c/data/m
     disabled
     oneshot
 
-service macloader /vendor/bin/macloader
+service macloader /system/bin/macloader
     class main
     oneshot
 
@@ -85,10 +70,3 @@ on property:init.svc.macloader=stopped
 #    class main
 #    disabled
 #    oneshot
-
-service hostapd /vendor/bin/hostapd -dddd /data/hostapd/hostapd.conf
-    class late_start
-    user root
-    group root
-    oneshot
-    disabled

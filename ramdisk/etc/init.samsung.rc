@@ -88,26 +88,9 @@ on post-fs-data
     chown media system /dev/socket/uibc
     chmod 0775 /dev/socket/uibc
 
-# [ SEC_MM_DRM
-    # DRM directory creation
-    mkdir /system/etc/security/.drm 0775
-    chown root root /system/etc/security/.drm
-    chmod 0775 /system/etc/security/.drm
-
-    # Added for Playready DCM DRM Support
-    mkdir /data/.dcmdrm 0775
-    chown drm system /data/.dcmdrm
-    chmod 0775 /data/.dcmdrm
-    mkdir /data/.dcmdrm/.playready 0775
-    chown drm system /data/.dcmdrm/.playready
-    chmod 0775 /data/.dcmdrm/.playready
-
-    # Added drm folder to copy drm plugins
-    mkdir /system/lib/drm 0775
-    chown root root /system/lib/drm
-    chmod 0775 /system/lib/drm
-
-# ]
+    # biometrics
+    mkdir /data/biometrics 0700 system system
+    restorecon /data/biometrics
 
 on boot
 
@@ -117,63 +100,29 @@ on boot
     chown radio system /efs/bluetooth
     chmod 0775 /efs/bluetooth
 
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_enter_load
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_enter_load
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_enter_time
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_enter_time
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_exit_load
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_exit_load
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_exit_time
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_exit_time
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_enter_load
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_enter_load
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_enter_time
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_enter_time
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_exit_load
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_exit_load
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_exit_time
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_exit_time
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/mode
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/mode
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/enforced_mode
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/enforced_mode
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/param_index
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/param_index
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/cpu_util
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/cpu_util
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_cluster0_min_freq
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/multi_cluster0_min_freq
-    chown system system /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_cluster0_min_freq
-    chmod 0660 /sys/devices/system/cpu/cpu0/cpufreq/interactive/single_cluster0_min_freq
-
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_enter_load
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_enter_load
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_enter_time
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_enter_time
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_exit_load
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_exit_load
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_exit_time
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_exit_time
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_enter_load
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_enter_load
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_enter_time
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_enter_time
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_load
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_load
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_time
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_exit_time
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/mode
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/mode
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/enforced_mode
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/enforced_mode
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/param_index
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/param_index
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/cpu_util
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/cpu_util
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_cluster0_min_freq
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/multi_cluster0_min_freq
-    chown system system /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_cluster0_min_freq
-    chmod 0660 /sys/devices/system/cpu/cpu4/cpufreq/interactive/single_cluster0_min_freq
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/timer_rate
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/timer_rate
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/timer_slack
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/timer_slack
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/min_sample_time
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/target_loads
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/target_loads
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/go_hispeed_load
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/above_hispeed_delay
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/boost
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/boost
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/boostpulse
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/input_boost
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/input_boost
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/boostpulse_duration
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/boostpulse_duration
+    chown system system /sys/devices/system/cpu/cpufreq/interactive/io_is_busy
+    chmod 0660 /sys/devices/system/cpu/cpufreq/interactive/io_is_busy
 
 
     # Change permission for dvfshelper
@@ -220,18 +169,6 @@ on boot
     chmod 0660 /dev/sec-nfc
     chown nfc nfc /dev/sec-nfc
 
-    # KNOX KAP
-    chown system system /dev/knox_kap
-    chmod 0660 /dev/knox_kap
-
-    # MST/NFC Switch
-    chown spay system /dev/mst_ctrl
-    chmod 0660 /dev/mst_ctrl
-
-    #MST Factory Test
-    chown system system /sys/class/mstldo/mst_drv/transmit
-    chmod 0770 /sys/class/mstldo/mst_drv/transmit
-
     # mobicore
     chmod 0660 /dev/s5p-smem
     chown system system /dev/s5p-smem
@@ -248,11 +185,10 @@ on boot
 
     chmod 0660 /sys/class/sec_touchkey/input/enabled
     chown system system /sys/class/sec/sec_touchkey/input/enabled
-	chown system radio /sys/class/sec/sec_touchkey/brightness
-	
-	chmod 0660 /sys/class/sec/sec_epen/input/enabled
-    chown system system /sys/class/sec/sec_epen/input/enabled
+    chown system radio /sys/class/sec/sec_touchkey/brightness
 
+    chmod 0660 /sys/class/sec/sec_epen/input/enabled
+    chown system system /sys/class/sec/sec_epen/input/enabled
 
     # Switch Device
     chown system radio /sys/class/sec/switch/usb_sel
@@ -452,21 +388,9 @@ on boot
 
     copy /system/etc/battery_charging_temp.data /sys/class/power_supply/battery/batt_temp_table
 
-service scs /system/bin/scs
-    class main
-    user system
-    group system
-    oneshot
-
 # MobiCore startup
 service mobicore /system/bin/mcDriverDaemon -r /system/app/FFFFFFFF000000000000000000000001.drbin -r /system/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin -r /system/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
     class core
     user system
     group system
     oneshot
-
-# Sensorhub service
-service sensorhubservice /system/bin/sensorhubservice
-    class main
-    user system
-    group input

@@ -43,7 +43,6 @@ on property:sys.usb.config=mtp
     write /sys/class/android_usb/android0/enable 1
     setprop sys.usb.state ${sys.usb.config}
 
-
 on property:sys.usb.config=mtp,adb
     write /sys/class/android_usb/android0/enable 0
     write /sys/class/android_usb/android0/idVendor 04e8
@@ -298,4 +297,3 @@ on property:sys.usb.config=midi,adb
      write /sys/class/android_usb/android0/enable 1
      start adbd
      setprop sys.usb.state ${sys.usb.config}
-
