@@ -5,4 +5,4 @@ PRODUCT_PACKAGES += \
 
 # samsung's sswap
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/rootdir/sbin/sswap:root/sbin/sswap
+    $(LOCAL_PATH)/ramdisk/external/sswap:root/sbin/sswap

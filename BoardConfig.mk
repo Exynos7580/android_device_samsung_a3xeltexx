@@ -22,7 +22,7 @@ TARGET_OTA_ASSERT_DEVICE := a3xelte, a3xeltexx, a3xelteub, a3xeltedo
 DEVICE_PATH := device/samsung/a3xeltexx
 
 # Include makefiles from board folder
--include $(DEVICE_PATH)/board/*.mk
+-include $(DEVICE_PATH)/configs/board/*.mk
 
 # inherit from the proprietary version
 -include vendor/samsung/a3xeltexx/BoardConfigVendor.mk
