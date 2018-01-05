@@ -14,7 +14,7 @@ on early-boot
     write /proc/sys/net/core/wmem_max 2097152
 
 on init
-    export LD_SHIM_LIBS "/system/bin/gpsd|/system/vendor/lib/libshim_gpsd.so:/system/lib/hw/camera.universal7580.so|/system/lib/libshim_camera.so:/system/lib/libexynoscamera.so|/system/lib/libexynoscamera_shim.so:/system/lib/libandroid_runtime.so|/system/lib/libandroid_runtime_shim.so:/system/bin/gpsd|/system/lib/gpsd_shim.so"
+    export LD_SHIM_LIBS "/system/bin/gpsd|/system/vendor/lib/libshim_gpsd.so:/system/lib/hw/camera.universal7580.so|/system/lib/libshim_camera.so:/system/lib/libexynoscamera.so|/system/lib/libexynoscamera_shim.so:/system/lib/libandroid_runtime.so|/system/lib/libandroid_runtime_shim.so"
     mkdir /preload 0771 system system
 
     # See storage config details at http://source.android.com/tech/storage/
@@ -842,7 +842,7 @@ service gpsd /system/bin/gpsd -c /system/etc/gps.xml
     class main
     user gps
     group system wakelock inet net_raw
-    disabled
+    ioprio be 0
 
 # Logcat
 service logcat_debug /system/bin/logcat -b all -f /data/logcat.txt -v threadtime
@@ -908,10 +908,6 @@ on property:persist.sys.storage_preload=0
 on property:sys.mobicoredaemon.enable=true
     start cs_service
     write /proc/iccc_ready 1
-
-on property:init.svc.bootanim=stopped
-    # start gpsd late to prevent it from changing /data/system
-    start gpsd
 
 service sswap /sbin/sswap -s -f 1024
       class core
