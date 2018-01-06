@@ -1,5 +1,5 @@
 ```
-Copyright (C) 2018 Jan Altensen (Stricted) <info@stricted.net>
+Copyright (C) 2017-2018 Jan Altensen (Stricted) <info@stricted.net>
 Copyright (C) 2018 Victor Lourme (KMXSLR) <victorlourme@vlour.me>
 
 Manifest for syncing: https://github.com/Exynos7580/android_device_samsung_a3xeltexx/wiki/Manifest
