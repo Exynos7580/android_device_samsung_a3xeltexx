@@ -1,6 +1,7 @@
+```
 Copyright (C) 2018 Jan Altensen (Stricted) <info@stricted.net>
 Copyright (C) 2018 Victor Lourme (KMXSLR) <victorlourme@vlour.me>
-```
+
 Manifest for syncing: https://github.com/Exynos7580/android_device_samsung_a3xeltexx/wiki/Manifest
 
 device-tree: a3xeltexx
@@ -22,4 +23,4 @@ specifications:
 - screen: Super AMOLED 720x1080 312ppi
 - gps: GPS + A-GPS + GLONASS
 - sensors: accelerometer / proximity / compass / light 
-
+```
