@@ -1,6 +1,7 @@
 # RIL
 
 PRODUCT_PACKAGES += \
+    libprotobuf-cpp-fl26 \
     libprotobuf-cpp-full \
     modemloader \
     libxml2 \
