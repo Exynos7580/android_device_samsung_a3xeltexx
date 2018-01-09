@@ -16,7 +16,6 @@
 #
 
 LOCAL_PATH := $(call my-dir)
-SAM_ROOT := hardware/samsung
 
 ifneq ($(filter a3xeltexx,$(TARGET_DEVICE)),)
 
