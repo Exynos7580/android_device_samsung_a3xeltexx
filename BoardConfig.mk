@@ -21,6 +21,8 @@ TARGET_OTA_ASSERT_DEVICE := a3xelte, a3xeltexx, a3xelteub, a3xeltedo
 
 DEVICE_PATH := device/samsung/a3xeltexx
 
+USE_COMMON_RIL := true
+
 # Include makefiles from board folder
 -include $(DEVICE_PATH)/configs/board/*.mk
 
