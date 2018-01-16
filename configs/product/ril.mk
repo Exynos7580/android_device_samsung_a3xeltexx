@@ -13,7 +13,8 @@ PRODUCT_PACKAGES += \
     android.hardware.radio@1.0 \
     android.hardware.radio.deprecated@1.0
 
-# cpboot-daemon for modem
+# Copy needed files for radio
 PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/radio/apns-conf.xml:system/etc/apns-conf.xml \
     $(LOCAL_PATH)/configs/radio/cbd:system/bin/cbd \
     $(LOCAL_PATH)/ramdisk/vendor/rild.rc:system/vendor/etc/init/rild.rc
