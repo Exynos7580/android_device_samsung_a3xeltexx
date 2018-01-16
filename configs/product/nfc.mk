@@ -5,10 +5,8 @@ PRODUCT_COPY_FILES += \
 	$(LOCAL_PATH)/configs/nfc/nfcee_access.xml:system/etc/nfcee_access.xml
 
 PRODUCT_PACKAGES += \
-	android.hardware.nfc@1.0-impl-bcm \
-	nfc_nci.bcm2079x.default \
-      	NfcNci \
-      	Tag
+	com.android.nfc_extras \
+	NfcNci \
+	Tag \
+	android.hardware.nfc@1.0-impl
 
-PRODUCT_PROPERTY_OVERRIDES += \
-	ro.nfc.sec_hal=true
