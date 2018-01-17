@@ -61,8 +61,6 @@ service macloader /vendor/bin/macloader
     seclabel u:r:macloader:s0
 
 on property:init.svc.macloader=stopped
-    chown system root /data/.cid.info
-    chmod 0664 /data/.cid.info
     chown system root /data/.rev
     chmod 0664 /data/.rev
 # end of WiFi MFG (TestMode)
