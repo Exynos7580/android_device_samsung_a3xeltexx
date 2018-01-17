@@ -65,3 +65,6 @@ power_supply.wakeup=enable
 
 # Default OMX service to non-Treble
 persist.media.treble_omx=false
+
+# Factory Reset Protection
+ro.frp.pst=/dev/block/platform/13540000.dwmmc0/by-name/PERSISTENT
