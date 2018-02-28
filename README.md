@@ -1,11 +1,11 @@
 ```
 Copyright (C) 2017-2018 Jan Altensen (Stricted) <info@stricted.net>
-Copyright (C) 2018 Victor Lourme (KMXSLR) <victorlourme@vlour.me>
+Copyright (C) 2018 Victor Lourme (l0w) <l0w@protonmail.ch>
 
-Manifest for syncing: https://github.com/Exynos7580/android_device_samsung_a3xeltexx/wiki/Manifest
+Manifest for syncing: https://github.com/Exynos7580/local_manifests
 
 device-tree: a3xeltexx
-Base: Android O (8.1)
+target: Android O / LineageOS 15.1 (8.1)
 type: phone
 license: Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
 
