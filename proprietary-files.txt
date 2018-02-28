@@ -130,11 +130,9 @@ lib/libsec-ril-dsds.so
 
 ### Sensors
 lib/hw/sensors.universal7580.so
-vendor/lib/libyasalgo.so
-vendor/lib/libwvm.so
-vendor/lib/libwvdrm_L1.so
-vendor/lib/libWVStreamControlAPI_L1.so
+vendor/lib/libyasalgo.so:lib/libyasalgo.so
 lib/libsensorservice.so
+lib/libsensorlistener.so
 
 ### DRM
 lib/liboemcrypto.so
