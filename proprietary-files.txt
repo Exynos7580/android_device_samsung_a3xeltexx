@@ -1,7 +1,30 @@
-### Bluetooth
+#
+# Copyright 2016 The CyanogenMod Project
+# Copyright 2017-2018 The LineageOS Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+###################
+# Bluetooth
+###################
+
 vendor/firmware/bcm43438A1_V0051.0217.hcd
 
-### Camera
+###################
+# Camera
+###################
+
 cameradata/datapattern_420sp.yuv
 cameradata/datapattern_front_420sp.yuv
 lib/hw/camera.universal7580.so
@@ -9,15 +32,18 @@ lib/libexynoscamera.so
 vendor/firmware/setfile_3l2.bin
 vendor/firmware/setfile_5e3.bin
 
-### Media
-# S5P Multi Format Codec
-vendor/firmware/mfc_fw.bin
+###################
+# Graphics / Media
+###################
 
-# Image subsystem
+vendor/firmware/mfc_fw.bin
 vendor/firmware/fimc_is_fd.bin
 vendor/firmware/fimc_is_fw2_3l2.bin
 
-### Mobicore
+###################
+# Mobicore
+###################
+
 app/020a0000000000000000000000000000.drbin
 app/FFFFFFFF000000000000000000000001.drbin
 app/mcRegistry/00060308060501020000000000000000.tlbin
@@ -25,12 +51,12 @@ app/mcRegistry/02010000080300030000000000000000.tlbin
 app/mcRegistry/07010000000000000000000000000000.tlbin
 app/mcRegistry/07060000000000000000000000000000.tlbin
 app/mcRegistry/08130000000000000000000000000000.tlbin
+app/mcRegistry/ffffffff000000000000000000000004.tlbin
+app/mcRegistry/ffffffff000000000000000000000005.tlbin
 app/mcRegistry/ffffffff00000000000000000000000a.tlbin
 app/mcRegistry/ffffffff00000000000000000000000c.tlbin
 app/mcRegistry/ffffffff00000000000000000000000d.tlbin
 app/mcRegistry/ffffffff00000000000000000000000f.tlbin
-app/mcRegistry/ffffffff000000000000000000000004.tlbin
-app/mcRegistry/ffffffff000000000000000000000005.tlbin
 app/mcRegistry/ffffffff000000000000000000000012.tlbin
 app/mcRegistry/ffffffff000000000000000000000013.tlbin
 app/mcRegistry/ffffffff000000000000000000000016.tlbin
@@ -38,13 +64,65 @@ app/mcRegistry/ffffffff000000000000000000000017.tlbin
 app/mcRegistry/ffffffff000000000000000000000019.tlbin
 app/mcRegistry/ffffffff000000000000000000000021.tlbin
 app/mcRegistry/ffffffff000000000000000000000041.tlbin
-app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
 app/mcRegistry/ffffffffd00000000000000000000004.tlbin
+app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
 app/mcRegistry/ffffffffd00000000000000000000016.tlbin
-app/mcRegistry/FFFFFFFFD00000000000000000000016.tlbin
 app/mcRegistry/fffffffff0000000000000000000001e.tlbin
+bin/mcDriverDaemon
+lib/libMcClient.so
+lib/libMcRegistry.so
 
-### Noise supppression
+###################
+# Radio
+###################
+
+lib/libsec-ril.so
+lib/libsec-ril-dsds.so
+
+###################
+# Sensors
+###################
+
+lib/hw/sensors.universal7580.so
+vendor/lib/libyasalgo.so:lib/libyasalgo.so
+lib/libsensorservice.so
+
+###################
+# Widevine
+###################
+
+vendor/lib/libwvm.so
+vendor/lib/libwvdrm_L1.so
+vendor/lib/libWVStreamControlAPI_L1.so
+
+###################
+# DRM
+###################
+
+vendor/lib/mediadrm/libdrmclearkeyplugin.so
+
+###################
+# Wi-Fi
+###################
+
+etc/wifi/bcmdhd_apsta.bin
+etc/wifi/bcmdhd_mfg.bin
+etc/wifi/bcmdhd_sta.bin
+etc/wifi/nvram_mfg.txt
+etc/wifi/nvram_net.txt
+
+###################
+# NFC
+###################
+
+etc/sec_s3fwrn5s_rfreg.bin
+lib/hw/nfc_nci.universal7580.so
+vendor/firmware/sec_s3fwrn5s_firmware.bin
+
+###################
+# NXP
+###################
+
 vendor/etc/nxp/BargeIn/Tx_ControlParams_WIDEBAND_ANALOG_DOCK.txt
 vendor/etc/nxp/BargeIn/Tx_ControlParams_WIDEBAND_BLUETOOTH_SCO_HEADSET.txt
 vendor/etc/nxp/BargeIn/Tx_ControlParams_WIDEBAND_EARPIECE.txt
@@ -123,30 +201,3 @@ vendor/etc/nxp/mVoIPSec/Tx_ControlParams_WIDEBAND_EARPIECE.txt
 vendor/etc/nxp/mVoIPSec/Tx_ControlParams_WIDEBAND_SPEAKER.txt
 vendor/etc/nxp/mVoIPSec/Tx_ControlParams_WIDEBAND_WIRED_HEADPHONE.txt
 vendor/etc/nxp/mVoIPSec/Tx_ControlParams_WIDEBAND_WIRED_HEADSET.txt
-
-### Radio
-lib/libsec-ril.so
-lib/libsec-ril-dsds.so
-
-### Sensors
-lib/hw/sensors.universal7580.so
-vendor/lib/libyasalgo.so:lib/libyasalgo.so
-lib/libsensorservice.so
-lib/libsensorlistener.so
-
-### DRM
-lib/liboemcrypto.so
-lib/libdrmdecrypt.so
-lib/drm/libdrmwvmplugin.so
-
-### Wi-Fi
-etc/wifi/bcmdhd_apsta.bin
-etc/wifi/bcmdhd_mfg.bin
-etc/wifi/bcmdhd_sta.bin
-etc/wifi/nvram_mfg.txt
-etc/wifi/nvram_net.txt
-
-### NFC
-etc/sec_s3fwrn5s_rfreg.bin
-lib/hw/nfc_nci.universal7580.so
-vendor/firmware/sec_s3fwrn5s_firmware.bin
