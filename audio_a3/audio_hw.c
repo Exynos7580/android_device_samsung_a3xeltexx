@@ -23,8 +23,8 @@
 
 
 #define LOG_TAG "audio_hw_primary"
-//#define LOG_NDEBUG 0
-//#define ALOG_TRACE 1
+#define LOG_NDEBUG 0
+#define ALOG_TRACE 1
 
 #include <errno.h>
 #include <pthread.h>
@@ -319,14 +319,31 @@ const struct string_to_enum out_channels_name_to_enum_table[] = {
     STRING_TO_ENUM(AUDIO_CHANNEL_OUT_7POINT1),
 };
 
-static int get_output_device_id(audio_devices_t device)
+static int get_output_device_id(struct audio_device *adev, audio_devices_t device)
 {
+    audio_mode_t mode = adev->mode;
 
-    ALOGV("%s: enter: get_output   devices(%#x)", __func__, device);
+    ALOGV("%s: enter: output device(%#x), mode(%d)", __func__, device, mode);
     if (device == AUDIO_DEVICE_NONE ||
         device & AUDIO_DEVICE_BIT_IN) {
         ALOGV("%s: Invalid output devices (%#x)", __func__, device);
         return OUT_DEVICE_NONE;
+    }
+
+
+
+
+    if (mode == AUDIO_MODE_IN_CALL) {
+        if (device & AUDIO_DEVICE_OUT_WIRED_HEADSET) {
+            return OUT_DEVICE_HEADSET;
+	} else if (device & AUDIO_DEVICE_OUT_WIRED_HEADPHONE) {
+            return OUT_DEVICE_HEADPHONE;
+        } else if (device & AUDIO_DEVICE_OUT_SPEAKER) {
+            return OUT_DEVICE_SPEAKER;
+        } else if (device & AUDIO_DEVICE_OUT_EARPIECE) {
+            return AUDIO_DEVICE_OUT_EARPIECE;
+        } else 
+            return OUT_DEVICE_NONE
     }
 
 
@@ -542,7 +559,7 @@ static int set_hdmi_channels(struct audio_device *adev, int channels) {
 
 static bool route_changed(struct audio_device *adev)
 {
-    int output_device_id = get_output_device_id(adev->out_device);
+    int output_device_id = get_output_device_id(adev, adev->out_device);
     int input_source_id = get_input_source_id(adev->input_source, adev->wb_amr);
     int new_route_id;
 
@@ -554,7 +571,7 @@ static bool route_changed(struct audio_device *adev)
 
 static void select_devices(struct audio_device *adev)
 {
-    int output_device_id = get_output_device_id(adev->out_device);
+    int output_device_id = get_output_device_id(adev, adev->out_device);
     int input_source_id = get_input_source_id(adev->input_source, adev->wb_amr);
     const char *output_route = NULL;
     const char *input_route = NULL;
