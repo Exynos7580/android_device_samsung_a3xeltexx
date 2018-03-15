@@ -259,9 +259,14 @@
     -->
     <bool name="config_enableWifiDisplay">true</bool>
 
-     <!-- Values for GPS configuration -->
-     <string-array translatable="false" name="config_gpsParameters">
+    <!-- Values for GPS configuration -->
+    <string-array translatable="false" name="config_gpsParameters">
         <item>XTRA_SERVER_1=http://gllto1.glpals.com/4day/v3/latest/lto2.dat</item>
         <item>XTRA_SERVER_2=http://gllto2.glpals.com/4day/v3/latest/lto2.dat</item>
-     </string-array>
+        <item>NTP_SERVER=north-america.pool.ntp.org</item>
+        <item>SUPL_HOST=supl.google.com</item>
+        <item>SUPL_PORT=7275</item>
+        <item>SUPL_MODE=1</item>
+    </string-array>
+
 </resources>
