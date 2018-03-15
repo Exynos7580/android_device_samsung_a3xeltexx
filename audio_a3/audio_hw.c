@@ -337,13 +337,13 @@ static int get_output_device_id(struct audio_device *adev, audio_devices_t devic
         if (device & AUDIO_DEVICE_OUT_WIRED_HEADSET) {
             return OUT_DEVICE_HEADSET;
 	} else if (device & AUDIO_DEVICE_OUT_WIRED_HEADPHONE) {
-            return OUT_DEVICE_HEADPHONE;
+            return OUT_DEVICE_HEADPHONES;
         } else if (device & AUDIO_DEVICE_OUT_SPEAKER) {
             return OUT_DEVICE_SPEAKER;
         } else if (device & AUDIO_DEVICE_OUT_EARPIECE) {
             return AUDIO_DEVICE_OUT_EARPIECE;
         } else 
-            return OUT_DEVICE_NONE
+            return OUT_DEVICE_NONE;
     }
 
 
