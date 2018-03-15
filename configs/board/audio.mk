@@ -19,4 +19,4 @@
 # Audio
 #####################
 
-TARGET_AUDIOHAL_VARIANT := samsung
+TARGET_AUDIOHAL_VARIANT := a3xeltexx

@@ -1,10 +1,3 @@
-#
-# Copyright (C) 2017 Victor Lourme <contact@zeroside.co>
-#
-# Radio Interface Layer
-# Ramdisk Init
-#
-
 # Radio daemon for SIM 1
 service ril-daemon /vendor/bin/hw/rild -c 1 -l ${rild.libpath}
     class main
@@ -24,7 +17,7 @@ service ril-daemon1 /vendor/bin/hw/rild -c 2 -l ${rild.libpath2}
     user radio
     group radio cache inet misc audio sdcard_r sdcard_rw log vpn system readproc wakelock
     capabilities BLOCK_SUSPEND NET_ADMIN NET_RAW
-	disabled
+    disabled
     onrestart restart cpboot-daemon
 
 on property:persist.sys.cpboot=disable
