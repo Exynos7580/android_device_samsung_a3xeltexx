@@ -343,32 +343,23 @@ static int get_output_device_id(struct audio_device *adev, audio_devices_t devic
         } else if (device & AUDIO_DEVICE_OUT_EARPIECE) {
             return AUDIO_DEVICE_OUT_EARPIECE;
         } else 
-            return OUT_DEVICE_NONE;
+            return AUDIO_DEVICE_OUT_EARPIECE;
     }
 
 
 
     if (popcount(device) == 2) {
-        if ((device == (AUDIO_DEVICE_OUT_SPEAKER |
-                        AUDIO_DEVICE_OUT_WIRED_HEADSET)) ||
-            (device == (AUDIO_DEVICE_OUT_SPEAKER |
-                        AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
+       if (device == (AUDIO_DEVICE_OUT_WIRED_HEADPHONE |
+                        AUDIO_DEVICE_OUT_SPEAKER)) {
             return OUT_DEVICE_SPEAKER_AND_HEADSET;
-	} else if (device == (AUDIO_DEVICE_OUT_SPEAKER |
-                              AUDIO_DEVICE_OUT_EARPIECE)) {
-            return OUT_DEVICE_SPEAKER_AND_EARPIECE;
+        } else if (device == (AUDIO_DEVICE_OUT_WIRED_HEADSET |
+                               AUDIO_DEVICE_OUT_SPEAKER)) {
+            return OUT_DEVICE_SPEAKER_AND_HEADSET;
         }
-          else if (device == (AUDIO_DEVICE_OUT_EARPIECE | AUDIO_DEVICE_OUT_BLUETOOTH_SCO)) {
-            return OUT_DEVICE_BT_SCO;
-	} 
-          else if (device == (AUDIO_DEVICE_OUT_EARPIECE | 0x20)) {
-            return OUT_DEVICE_BT_SCO;
-        }
-
-        else 
+          else
             return OUT_DEVICE_NONE;
     }
-    
+
 
     if (popcount(device) != 1)
         return OUT_DEVICE_NONE;
