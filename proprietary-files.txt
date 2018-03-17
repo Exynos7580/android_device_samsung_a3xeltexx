@@ -40,6 +40,14 @@ vendor/firmware/mfc_fw.bin
 vendor/firmware/fimc_is_fd.bin
 vendor/firmware/fimc_is_fw2_3l2.bin
 
+
+###scaler csc
+lib/libexynosscaler.so
+lib/libexynosgscaler.so
+lib/libcsc.so
+lib/libexynosutils.so
+
+
 ###################
 # Mobicore
 ###################
