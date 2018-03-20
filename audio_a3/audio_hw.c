@@ -938,21 +938,19 @@ static void start_comm_call(struct audio_device *adev)
 }
 
 
-static void start_call(struct audio_device *adev)
+static void start_call(struct audio_device *adev, bool first)
 {
 
     if (adev->in_call) return;
 
     adev->in_call = true;
 
-/*
-    if (adev->out_device == AUDIO_DEVICE_NONE &&
-        adev->in_device == AUDIO_DEVICE_NONE) {
-        ALOGV("%s: No device selected, use earpiece as the default",
-              __func__);
+
+    if (first) {
+        ALOGV("%s: While starting call - use EARPIECE for default output", __func__);
         adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     }
-*/
+
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
     if (adev->out_device & 0x70) {
@@ -1041,6 +1039,8 @@ static void adev_set_wb_amr_callback(void *data, int enable)
 
     pthread_mutex_lock(&adev->lock);
 
+    ALOGV("*** %s: SND_DBG = wide band!", __func__);
+
     if (adev->wb_amr != enable) {
         adev->wb_amr = enable;
 
@@ -1051,7 +1051,7 @@ static void adev_set_wb_amr_callback(void *data, int enable)
                   enable ? "Turn on" : "Turn off");
 
             stop_call(adev);
-            start_call(adev);
+            start_call(adev,0);
         }
     }
 
@@ -1633,13 +1633,13 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
              * modem audio path.
              */
             if ((adev->mode == AUDIO_MODE_IN_CALL) && !adev->in_call) {
-                start_call(adev);
+                start_call(adev,0);
             } 
             
             if (adev->in_call) {
 //                if (route_changed(adev)) {
                     stop_call(adev);
-                    start_call(adev);
+                    start_call(adev,0);
 //                }
             }
             else  {
@@ -2475,7 +2475,7 @@ static int adev_set_mode(struct audio_hw_device *dev, audio_mode_t mode)
 
     if (adev->mode == AUDIO_MODE_IN_CALL) {
         ALOGV("*** %s: Entering IN_CALL mode", __func__);
-        start_call(adev);
+        start_call(adev,1);
     }
     else if (adev->mode == AUDIO_MODE_IN_COMMUNICATION)
     {

@@ -20,6 +20,13 @@
 ###################
 
 vendor/firmware/bcm43438A1_V0051.0217.hcd
+vendor/lib/libbt-vendor.so
+etc/bluetooth/iop_device_list.conf
+etc/bluetooth/av_performance.conf
+etc/bluetooth/iop_bt.db
+etc/bluetooth/bt_did.conf
+etc/bluetooth/bt_stack.conf
+
 
 ###################
 # Camera
@@ -39,7 +46,7 @@ vendor/firmware/setfile_5e3.bin
 vendor/firmware/mfc_fw.bin
 vendor/firmware/fimc_is_fd.bin
 vendor/firmware/fimc_is_fw2_3l2.bin
-
+vendor/firmware/ram_patch.fw
 
 ###scaler csc
 lib/libexynosscaler.so
