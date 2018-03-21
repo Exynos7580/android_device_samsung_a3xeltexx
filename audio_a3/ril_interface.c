@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "audio_hw_primary"
+#define LOG_TAG "audio_hw_primary-ril"
 /*#define LOG_NDEBUG 0*/
 
 #include <errno.h>
@@ -170,7 +170,7 @@ int ril_set_call_volume(struct ril_handle *ril,
 
     rc = SetCallVolume(ril->client,
                        sound_type,
-                       (int)(volume * ril->volume_steps_max));
+                       (volume * ril->volume_steps_max+0.1));
     if (rc != 0) {
         ALOGE("%s: SetCallVolume() failed, rc=%d", __func__, rc);
     }

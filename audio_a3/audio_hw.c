@@ -6,7 +6,7 @@
  *               Guillaume "XpLoDWilD" Lesniak <xplodgui@gmail.com>
  * Copyright (c) 2015-2017 Andreas Schneider <asn@cryptomilk.org>
  * Copyright (c) 2015-2017 Christopher N. Hesse <raymanfx@gmail.org>
- * Copyright (c) 2017 Evgeniy Stenkin <stenkinevgeniy@gmail.com>
+ * Copyright (c) 2017-2018 Evgeniy Stenkin <stenkinevgeniy@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
