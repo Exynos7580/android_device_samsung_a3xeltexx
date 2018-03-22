@@ -555,8 +555,8 @@ static bool route_changed(struct audio_device *adev)
     int new_route_id;
 
     new_route_id = (1 << (input_source_id + OUT_DEVICE_CNT)) + (1 << output_device_id);
-    return new_route_id != adev->cur_route_id;
     ALOGV("%s SOUND_DBG need out device - %#x, use out device - %#x", __func__,adev->out_device , output_device_id);
+    return new_route_id != adev->cur_route_id;
 
 }
 
@@ -573,10 +573,12 @@ static void select_devices(struct audio_device *adev)
 
 
 
+    ALOGV("*** %s: SND_DBG select_devices enter++++, adev-mode = %d", __func__, adev->mode);
+
     new_route_id = (1 << (input_source_id + OUT_DEVICE_CNT)) + (1 << output_device_id);
     if (new_route_id == adev->cur_route_id) {
-        ALOGV("*** %s: Routing hasn't changed, leaving function.", __func__);
-        return;
+        ALOGV("*** %s: Routing hasn't changed.", __func__);
+        //return;
     }
 
 
@@ -941,27 +943,30 @@ static void start_comm_call(struct audio_device *adev)
 static void start_call(struct audio_device *adev, bool first)
 {
 
+
+    ALOGV("%s: SND_DBG start_call enter+++", __func__);
+
     if (adev->in_call) return;
 
     adev->in_call = true;
 
 
-    if (first) {
-        ALOGV("%s: While starting call - use EARPIECE for default output", __func__);
-        adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
-    }
+    //if (first) {
+    //    ALOGV("%s: While starting call - use EARPIECE for default output", __func__);
+    //    adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
+    //}
 
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
-    if (adev->out_device & 0x70) {
-       start_voice_call(adev);
+    //if (adev->out_device & 0x70) {
+    //   start_voice_call(adev);
+    //   select_devices(adev);
+    //
+    //}
+    //else {
        select_devices(adev);
-
-    }
-    else {
-       select_devices(adev);
        start_voice_call(adev);
-    }
+    //}
 
     /* FIXME: Turn on two mic control for earpiece and speaker */
     switch (adev->out_device) {
@@ -994,6 +999,8 @@ static void start_call(struct audio_device *adev, bool first)
     ril_set_sound_clock_mode(&adev->ril,3);
 
     ril_set_call_clock_sync(&adev->ril, SOUND_CLOCK_START);
+
+    ALOGV("%s: SND_DBG start_call enter---", __func__);
 
 }
 
@@ -1163,7 +1170,7 @@ static int start_output_stream(struct stream_out *out)
     }
 
     /* in call routing must go through set_parameters */
-    if (!adev->in_call && !adev->in_comm_call) {
+    if (adev->mode != AUDIO_MODE_IN_CALL  && !adev->in_comm_call) {
         adev->out_device |= out->device;
         select_devices(adev);
     }
@@ -1212,13 +1219,12 @@ static int start_input_stream(struct stream_in *in)
     in->buffer_size = 0;
 
     /* in call routing must go through set_parameters */
-    if (!adev->in_call) {
+    if (adev->mode != AUDIO_MODE_IN_CALL) {
         adev->input_source = in->input_source;
         adev->in_device = in->device;
         adev->in_channel_mask = in->channel_mask;
 
-
-       select_devices(adev);
+        select_devices(adev);
     }
 
 
@@ -1491,7 +1497,7 @@ static void do_out_standby(struct stream_out *out)
 
         out->standby = true;
 
-        if (adev->in_call) {
+        if (adev->mode == AUDIO_MODE_IN_CALL) {
             ALOGV("%s: after pcm_close skip standby mode!! in IN_CALL", __func__);
             return;
         }
@@ -1913,6 +1919,8 @@ static int in_set_format(struct audio_stream *stream __unused,
 /* must be called with in stream and hw device mutex locked */
 static void do_in_standby(struct stream_in *in)
 {
+
+    
     struct audio_device *adev = in->dev;
 
     if (!in->standby) {
