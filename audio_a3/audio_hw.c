@@ -229,6 +229,7 @@ struct audio_device {
     bool bluetooth_nrec;
     bool bt_wbs;
     bool wb_amr;
+    bool cp_11022;
     bool two_mic_control;
     bool two_mic_disabled;
 
@@ -1046,7 +1047,7 @@ static void adev_set_wb_amr_callback(void *data, int enable)
 
     pthread_mutex_lock(&adev->lock);
 
-    ALOGV("*** %s: SND_DBG = wide band!", __func__);
+    ALOGV("*** %s: SND_DBG = WB AMR CALLBACK -!", __func__);
 
     if (adev->wb_amr != enable) {
         adev->wb_amr = enable;
@@ -1064,6 +1065,43 @@ static void adev_set_wb_amr_callback(void *data, int enable)
 
     pthread_mutex_unlock(&adev->lock);
 }
+
+static void adev_set_11022_callback(void *data, int clock_status)
+{
+    struct audio_device *adev = (struct audio_device *)data;
+
+    pthread_mutex_lock(&adev->lock);
+
+    ALOGV("*** %s: SND_DBG = 11022 CALLBACK ! adev-mode=%d data=%d  clock_status=%d", __func__, adev->mode,(int)(data)&1,clock_status);
+
+    if (adev->cp_11022 != clock_status) {
+        adev->cp_11022 = clock_status;
+
+
+    if (clock_status) {
+
+    	if (!adev->in_call) {
+		ALOGV("*** %s: SND_DBG = start_call by cp clock status 1 ", __func__);
+		stop_call(adev);
+		start_call(adev,1);
+	}
+    /* reopen the modem PCMs at the new rate
+        if (adev->in_call && route_changed(adev)) {
+            ALOGV("%s: %s Incall Wide Band support",
+                  __func__,
+                  enable ? "Turn on" : "Turn off");
+
+            stop_call(adev);
+            start_call(adev,0);
+        }
+    */
+	}
+    }
+    
+    pthread_mutex_unlock(&adev->lock);
+}
+
+
 
 static void adev_set_call_audio_path(struct audio_device *adev)
 {
@@ -2733,9 +2771,32 @@ static int adev_open(const hw_module_t* module, const char* name,
             adev->wb_amr = true;
         ALOGV("%s: Forcing voice config: %s", __func__, voice_config);
     } else {
+
+            /* register callback for wideband AMR setting */
+            ret = ril_set_wb_amr_callback(&adev->ril,
+                                          adev_set_wb_amr_callback,
+                                          (void *)adev);
+            if (ret != 0) {
+                ALOGE("%s: Failed to register WB_AMR callback", __func__);
+            }
+
+            ALOGV("%s: Registered WB_AMR callback", __func__);
+
         /* register callback for wideband AMR setting */
-        ril_register_set_wb_amr_callback(adev_set_wb_amr_callback, (void *)adev);
+        //ril_register_set_wb_amr_callback(adev_set_wb_amr_callback, (void *)adev);
     }
+
+    // samsung 11022 unsol response - modem send this when incomming? starting
+
+    ret = ril_set_11022_callback(&adev->ril, adev_set_11022_callback, (void *)adev);
+
+    if (ret != 0) {
+        ALOGV("%s: Failed to register 11022 callback", __func__);
+    }
+    else
+        ALOGV("%s: Registered 11022 callback", __func__);
+
+
 
     /* Two mic control */
     if (property_get_bool("audio_hal.disable_two_mic", false))

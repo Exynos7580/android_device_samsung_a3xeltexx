@@ -20,6 +20,10 @@
 #include <telephony/ril.h>
 #include "secril-client.h"
 
+
+typedef void (*ril_wb_amr_callback)(void *data, int wb_amr_type);
+typedef void (*ril_11022_callback)(void *data, int cp_11022_type);
+
 struct ril_handle
 {
     void *client;
@@ -52,5 +56,13 @@ int ril_set_two_mic_control(struct ril_handle *ril,
                             enum __TwoMicSolReport report);
 
 void ril_register_set_wb_amr_callback(void *function, void *data);
+
+int ril_set_11022_callback(struct ril_handle *ril,
+                            ril_wb_amr_callback fn,
+                            void *data);
+int ril_set_wb_amr_callback(struct ril_handle *ril,
+                            ril_wb_amr_callback fn,
+                            void *data);
+
 
 #endif
