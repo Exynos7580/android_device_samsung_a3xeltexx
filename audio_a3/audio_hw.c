@@ -334,17 +334,33 @@ static int get_output_device_id(struct audio_device *adev, audio_devices_t devic
 
 
 
+
     if (mode == AUDIO_MODE_IN_CALL) {
-        if (device & AUDIO_DEVICE_OUT_WIRED_HEADSET) {
-            return OUT_DEVICE_HEADSET;
-	} else if (device & AUDIO_DEVICE_OUT_WIRED_HEADPHONE) {
-            return OUT_DEVICE_HEADPHONES;
-        } else if (device & AUDIO_DEVICE_OUT_SPEAKER) {
+    switch (device) {
+        case AUDIO_DEVICE_OUT_SPEAKER:
             return OUT_DEVICE_SPEAKER;
-        } else if (device & AUDIO_DEVICE_OUT_EARPIECE) {
+        case AUDIO_DEVICE_OUT_EARPIECE:
+            return OUT_DEVICE_EARPIECE;
+        case AUDIO_DEVICE_OUT_WIRED_HEADSET:
+            return OUT_DEVICE_HEADSET;
+        case AUDIO_DEVICE_OUT_WIRED_HEADPHONE:
+            return OUT_DEVICE_HEADPHONES;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_SCO:
+            return OUT_DEVICE_BT_SCO;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET:
+            return OUT_DEVICE_BT_SCO_HEADSET_OUT;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_CARKIT:
+            return OUT_DEVICE_BT_SCO_CARKIT;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP:
+            return OUT_DEVICE_BT_SCO;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES:
+            return OUT_DEVICE_BT_SCO_HEADSET_OUT;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER:
+            return OUT_DEVICE_BT_SCO_HEADSET_OUT;
+
+        default:
             return AUDIO_DEVICE_OUT_EARPIECE;
-        } else 
-            return AUDIO_DEVICE_OUT_EARPIECE;
+    	}
     }
 
 
@@ -952,10 +968,11 @@ static void start_call(struct audio_device *adev, bool first)
     adev->in_call = true;
 
 
-    //if (first) {
-    //    ALOGV("%s: While starting call - use EARPIECE for default output", __func__);
-    //    adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
-    //}
+    if (first) {
+        ALOGV("%s: While starting call - use EARPIECE for default output", __func__);
+        adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
+    }
+
 
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
@@ -965,8 +982,8 @@ static void start_call(struct audio_device *adev, bool first)
     //
     //}
     //else {
-       select_devices(adev);
-       start_voice_call(adev);
+    select_devices(adev);
+    start_voice_call(adev);
     //}
 
     /* FIXME: Turn on two mic control for earpiece and speaker */
@@ -1033,7 +1050,7 @@ static void stop_call(struct audio_device *adev)
               adev->out_device,
               adev->input_source);
 
-        //select_devices(adev);
+        select_devices(adev);
     }
 
 
@@ -1165,6 +1182,7 @@ static int start_output_stream(struct stream_out *out)
     else 
        pcm_config = &out->config; 
 
+/*
 
     if (out == adev->outputs[OUTPUT_HDMI]) {
         force_non_hdmi_out_standby(adev);
@@ -1173,6 +1191,7 @@ static int start_output_stream(struct stream_out *out)
         return 0;
     }
 
+*/
     out->disabled = false;
 
     if (out->device & (AUDIO_DEVICE_OUT_SPEAKER |
@@ -1208,10 +1227,10 @@ static int start_output_stream(struct stream_out *out)
     }
 
     /* in call routing must go through set_parameters */
-    if (adev->mode != AUDIO_MODE_IN_CALL  && !adev->in_comm_call) {
-        adev->out_device |= out->device;
+    //if (adev->mode != AUDIO_MODE_IN_CALL  && !adev->in_comm_call) {
+        adev->out_device = out->device;
         select_devices(adev);
-    }
+    //}
 
     if (out->device & AUDIO_DEVICE_OUT_AUX_DIGITAL) {
         set_hdmi_channels(adev, out->config.channels);
@@ -1676,11 +1695,11 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
              * If we switch from earpiece to speaker, we need to fully reset the
              * modem audio path.
              */
-            if ((adev->mode == AUDIO_MODE_IN_CALL) && !adev->in_call) {
-                start_call(adev,0);
-            } 
+            //if ((adev->mode == AUDIO_MODE_IN_CALL) && !adev->in_call) {
+            //    start_call(adev,0);
+            //} 
             
-            if (adev->in_call) {
+            if (adev->mode == AUDIO_MODE_IN_CALL) {
 //                if (route_changed(adev)) {
                     stop_call(adev);
                     start_call(adev,0);
@@ -2218,7 +2237,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
                                    const char *address __unused)
 {
     struct audio_device *adev = (struct audio_device *)dev;
-    struct stream_out *out;
+    struct stream_out *out = NULL;
     int ret;
     enum output_type type;
 
@@ -2232,11 +2251,9 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     out->supported_channel_masks[0] = AUDIO_CHANNEL_OUT_STEREO;
     out->channel_mask = AUDIO_CHANNEL_OUT_STEREO;
 
-
-    if (devices == AUDIO_DEVICE_NONE){
+    if (devices == AUDIO_DEVICE_NONE)
         devices = AUDIO_DEVICE_OUT_SPEAKER;
 
-    }
     out->flags = flags;
     out->device = devices;
 
