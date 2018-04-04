@@ -55,6 +55,13 @@ void property_override(char const prop[], char const value[])
 		__system_property_add(prop, strlen(prop), value, strlen(value));
 }
 
+void property_override_dual(char const system_prop[],
+		char const vendor_prop[], char const value[])
+{
+	property_override(system_prop, value);
+	property_override(vendor_prop, value);
+}
+
 void set_sim_info()
 {
 	const char *simslot_count_path = "/proc/simslot_count";
@@ -86,34 +93,34 @@ void vendor_load_properties()
 	if (bootloader.find("A310F") != std::string::npos) {
 
 	    /* SM-A310F */
-        property_override("ro.build.fingerprint", "samsung/a3xeltexx/a3xelte:7.0/NRD90M/A310FXXU3CQL3:user/release-keys");
+        property_override_dual("ro.build.fingerprint", "ro.vendor.build.fingerprint", "samsung/a3xeltexx/a3xelte:7.0/NRD90M/A310FXXU3CQL3:user/release-keys");
         property_override("ro.build.description", "a3xeltexx-user 7.0 NRD90M A310FXXU3CQL3 test-keys");
-        property_override("ro.product.model", "SM-A310F");
-        property_override("ro.product.device", "a3xeltexx");
+        property_override_dual("ro.product.model", "ro.vendor.product.model", "SM-A310F");
+        property_override_dual("ro.product.device", "ro.vendor.product.device", "a3xeltexx");
 
     } else if (bootloader.find("A310M") != std::string::npos) {
 
 	    /* SM-A310M */
-        property_override("ro.build.fingerprint", "samsung/a3xelteub/a3xelte:7.0/NRD90M/A310MUBU2CQL5:user/release-keys");
+        property_override_dual("ro.build.fingerprint", "ro.vendor.build.fingerprint", "samsung/a3xelteub/a3xelte:7.0/NRD90M/A310MUBU2CQL5:user/release-keys");
         property_override("ro.build.description", "a3xelteub-user 7.0 NRD90M A310MUBU2CQL5 release-keys");
-        property_override("ro.product.model", "SM-A310M");
-        property_override("ro.product.device", "a3xelteub");
+        property_override_dual("ro.product.model", "ro.vendor.product.model", "SM-A310M");
+        property_override_dual("ro.product.device", "ro.vendor.product.device", "a3xelteub");
 
     } else if (bootloader.find("A310N0") != std::string::npos) {
 
 	    /* SM-A310N0 */
-        property_override("ro.build.fingerprint", "samsung/a3xeltekx/a3xeltekx:7.0/NRD90M/A310N0KOU1CQL2:user/release-keys");
+        property_override_dual("ro.build.fingerprint", "ro.vendor.build.fingerprint", "samsung/a3xeltekx/a3xeltekx:7.0/NRD90M/A310N0KOU1CQL2:user/release-keys");
         property_override("ro.build.description", "a3xeltekx-user 7.0 NRD90M A310N0KOU1CQL2 release-keys");
-        property_override("ro.product.model", "SM-A310N0");
-        property_override("ro.product.device", "a3xeltekx");
+        property_override_dual("ro.product.model", "ro.vendor.product.model", "SM-A310N0");
+        property_override_dual("ro.product.device", "ro.vendor.product.device", "a3xeltekx");
 
     } else {
 
 	    /* SM-A310Y */
-        property_override("ro.build.fingerprint", "samsung/a3xeltedo/a3xelte:7.0/NRD90M/A310YDVU3CQK1:user/release-keys");
+        property_override_dual("ro.build.fingerprint", "ro.vendor.build.fingerprint", "samsung/a3xeltedo/a3xelte:7.0/NRD90M/A310YDVU3CQK1:user/release-keys");
         property_override("ro.build.description", "a3xeltedo-user 7.0 NRD90M A310YDVU3CQK1 release-keys");
-        property_override("ro.product.model", "SM-A310Y");
-        property_override("ro.product.device", "a3xeltedo");
+        property_override_dual("ro.product.model", "ro.vendor.product.model", "SM-A310Y");
+        property_override_dual("ro.product.device", "ro.vendor.product.device", "a3xeltedo");
 
     }
 
