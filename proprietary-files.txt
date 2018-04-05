@@ -73,13 +73,6 @@ lib/libMcClient.so
 lib/libMcRegistry.so
 
 ###################
-# Radio
-###################
-
-lib/libsec-ril.so
-lib/libsec-ril-dsds.so
-
-###################
 # Sensors
 ###################
 
