@@ -206,6 +206,7 @@ static char *camera_fixup_getparams(int __attribute__((unused)) id,
     params.dump();
 
     params.set(CameraParameters::KEY_SUPPORTED_SCENE_MODES, "auto");
+    params.set(CameraParameters::KEY_FOCUS_MODE, "continuous-picture");
 
     const char *recordHint = params.get(CameraParameters::KEY_RECORDING_HINT);
     bool videoMode = recordHint ? !strcmp(recordHint, "true") : false;
@@ -481,25 +482,20 @@ static int camera_auto_focus(struct camera_device *device)
 
     ALOGV("%s->%08X->%08X", __FUNCTION__, (uintptr_t)device,
             (uintptr_t)(((wrapper_camera_device_t*)device)->vendor));
-
-    return VENDOR_CALL(device, auto_focus);
+    
+    VENDOR_CALL(device, auto_focus);
+    return 0;
 }
 
 static int camera_cancel_auto_focus(struct camera_device *device)
 {
     if (!device)
         return -EINVAL;
-    if (gPreviewWindow !=0) {
 
-    	ALOGV("%s->%08X->%08X", __FUNCTION__, (uintptr_t)device,
-            	(uintptr_t)(((wrapper_camera_device_t*)device)->vendor));
+    ALOGV("%s->%08X->%08X", __FUNCTION__, (uintptr_t)device,
+    	(uintptr_t)(((wrapper_camera_device_t*)device)->vendor));
 
-    	return VENDOR_CALL(device, cancel_auto_focus);
-    }
-    else {
-	ALOGV("%s: PreviewWindow null go out!", __FUNCTION__);
-	return 0;
-    }
+    return VENDOR_CALL(device, cancel_auto_focus);
 }
 
 static int camera_take_picture(struct camera_device *device)
@@ -533,7 +529,7 @@ static int camera_set_parameters(struct camera_device *device,
     ALOGV("%s->%08X->%08X", __FUNCTION__, (uintptr_t)device,
             (uintptr_t)(((wrapper_camera_device_t*)device)->vendor));
 
-    //char *tmp = camera_fixup_setparams(CAMERA_ID(device), params);
+    char *tmp = camera_fixup_setparams(CAMERA_ID(device), params);
 
     return VENDOR_CALL(device, set_parameters, params);
 }
@@ -548,10 +544,10 @@ static char *camera_get_parameters(struct camera_device *device)
 
     char *params = VENDOR_CALL(device, get_parameters);
 
-    //char *tmp = camera_fixup_getparams(CAMERA_ID(device), params);
+    char *tmp = camera_fixup_getparams(CAMERA_ID(device), params);
 
-    //VENDOR_CALL(device, put_parameters, params);
-    //params = tmp;
+    VENDOR_CALL(device, put_parameters, params);
+    params = tmp;
 
     return params;
 }
