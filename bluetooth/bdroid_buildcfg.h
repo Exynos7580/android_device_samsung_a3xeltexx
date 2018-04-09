@@ -18,13 +18,23 @@
 #ifndef _BDROID_BUILDCFG_H
 #define _BDROID_BUILDCFG_H
 
-#define BTM_DEF_LOCAL_NAME   "Samsung Galaxy A3 (6)"
+#define BTM_DEF_LOCAL_NAME   "Samsung A3 (2016)"
+
+#define BTM_BYPASS_EXTRA_ACL_SETUP TRUE
 
 #define BTM_WBS_INCLUDED TRUE       /* Enable WBS */
 #define BTIF_HF_WBS_PREFERRED TRUE  /* Use WBS    */
-
 #define BLE_INCLUDED TRUE
-#define BTA_GATT_INCLUDED TRUE
-#define SMP_INCLUDED TRUE
+
+// Disables read remote device feature
+#define BTA_SKIP_BLE_READ_REMOTE_FEAT FALSE
+#define MAX_ACL_CONNECTIONS    7
+#define MAX_L2CAP_CHANNELS    16
+#define BLE_VND_INCLUDED   TRUE
+// skips conn update at conn completion
+#define BTA_BLE_SKIP_CONN_UPD  FALSE
+#define BLE_PERIPHERAL_ADV_NAME  FALSE
+#define BT_CLEAN_TURN_ON_DISABLED 1
+#define BTM_SCO_ENHANCED_SYNC_DISABLED TRUE
 
 #endif
