@@ -6,7 +6,7 @@
  *               Guillaume "XpLoDWilD" Lesniak <xplodgui@gmail.com>
  * Copyright (c) 2015-2017 Andreas Schneider <asn@cryptomilk.org>
  * Copyright (c) 2015-2017 Christopher N. Hesse <raymanfx@gmail.org>
- * Copyright (c) 2017 Evgeniy Stenkin <stenkinevgeniy@gmail.com>
+ * Copyright (c) 2017-2018 Evgeniy Stenkin <stenkinevgeniy@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@
 
 
 #define LOG_TAG "audio_hw_primary"
-//#define LOG_NDEBUG 0
-//#define ALOG_TRACE 1
+#define LOG_NDEBUG 0
+#define ALOG_TRACE 1
 
 #include <errno.h>
 #include <pthread.h>
@@ -229,6 +229,7 @@ struct audio_device {
     bool bluetooth_nrec;
     bool bt_wbs;
     bool wb_amr;
+    bool cp_11022;
     bool two_mic_control;
     bool two_mic_disabled;
 
@@ -319,10 +320,11 @@ const struct string_to_enum out_channels_name_to_enum_table[] = {
     STRING_TO_ENUM(AUDIO_CHANNEL_OUT_7POINT1),
 };
 
-static int get_output_device_id(audio_devices_t device)
+static int get_output_device_id(struct audio_device *adev, audio_devices_t device)
 {
+    audio_mode_t mode = adev->mode;
 
-    ALOGV("%s: enter: get_output   devices(%#x)", __func__, device);
+    ALOGV("%s: enter: output device(%#x), mode(%d)", __func__, device, mode);
     if (device == AUDIO_DEVICE_NONE ||
         device & AUDIO_DEVICE_BIT_IN) {
         ALOGV("%s: Invalid output devices (%#x)", __func__, device);
@@ -331,27 +333,50 @@ static int get_output_device_id(audio_devices_t device)
 
 
 
-    if (popcount(device) == 2) {
-        if ((device == (AUDIO_DEVICE_OUT_SPEAKER |
-                        AUDIO_DEVICE_OUT_WIRED_HEADSET)) ||
-            (device == (AUDIO_DEVICE_OUT_SPEAKER |
-                        AUDIO_DEVICE_OUT_WIRED_HEADPHONE))) {
-            return OUT_DEVICE_SPEAKER_AND_HEADSET;
-	} else if (device == (AUDIO_DEVICE_OUT_SPEAKER |
-                              AUDIO_DEVICE_OUT_EARPIECE)) {
-            return OUT_DEVICE_SPEAKER_AND_EARPIECE;
-        }
-          else if (device == (AUDIO_DEVICE_OUT_EARPIECE | AUDIO_DEVICE_OUT_BLUETOOTH_SCO)) {
-            return OUT_DEVICE_BT_SCO;
-	} 
-          else if (device == (AUDIO_DEVICE_OUT_EARPIECE | 0x20)) {
-            return OUT_DEVICE_BT_SCO;
-        }
 
-        else 
+
+    if (mode == AUDIO_MODE_IN_CALL) {
+    switch (device) {
+        case AUDIO_DEVICE_OUT_SPEAKER:
+            return OUT_DEVICE_SPEAKER;
+        case AUDIO_DEVICE_OUT_EARPIECE:
+            return OUT_DEVICE_EARPIECE;
+        case AUDIO_DEVICE_OUT_WIRED_HEADSET:
+            return OUT_DEVICE_HEADSET;
+        case AUDIO_DEVICE_OUT_WIRED_HEADPHONE:
+            return OUT_DEVICE_HEADPHONES;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_SCO:
+            return OUT_DEVICE_BT_SCO;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET:
+            return OUT_DEVICE_BT_SCO_HEADSET_OUT;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_CARKIT:
+            return OUT_DEVICE_BT_SCO_CARKIT;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP:
+            return OUT_DEVICE_BT_SCO;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES:
+            return OUT_DEVICE_BT_SCO_HEADSET_OUT;
+        case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP_SPEAKER:
+            return OUT_DEVICE_BT_SCO_HEADSET_OUT;
+
+        default:
+            return AUDIO_DEVICE_OUT_EARPIECE;
+    	}
+    }
+
+
+
+    if (popcount(device) == 2) {
+       if (device == (AUDIO_DEVICE_OUT_WIRED_HEADPHONE |
+                        AUDIO_DEVICE_OUT_SPEAKER)) {
+            return OUT_DEVICE_SPEAKER_AND_HEADSET;
+        } else if (device == (AUDIO_DEVICE_OUT_WIRED_HEADSET |
+                               AUDIO_DEVICE_OUT_SPEAKER)) {
+            return OUT_DEVICE_SPEAKER_AND_HEADSET;
+        }
+          else
             return OUT_DEVICE_NONE;
     }
-    
+
 
     if (popcount(device) != 1)
         return OUT_DEVICE_NONE;
@@ -542,19 +567,19 @@ static int set_hdmi_channels(struct audio_device *adev, int channels) {
 
 static bool route_changed(struct audio_device *adev)
 {
-    int output_device_id = get_output_device_id(adev->out_device);
+    int output_device_id = get_output_device_id(adev, adev->out_device);
     int input_source_id = get_input_source_id(adev->input_source, adev->wb_amr);
     int new_route_id;
 
     new_route_id = (1 << (input_source_id + OUT_DEVICE_CNT)) + (1 << output_device_id);
-    return new_route_id != adev->cur_route_id;
     ALOGV("%s SOUND_DBG need out device - %#x, use out device - %#x", __func__,adev->out_device , output_device_id);
+    return new_route_id != adev->cur_route_id;
 
 }
 
 static void select_devices(struct audio_device *adev)
 {
-    int output_device_id = get_output_device_id(adev->out_device);
+    int output_device_id = get_output_device_id(adev, adev->out_device);
     int input_source_id = get_input_source_id(adev->input_source, adev->wb_amr);
     const char *output_route = NULL;
     const char *input_route = NULL;
@@ -565,10 +590,12 @@ static void select_devices(struct audio_device *adev)
 
 
 
+    ALOGV("*** %s: SND_DBG select_devices enter++++, adev-mode = %d", __func__, adev->mode);
+
     new_route_id = (1 << (input_source_id + OUT_DEVICE_CNT)) + (1 << output_device_id);
     if (new_route_id == adev->cur_route_id) {
-        ALOGV("*** %s: Routing hasn't changed, leaving function.", __func__);
-        return;
+        ALOGV("*** %s: Routing hasn't changed.", __func__);
+        //return;
     }
 
 
@@ -930,32 +957,34 @@ static void start_comm_call(struct audio_device *adev)
 }
 
 
-static void start_call(struct audio_device *adev)
+static void start_call(struct audio_device *adev, bool first)
 {
+
+
+    ALOGV("%s: SND_DBG start_call enter+++", __func__);
 
     if (adev->in_call) return;
 
     adev->in_call = true;
 
-/*
-    if (adev->out_device == AUDIO_DEVICE_NONE &&
-        adev->in_device == AUDIO_DEVICE_NONE) {
-        ALOGV("%s: No device selected, use earpiece as the default",
-              __func__);
+
+    if (first) {
+        ALOGV("%s: While starting call - use EARPIECE for default output", __func__);
         adev->out_device = AUDIO_DEVICE_OUT_EARPIECE;
     }
-*/
+
+
     adev->input_source = AUDIO_SOURCE_VOICE_CALL;
 
-    if (adev->out_device & 0x70) {
-       start_voice_call(adev);
-       select_devices(adev);
-
-    }
-    else {
-       select_devices(adev);
-       start_voice_call(adev);
-    }
+    //if (adev->out_device & 0x70) {
+    //   start_voice_call(adev);
+    //   select_devices(adev);
+    //
+    //}
+    //else {
+    select_devices(adev);
+    start_voice_call(adev);
+    //}
 
     /* FIXME: Turn on two mic control for earpiece and speaker */
     switch (adev->out_device) {
@@ -989,6 +1018,8 @@ static void start_call(struct audio_device *adev)
 
     ril_set_call_clock_sync(&adev->ril, SOUND_CLOCK_START);
 
+    ALOGV("%s: SND_DBG start_call enter---", __func__);
+
 }
 
 static void stop_call(struct audio_device *adev)
@@ -1019,7 +1050,7 @@ static void stop_call(struct audio_device *adev)
               adev->out_device,
               adev->input_source);
 
-        //select_devices(adev);
+        select_devices(adev);
     }
 
 
@@ -1033,6 +1064,8 @@ static void adev_set_wb_amr_callback(void *data, int enable)
 
     pthread_mutex_lock(&adev->lock);
 
+    ALOGV("*** %s: SND_DBG = WB AMR CALLBACK -!", __func__);
+
     if (adev->wb_amr != enable) {
         adev->wb_amr = enable;
 
@@ -1043,12 +1076,49 @@ static void adev_set_wb_amr_callback(void *data, int enable)
                   enable ? "Turn on" : "Turn off");
 
             stop_call(adev);
-            start_call(adev);
+            start_call(adev,0);
         }
     }
 
     pthread_mutex_unlock(&adev->lock);
 }
+
+static void adev_set_11022_callback(void *data, int clock_status)
+{
+    struct audio_device *adev = (struct audio_device *)data;
+
+    pthread_mutex_lock(&adev->lock);
+
+    ALOGV("*** %s: SND_DBG = 11022 CALLBACK ! adev-mode=%d data=%d  clock_status=%d", __func__, adev->mode,(int)(data)&1,clock_status);
+
+    if (adev->cp_11022 != clock_status) {
+        adev->cp_11022 = clock_status;
+
+
+    if (clock_status) {
+
+    	if (!adev->in_call) {
+		ALOGV("*** %s: SND_DBG = start_call by cp clock status 1 ", __func__);
+		stop_call(adev);
+		start_call(adev,1);
+	}
+    /* reopen the modem PCMs at the new rate
+        if (adev->in_call && route_changed(adev)) {
+            ALOGV("%s: %s Incall Wide Band support",
+                  __func__,
+                  enable ? "Turn on" : "Turn off");
+
+            stop_call(adev);
+            start_call(adev,0);
+        }
+    */
+	}
+    }
+    
+    pthread_mutex_unlock(&adev->lock);
+}
+
+
 
 static void adev_set_call_audio_path(struct audio_device *adev)
 {
@@ -1112,6 +1182,7 @@ static int start_output_stream(struct stream_out *out)
     else 
        pcm_config = &out->config; 
 
+/*
 
     if (out == adev->outputs[OUTPUT_HDMI]) {
         force_non_hdmi_out_standby(adev);
@@ -1120,6 +1191,7 @@ static int start_output_stream(struct stream_out *out)
         return 0;
     }
 
+*/
     out->disabled = false;
 
     if (out->device & (AUDIO_DEVICE_OUT_SPEAKER |
@@ -1155,10 +1227,10 @@ static int start_output_stream(struct stream_out *out)
     }
 
     /* in call routing must go through set_parameters */
-    if (!adev->in_call && !adev->in_comm_call) {
-        adev->out_device |= out->device;
+    //if (adev->mode != AUDIO_MODE_IN_CALL  && !adev->in_comm_call) {
+        adev->out_device = out->device;
         select_devices(adev);
-    }
+    //}
 
     if (out->device & AUDIO_DEVICE_OUT_AUX_DIGITAL) {
         set_hdmi_channels(adev, out->config.channels);
@@ -1204,13 +1276,12 @@ static int start_input_stream(struct stream_in *in)
     in->buffer_size = 0;
 
     /* in call routing must go through set_parameters */
-    if (!adev->in_call) {
+    if (adev->mode != AUDIO_MODE_IN_CALL) {
         adev->input_source = in->input_source;
         adev->in_device = in->device;
         adev->in_channel_mask = in->channel_mask;
 
-
-       select_devices(adev);
+        select_devices(adev);
     }
 
 
@@ -1483,7 +1554,7 @@ static void do_out_standby(struct stream_out *out)
 
         out->standby = true;
 
-        if (adev->in_call) {
+        if (adev->mode == AUDIO_MODE_IN_CALL) {
             ALOGV("%s: after pcm_close skip standby mode!! in IN_CALL", __func__);
             return;
         }
@@ -1624,14 +1695,14 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
              * If we switch from earpiece to speaker, we need to fully reset the
              * modem audio path.
              */
-            if ((adev->mode == AUDIO_MODE_IN_CALL) && !adev->in_call) {
-                start_call(adev);
-            } 
+            //if ((adev->mode == AUDIO_MODE_IN_CALL) && !adev->in_call) {
+            //    start_call(adev,0);
+            //} 
             
-            if (adev->in_call) {
+            if (adev->mode == AUDIO_MODE_IN_CALL) {
 //                if (route_changed(adev)) {
                     stop_call(adev);
-                    start_call(adev);
+                    start_call(adev,0);
 //                }
             }
             else  {
@@ -1905,6 +1976,8 @@ static int in_set_format(struct audio_stream *stream __unused,
 /* must be called with in stream and hw device mutex locked */
 static void do_in_standby(struct stream_in *in)
 {
+
+    
     struct audio_device *adev = in->dev;
 
     if (!in->standby) {
@@ -2164,7 +2237,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
                                    const char *address __unused)
 {
     struct audio_device *adev = (struct audio_device *)dev;
-    struct stream_out *out;
+    struct stream_out *out = NULL;
     int ret;
     enum output_type type;
 
@@ -2178,11 +2251,9 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     out->supported_channel_masks[0] = AUDIO_CHANNEL_OUT_STEREO;
     out->channel_mask = AUDIO_CHANNEL_OUT_STEREO;
 
-
-    if (devices == AUDIO_DEVICE_NONE){
+    if (devices == AUDIO_DEVICE_NONE)
         devices = AUDIO_DEVICE_OUT_SPEAKER;
 
-    }
     out->flags = flags;
     out->device = devices;
 
@@ -2467,7 +2538,7 @@ static int adev_set_mode(struct audio_hw_device *dev, audio_mode_t mode)
 
     if (adev->mode == AUDIO_MODE_IN_CALL) {
         ALOGV("*** %s: Entering IN_CALL mode", __func__);
-        start_call(adev);
+        start_call(adev,1);
     }
     else if (adev->mode == AUDIO_MODE_IN_COMMUNICATION)
     {
@@ -2717,9 +2788,32 @@ static int adev_open(const hw_module_t* module, const char* name,
             adev->wb_amr = true;
         ALOGV("%s: Forcing voice config: %s", __func__, voice_config);
     } else {
+
+            /* register callback for wideband AMR setting */
+            ret = ril_set_wb_amr_callback(&adev->ril,
+                                          adev_set_wb_amr_callback,
+                                          (void *)adev);
+            if (ret != 0) {
+                ALOGE("%s: Failed to register WB_AMR callback", __func__);
+            }
+
+            ALOGV("%s: Registered WB_AMR callback", __func__);
+
         /* register callback for wideband AMR setting */
-        ril_register_set_wb_amr_callback(adev_set_wb_amr_callback, (void *)adev);
+        //ril_register_set_wb_amr_callback(adev_set_wb_amr_callback, (void *)adev);
     }
+
+    // samsung 11022 unsol response - modem send this when incomming? starting
+
+    ret = ril_set_11022_callback(&adev->ril, adev_set_11022_callback, (void *)adev);
+
+    if (ret != 0) {
+        ALOGV("%s: Failed to register 11022 callback", __func__);
+    }
+    else
+        ALOGV("%s: Registered 11022 callback", __func__);
+
+
 
     /* Two mic control */
     if (property_get_bool("audio_hal.disable_two_mic", false))

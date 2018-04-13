@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "audio_hw_primary"
-/*#define LOG_NDEBUG 0*/
+#define LOG_TAG "audio_hw_primary-ril"
+#define LOG_NDEBUG 0
 
 #include <errno.h>
 #include <dlfcn.h>
@@ -30,32 +30,78 @@
 #define VOLUME_STEPS_DEFAULT  "5"
 #define VOLUME_STEPS_PROPERTY "ro.config.vc_call_vol_steps"
 
-/* Audio WB AMR callback */
-void (*_audio_set_wb_amr_callback)(void *, int);
-void *callback_data = NULL;
 
-void ril_register_set_wb_amr_callback(void *function, void *data)
-{
-    _audio_set_wb_amr_callback = function;
-    callback_data = data;
-}
+/* Audio WB AMR callback */
+/*
+ * TODO:
+ * struct audio_device {
+ *     HRilClient client;
+ *     void *data
+ * }
+ * static struct audio_device _audio_devices[64];
+ *
+ * When registering a call back we should store it in the array and when
+ * the callback is triggered find the data pointer based on the client
+ * passed in.
+ */
+static ril_wb_amr_callback _wb_amr_callback;
+static void *_wb_amr_data = NULL;
+
+static ril_11022_callback _11022_callback;
+static void *_11022_data = NULL;
 
 /* This is the callback function that the RIL uses to
 set the wideband AMR state */
-static int ril_set_wb_amr_callback(void *ril_client __unused,
-                                   const void *data,
-                                   size_t datalen)
+static int ril_internal_wb_amr_callback(HRilClient client __unused,
+                                        const void *data,
+                                        size_t datalen)
 {
-    int enable = ((int *)data)[0];
+    int wb_amr_type = 0;
 
-    if (callback_data == NULL || _audio_set_wb_amr_callback == NULL) {
+    if (_wb_amr_data == NULL || _wb_amr_callback == NULL) {
         return -1;
     }
 
-    _audio_set_wb_amr_callback(callback_data, enable);
+    if (datalen != 1) {
+        return -1;
+    }
+
+    wb_amr_type = *((int *)data);
+
+    _wb_amr_callback(_wb_amr_data, wb_amr_type);
 
     return 0;
 }
+
+/* This is the callback function get modem CP clock status */
+static int ril_internal_11022_callback(HRilClient client __unused,
+                                        const void *data,
+                                        size_t datalen)
+{
+
+    //ALOGV("ril internal 11022 callback start+++++");
+    int temp = 0;
+
+    if (_11022_data == NULL || _11022_callback == NULL) {
+        ALOGE("ril internal 11022 callback data or callback NULL!");
+
+        return -1;
+    }
+
+    if (datalen != 1) {
+        ALOGE("ril internal 11022 callback datalen error!");
+        return -1;
+    }
+
+    temp = *((int *)data);
+
+    _11022_callback(_11022_data, temp);
+
+    //ALOGV("ril internal 11022 callback end------");
+
+    return 0;
+}
+
 
 static int ril_connect_if_required(struct ril_handle *ril)
 {
@@ -170,7 +216,7 @@ int ril_set_call_volume(struct ril_handle *ril,
 
     rc = SetCallVolume(ril->client,
                        sound_type,
-                       (int)(volume * ril->volume_steps_max));
+                       (volume * ril->volume_steps_max+0.1));
     if (rc != 0) {
         ALOGE("%s: SetCallVolume() failed, rc=%d", __func__, rc);
     }
@@ -252,3 +298,67 @@ int ril_set_two_mic_control(struct ril_handle *ril,
 
     return rc;
 }
+
+int ril_set_11022_callback(struct ril_handle *ril,
+                            ril_11022_callback fn,
+                            void *data)
+{
+    int rc;
+
+    if (fn == NULL || data == NULL) {
+        
+        return -1;
+    }
+
+    _11022_callback = fn;
+    _11022_data = data;
+
+    ALOGV("%s: RegisterUnsolicitedHandler(%d, %p)",
+          __func__,
+          11022,
+          ril_set_11022_callback);
+
+    /* register the wideband AMR callback */
+    rc = RegisterUnsolicitedHandler(ril->client,
+                                    11022,
+                                    (RilOnUnsolicited)ril_internal_11022_callback);
+    if (rc != RIL_CLIENT_ERR_SUCCESS) {
+        ALOGE("%s: Failed to register 11022 callback", __func__);
+        ril_close(ril);
+        return -1;
+    }
+
+    return 0;
+}
+
+int ril_set_wb_amr_callback(struct ril_handle *ril,
+                            ril_wb_amr_callback fn,
+                            void *data)
+{
+    int rc;
+
+    if (fn == NULL || data == NULL) {
+        return -1;
+    }
+
+    _wb_amr_callback = fn;
+    _wb_amr_data = data;
+
+    ALOGV("%s: RegisterUnsolicitedHandler(%d, %p)",
+          __func__,
+          RIL_UNSOL_SNDMGR_WB_AMR_REPORT,
+          ril_set_wb_amr_callback);
+
+    /* register the wideband AMR callback */
+    rc = RegisterUnsolicitedHandler(ril->client,
+                                    RIL_UNSOL_SNDMGR_WB_AMR_REPORT,
+                                    (RilOnUnsolicited)ril_internal_wb_amr_callback);
+    if (rc != RIL_CLIENT_ERR_SUCCESS) {
+        ALOGE("%s: Failed to register WB_AMR callback", __func__);
+        ril_close(ril);
+        return -1;
+    }
+
+    return 0;
+}
+
