@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#ifndef DRAGON_AUDIO_HW_H
-#define DRAGON_AUDIO_HW_H
+#ifndef EXYNOS7580_AUDIO_HW_H
+#define EXYNOS7580_AUDIO_HW_H
 
 #include <cutils/list.h>
 #include <hardware/audio.h>
@@ -29,17 +29,7 @@
 
 //#define PREPROCESSING_ENABLED
 
-
-
-
 #define SOUND_TRIGGER_HAL_LIBRARY_PATH "/system/lib/hw/sound_trigger.primary.dragon.so"
-
-/* Retry for delay in FW loading*/
-#define RETRY_NUMBER 10
-#define RETRY_US 500000
-
-#define DEEP_BUFFER_PLATFORM_DELAY (29*1000LL)
-#define LOW_LATENCY_PLATFORM_DELAY (13*1000LL)
 
 #define DEFAULT_OUTPUT_SAMPLING_RATE 48000
 #define DEFAULT_INPUT_SAMPLING_RATE 48000
@@ -54,15 +44,6 @@
 
 #define MIN_CHANNEL_COUNT                1
 #define DEFAULT_CHANNEL_COUNT            2
-
-#ifdef PREPROCESSING_ENABLED
-#define MAX_PREPROCESSORS 3
-struct effect_info_s {
-    effect_handle_t effect_itfe;
-    size_t num_channel_configs;
-    channel_config_t *channel_configs;
-};
-#endif
 
 #define TTY_MODE_OFF    1
 #define TTY_MODE_FULL   2
@@ -410,4 +391,4 @@ struct audio_device {
  * lock_inputs must be held in order to either close the input stream, or prevent closure.
  */
 
-#endif // NVIDIA_AUDIO_HW_H
+#endif // EXYNOS7580_AUDIO_HW_H

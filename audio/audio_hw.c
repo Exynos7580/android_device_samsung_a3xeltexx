@@ -165,20 +165,6 @@ static audio_usecase_t get_voice_usecase_id_from_list(struct audio_device *adev)
     return USECASE_INVALID;
 }
 
-/* Delay in Us */
-int64_t platform_render_latency(audio_usecase_t usecase)
-{
-    switch (usecase) {
-        case USECASE_AUDIO_PLAYBACK_DEEP_BUFFER:
-            return DEEP_BUFFER_PLATFORM_DELAY;
-        case USECASE_AUDIO_PLAYBACK_LOW_LATENCY:
-            return LOW_LATENCY_PLATFORM_DELAY;
-        default:
-           return 0;
-    }
-}
-
-
 int platform_get_pcm_device_id(audio_usecase_t usecase, int device_type)
 {
     int device_id;
@@ -2073,7 +2059,7 @@ static int out_get_presentation_position(const struct audio_stream_out *stream,
                 // This adjustment accounts for buffering after app processor.
                 // It is based on estimated DSP latency per use case, rather than exact.
                 signed_frames -=
-                    (platform_render_latency(out->usecase) * out->sample_rate / 1000000LL);
+                    (render_latency(out->usecase) * out->sample_rate / 1000000LL);
 
                 // It would be unusual for this value to be negative, but check just in case ...
                 if (signed_frames >= 0) {
@@ -3017,8 +3003,8 @@ struct audio_module HAL_MODULE_INFO_SYM = {
         .module_api_version = AUDIO_MODULE_API_VERSION_0_1,
         .hal_api_version = HARDWARE_HAL_API_VERSION,
         .id = AUDIO_HARDWARE_MODULE_ID,
-        .name = "NVIDIA Tegra Audio HAL",
-        .author = "The Android Open Source Project",
+        .name = "EXYNOS 7580 Audio HAL",
+        .author = "Stenkin Evgeniy <stenkinevgeniy@gmail.com>",
         .methods = &hal_module_methods,
     },
 };
