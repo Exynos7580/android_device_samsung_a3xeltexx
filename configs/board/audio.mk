@@ -19,4 +19,4 @@
 # Audio
 #####################
 
-TARGET_AUDIOHAL_VARIANT := a3xeltexx
+TARGET_AUDIOHAL_VARIANT := exynos7580
