@@ -41,6 +41,9 @@
 #define AUDIO_CAPTURE_PERIOD_COUNT 2
 #define AUDIO_CAPTURE_PERIOD_SIZE 960
 
+#define MIXER_PATH_MAX_LENGTH 100
+#define MIXER_XML_PATH "mixer_paths.xml"
+
 
 #define MIN_CHANNEL_COUNT                1
 #define DEFAULT_CHANNEL_COUNT            2
@@ -354,7 +357,10 @@ struct audio_device {
     bool                    voice_wb;
     int                     tty_mode;
     bool                    bluetooth_nrec;
+    bool 		    bluetooth_wbs;
     bool                    screen_off;
+    bool 		    fm_mode;
+    bool                    sco_act;
     int*                    snd_dev_ref_cnt;
     struct listnode         usecase_list;
     bool                    speaker_lr_swap;
@@ -373,9 +379,20 @@ struct audio_device {
     audio_devices_t         dummybuf_thread_devices;
     /* RIL */
     struct 	            ril_handle ril;
+
     /* Call audio */
     struct pcm              *pcm_voice_rx;
     struct pcm              *pcm_voice_tx;
+
+    /* SCO audio */
+    struct pcm 		    *pcm_sco_rx;
+    struct pcm 		    *pcm_sco_tx;
+
+
+    /* FM audio */
+    struct pcm 		    *pcm_fm_rx;
+    struct pcm 	            *pcm_fm_tx;
+
     pthread_mutex_t         dummybuf_thread_lock;
     pthread_t               dummybuf_thread;
 
