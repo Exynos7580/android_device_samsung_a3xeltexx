@@ -49,13 +49,6 @@
 #include "audio_hw.h"
 
 
-static void adev_set_call_audio_path(struct audio_device *adev);
-static int start_voice_call(struct audio_device *adev);
-static int stop_voice_call(struct audio_device *adev);
-static int disable_snd_device(struct audio_device *adev,
-                              snd_device_t snd_device);
-
-
 struct pcm_config pcm_config_voice = {
     .channels = PLAYBACK_DEFAULT_CHANNEL_COUNT,
     .rate = 16000,
@@ -152,9 +145,6 @@ static const char * const use_case_table[AUDIO_USECASE_MAX] = {
 
     [USECASE_AUDIO_CAPTURE] = "audio-record",
     [USECASE_AUDIO_CAPTURE_LOW_LATENCY] = "low-latency-record",
-
-    [USECASE_AUDIO_HFP_SCO] = "hfp-sco",
-    [USECASE_AUDIO_HFP_SCO_WB] = "hfp-sco-wb",
 
     [USECASE_VOICE_CALL] = "voice-call",
 };
@@ -268,7 +258,7 @@ static const char * const device_table[SND_DEVICE_MAX] = {
 
 // Treblized config files will be located in /odm/etc or /vendor/etc.
 static const char *kConfigLocationList[] =
-        {"/odm/etc", "/vendor/etc", "/system/etc"};
+        {"/vendor/etc", "/system/etc"};
 static const int kConfigLocationListSize =
         (sizeof(kConfigLocationList) / sizeof(kConfigLocationList[0]));
 
@@ -344,6 +334,22 @@ const char *get_snd_device_display_name(snd_device_t snd_device)
  **********************************************************/
 
 /* must be called with the hw device mutex locked, OK to hold other mutexes */
+
+
+static void check_dualmic(struct audio_device *adev, struct audio_usecase *uc_info)
+{
+
+    switch (uc_info->devices) {
+    case AUDIO_DEVICE_OUT_EARPIECE:
+    case AUDIO_DEVICE_OUT_SPEAKER:
+        adev->voice_two_mic = true;
+        break;
+    default:
+        adev->voice_two_mic = false;
+        break;
+    }
+}
+
 static void start_fm(struct audio_device *adev)
 {
 
@@ -1110,7 +1116,6 @@ static int select_devices(struct audio_device *adev,
             } else {
                 in_snd_device = vc_usecase->in_snd_device;
                 out_snd_device = vc_usecase->out_snd_device;
-		return 0;
             }
         }
         if (usecase->type == PCM_PLAYBACK) {
@@ -1147,10 +1152,7 @@ static int select_devices(struct audio_device *adev,
           out_snd_device, get_snd_device_display_name(out_snd_device),
           in_snd_device,  get_snd_device_display_name(in_snd_device));
 
-
-
     /* Disable current sound devices */
-
 
     if (usecase->out_snd_device != SND_DEVICE_NONE) {
         disable_snd_device(adev, usecase->out_snd_device);
@@ -1160,10 +1162,7 @@ static int select_devices(struct audio_device *adev,
         disable_snd_device(adev, usecase->in_snd_device);
     }
 
-
-
     /* Enable new sound devices */
-
 
     if (out_snd_device != SND_DEVICE_NONE) {
 	check_and_route_playback_usecases(adev, usecase, out_snd_device);
@@ -1558,27 +1557,6 @@ static int out_open_pcm_devices(struct stream_out *out)
             break;
     }
 
-
-
-/*
-
-
-        if (out->sample_rate != pcm_device->pcm_profile->config.rate) {
-            ALOGV("%s: create_resampler(), pcm_device_card(%d), pcm_device_id(%d), \
-                    out_rate(%d), device_rate(%d)",__func__,
-                    pcm_device->pcm_profile->card, pcm_device->pcm_profile->device,
-                    out->sample_rate, pcm_device->pcm_profile->config.rate);
-            ret = create_resampler(out->sample_rate,
-                    pcm_device->pcm_profile->config.rate,
-                    audio_channel_count_from_out_mask(out->channel_mask),
-                    RESAMPLER_QUALITY_DEFAULT,
-                    NULL,
-                    &pcm_device->resampler);
-            pcm_device->res_byte_count = 0;
-            pcm_device->res_buffer = NULL;
-        }
-*/
-
     return ret;
 
 error_open:
@@ -1720,6 +1698,8 @@ static int start_voice_call(struct audio_device *adev)
     uc_info->out_snd_device = SND_DEVICE_NONE;
 
     list_add_tail(&adev->usecase_list, &uc_info->adev_list_node);
+
+    check_dualmic(adev, uc_info);
 
     select_devices(adev, USECASE_VOICE_CALL);
 
@@ -1918,7 +1898,6 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 
 
         }
-        adev->fix = false;
 
         pthread_mutex_unlock(&adev->lock);
         pthread_mutex_unlock(&out->lock);
@@ -2029,7 +2008,7 @@ static ssize_t out_write(struct audio_stream_out *stream, const void *buffer,
 exit:
 
     // For PCM we always consume the buffer and return #bytes regardless of ret.
-    if (out->usecase != USECASE_AUDIO_PLAYBACK_OFFLOAD && ret == 0) {
+    if (ret == 0) {
         out->written += frames;
     }
 
@@ -2637,8 +2616,6 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
         }
     }
 
-
-
     ret = str_parms_get_str(parms, AUDIO_PARAMETER_KEY_BT_NREC, value, sizeof(value));
     if (ret >= 0) {
         /* When set to false, HAL should disable EC and NS
@@ -2761,7 +2738,6 @@ static int adev_set_mode(struct audio_hw_device *dev, audio_mode_t mode)
         if ((mode == AUDIO_MODE_NORMAL) && adev->in_call) {
             stop_voice_call(adev);
 	    adev->current_call_output = NULL;
-	    adev->fix = true;
         }
     }
     pthread_mutex_unlock(&adev->lock);
@@ -2962,13 +2938,9 @@ static int adev_open(const hw_module_t *module, const char *name,
     adev->tty_mode = TTY_MODE_OFF;
     adev->bluetooth_nrec = true;
     adev->in_call = false;
-    adev->fix = false;
 
     /* adev->cur_hdmi_channels = 0;  by calloc() */
     adev->snd_dev_ref_cnt = calloc(SND_DEVICE_MAX, sizeof(int));
-
-    adev->dualmic_config = DUALMIC_CONFIG_NONE;
-    adev->ns_in_voice_rec = false;
 
     list_init(&adev->usecase_list);
 

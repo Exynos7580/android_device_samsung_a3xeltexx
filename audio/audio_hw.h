@@ -53,9 +53,6 @@
 #define TTY_MODE_VCO    4
 #define TTY_MODE_HCO    8
 
-#define DUALMIC_CONFIG_NONE 0
-#define DUALMIC_CONFIG_1 1
-
 /* Sound devices specific to the platform
  * The DEVICE_OUT_* and DEVICE_IN_* should be mapped to these sound
  * devices to enable corresponding mixer paths
@@ -166,8 +163,6 @@ enum {
 
 #define MAX_SUPPORTED_CHANNEL_MASKS 2
 
-struct cras_dsp_context;
-
 typedef int snd_device_t;
 
 /* These are the supported use cases by the hardware.
@@ -222,29 +217,6 @@ typedef enum usecase_type_t {
     USECASE_TYPE_MAX
 } usecase_type_t;
 
-
-struct pcm_device_profile {
-    struct pcm_config config;
-    int               card;
-    int               device;
-    int               id;
-    usecase_type_t    type;
-    audio_devices_t   devices;
-    const char*       dsp_name;
-};
-
-struct pcm_device {
-    struct listnode            stream_list_node;
-    struct pcm_device_profile* pcm_profile;
-    struct pcm*                pcm;
-    int                        status;
-    /* TODO: remove resampler if possible when AudioFlinger supports downsampling from 48 to 8 */
-    struct resampler_itfe*     resampler;
-    int16_t*                   res_buffer;
-    size_t                     res_byte_count;
-    struct cras_dsp_context*   dsp_context;
-    int                        sound_trigger_handle;
-};
 
 struct stream_out {
     struct audio_stream_out     stream;
@@ -311,19 +283,6 @@ struct stream_in {
     void *proc_buf_out;
     size_t proc_buf_size;
     int64_t                             frames_read; // total frames read, not cleared when
-
-
-#ifdef PREPROCESSING_ENABLED
-    void *proc_buf_in;
-    size_t proc_buf_frames;
-
-    int num_preprocessors;
-    struct effect_info_s preprocessors[MAX_PREPROCESSORS];
-
-    bool aux_channels_changed;
-    uint32_t aux_channels;
-#endif
-
     struct audio_device*                dev;
 };
 
@@ -335,14 +294,12 @@ struct audio_usecase {
     snd_device_t            out_snd_device;
     snd_device_t            in_snd_device;
     struct audio_stream*    stream;
-    struct listnode         mixer_list;
 };
 
 
 struct audio_device {
     struct audio_hw_device  device;
     pthread_mutex_t         lock; /* see note below on mutex acquisition order */
-    struct listnode         mixer_list;
     struct mixer 	    *mixer;
     struct audio_route      *audio_route;
     audio_mode_t            mode;
@@ -365,8 +322,6 @@ struct audio_device {
     struct listnode         usecase_list;
     bool                    speaker_lr_swap;
     unsigned int            cur_hdmi_channels;
-    int                     dualmic_config;
-    bool                    ns_in_voice_rec;
 
     void*                   sound_trigger_lib;
     int                     (*sound_trigger_open_for_streaming)();
