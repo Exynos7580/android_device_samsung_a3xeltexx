@@ -119,6 +119,20 @@ struct pcm_config pcm_config_audio_capture = {
     .avail_min = 0,
 };
 
+struct pcm_config pcm_config_audio_capture_low_latency = {
+    .channels = DEFAULT_CHANNEL_COUNT,
+    .rate = DEFAULT_OUTPUT_SAMPLING_RATE,
+    .period_size = 240,
+    .period_count = 2,
+    .format = PCM_FORMAT_S16_LE,
+    .start_threshold = 0,
+    .stop_threshold = INT_MAX,
+    .silence_threshold = 0,
+    .silence_size = 0,
+    .avail_min = 0,
+};
+
+
 #define PCM_CARD 0
 
 #define PCM_DEVICE 5       /* Playback link */
@@ -911,15 +925,6 @@ static int enable_snd_device(struct audio_device *adev,
     if (snd_device_name == NULL)
         return -EINVAL;
 
-
-    if (snd_device == SND_DEVICE_OUT_SPEAKER_AND_HEADPHONES) {
-        ALOGV("Request to enable combo device: enable individual devices\n");
-        enable_snd_device(adev, SND_DEVICE_OUT_SPEAKER);
-        enable_snd_device(adev, SND_DEVICE_OUT_HEADPHONES);
-        return 0;
-    }
-
-
     adev->snd_dev_ref_cnt[snd_device]++;
 
     if (adev->snd_dev_ref_cnt[snd_device] > 1) {
@@ -1421,12 +1426,6 @@ int start_input_stream(struct stream_in *in)
      * to this function:
      * - Trigger resampler creation
      * - Config needs to be updated */
-
-
-    if (in->config.rate != pcm_config_audio_capture.rate) {
-        recreate_resampler = true;
-    }
-    in->config = pcm_config_audio_capture;
 
 
     if (in->requested_rate != in->config.rate) {
@@ -2835,12 +2834,12 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     in->standby = 1;
     in->main_channels = config->channel_mask;
     in->requested_rate = config->sample_rate;
+
     if (config->sample_rate != CAPTURE_DEFAULT_SAMPLING_RATE)
         flags = flags & ~AUDIO_INPUT_FLAG_FAST;
-    in->input_flags = flags;
-    /* HW codec is limited to default channels. No need to update with
-     * requested channels */
+
     in->config = pcm_config_audio_capture;
+    in->input_flags = flags;
 
     /* Update config params with the requested sample rate and channels */
     in->usecase = USECASE_AUDIO_CAPTURE;
