@@ -1,29 +1,45 @@
-From f8b6d1fc4d45e989411184e8801406ad92f56801 Mon Sep 17 00:00:00 2001
+From fb7eb690bd62b75082b21744c4d9dac2c9ab577e Mon Sep 17 00:00:00 2001
 From: stenkinevgeniy <stenkinevgeniy@gmail.com>
 Date: Mon, 2 Jul 2018 07:30:19 +0000
 Subject: [PATCH] Add FM stuff
 
 Change-Id: Ib375c1f6327a33789e12db11886132d9b1be67ba
 ---
- Android.mk                   |   10 +-
- bt.diff                      | 1025 ++++++++++++++++++++++++++++++++++++++++++
- bta/fm/libbt-fmcore.a        |  Bin 0 -> 243186 bytes
- bta/fm/libbt-fmrds.a         |  Bin 0 -> 175536 bytes
- bta/sys/bta_sys_main.c       |   51 ++-
- btcore/src/module.c          |    8 +-
- btif/include/btif_api.h      |    6 +
- btif/include/stack_manager.h |    7 +
- btif/src/bluetooth.c         |   17 +-
- btif/src/btif_core.c         |   23 +-
- btif/src/stack_manager.c     |  143 +++++-
- hci/src/btsnoop.c            |  138 +-----
- hci/src/btsnoop_net.c        |  142 ++----
- hci/src/hci_layer.c          |    7 +-
- main/Android.mk              |   34 ++
- 15 files changed, 1346 insertions(+), 265 deletions(-)
- create mode 100644 bt.diff
+ Android.mk                   |  10 +-
+ bta/fm/bta_fm_legacy.c       |  74 ++++
+ bta/fm/libbt-fmcore.a        | Bin 0 -> 243186 bytes
+ bta/fm/libbt-fmrds.a         | Bin 0 -> 175536 bytes
+ bta/include/bta_fm_api.h     | 809 +++++++++++++++++++++++++++++++++++++
+ bta/include/bta_fm_co.h      |  88 ++++
+ bta/include/bta_fm_hwhdr.h   | 293 ++++++++++++++
+ bta/include/bta_rds_api.h    | 506 +++++++++++++++++++++++
+ bta/sys/bta_sys_main.c       |  51 ++-
+ btcore/src/module.c          |   8 +-
+ btif/co/bta_fm_co.c          |  93 +++++
+ btif/include/btif_api.h      |   6 +
+ btif/include/btif_fm.h       | 101 +++++
+ btif/include/stack_manager.h |   7 +
+ btif/src/bluetooth.c         |  17 +-
+ btif/src/btif_core.c         |  23 +-
+ btif/src/btif_fm.c           | 927 +++++++++++++++++++++++++++++++++++++++++++
+ btif/src/stack_manager.c     | 143 ++++++-
+ gki_legacy/legacy.c          |  14 +
+ hci/src/btsnoop.c            | 138 +------
+ hci/src/btsnoop_net.c        | 142 ++-----
+ hci/src/hci_layer.c          |   7 +-
+ main/Android.mk              |  34 ++
+ 23 files changed, 3226 insertions(+), 265 deletions(-)
+ create mode 100644 bta/fm/bta_fm_legacy.c
  create mode 100644 bta/fm/libbt-fmcore.a
  create mode 100644 bta/fm/libbt-fmrds.a
+ create mode 100644 bta/include/bta_fm_api.h
+ create mode 100644 bta/include/bta_fm_co.h
+ create mode 100644 bta/include/bta_fm_hwhdr.h
+ create mode 100644 bta/include/bta_rds_api.h
+ create mode 100644 btif/co/bta_fm_co.c
+ create mode 100644 btif/include/btif_fm.h
+ create mode 100644 btif/src/btif_fm.c
+ create mode 100644 gki_legacy/legacy.c
 
 diff --git a/Android.mk b/Android.mk
 index b370cc0..c42736e 100644
@@ -51,1037 +67,86 @@ index b370cc0..c42736e 100644
  include $(call all-subdir-makefiles)
  
  # Cleanup our locals
-diff --git a/bt.diff b/bt.diff
+diff --git a/bta/fm/bta_fm_legacy.c b/bta/fm/bta_fm_legacy.c
 new file mode 100644
-index 0000000..5684a7d
+index 0000000..907a9a1
 --- /dev/null
-+++ b/bt.diff
-@@ -0,0 +1,1025 @@
-+diff --git a/Android.mk b/Android.mk
-+index b370cc0..c42736e 100644
-+--- a/Android.mk
-++++ b/Android.mk
-+@@ -48,14 +48,18 @@ bluetooth_CFLAGS += \
-+   -DLOG_NDEBUG=1
-+ 
-+ ifeq ($(strip $(AUDIO_FEATURE_ENABLED_SPLIT_A2DP)),true)
-+-bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
-+-bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-+-bluetooth_CFLAGS += -DAPTX_48000
-++#bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_ENABLED
-++#bluetooth_CFLAGS += -DBTA_AV_SPLIT_A2DP_DEF_FREQ_48KHZ
-++#bluetooth_CFLAGS += -DAPTX_48000
-+ endif
-+ 
-+ bluetooth_CONLYFLAGS += -std=c99
-+ bluetooth_CPPFLAGS :=
-+ 
-++ifeq ($(strip $(BOARD_HAVE_FMRADIO_BCM)),true)
-++bluetooth_CFLAGS += -DBOARD_HAVE_FMRADIO_BCM
-++endif
-++
-+ include $(call all-subdir-makefiles)
-+ 
-+ # Cleanup our locals
-+diff --git a/bta/sys/bta_sys_main.c b/bta/sys/bta_sys_main.c
-+index 6bb64c6..0c8db58 100644
-+--- a/bta/sys/bta_sys_main.c
-++++ b/bta/sys/bta_sys_main.c
-+@@ -54,6 +54,12 @@ tBTA_SYS_CB bta_sys_cb;
-+ fixed_queue_t *btu_bta_alarm_queue;
-+ extern thread_t *bt_workqueue_thread;
-+ 
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++static hash_map_t *bta_alarm_hash_map;
-++static const size_t BTA_ALARM_HASH_MAP_SIZE = 17;
-++static pthread_mutex_t bta_alarm_lock;
-++#endif
-++
-+ /* trace level */
-+ /* TODO Hard-coded trace levels -  Needs to be configurable */
-+ UINT8 appl_trace_level = BT_TRACE_LEVEL_WARNING; //APPL_INITIAL_TRACE_LEVEL;
-+@@ -175,6 +181,13 @@ void bta_sys_init(void)
-+ {
-+     memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
-+ 
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++    pthread_mutex_init(&bta_alarm_lock, NULL);
-++
-++    bta_alarm_hash_map = hash_map_new(BTA_ALARM_HASH_MAP_SIZE,
-++            hash_function_pointer, NULL, (data_free_fn)alarm_free, NULL);
-++#endif
-++
-+     btu_bta_alarm_queue = fixed_queue_new(SIZE_MAX);
-+ 
-+     alarm_register_processing_queue(btu_bta_alarm_queue, bt_workqueue_thread);
-+@@ -197,6 +210,10 @@ void bta_sys_free(void) {
-+     alarm_unregister_processing_queue(btu_bta_alarm_queue);
-+     fixed_queue_free(btu_bta_alarm_queue, NULL);
-+     btu_bta_alarm_queue = NULL;
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++    hash_map_free(bta_alarm_hash_map);
-++    pthread_mutex_destroy(&bta_alarm_lock);
-++#endif
-+ }
-+ 
-+ /*******************************************************************************
-+@@ -600,6 +617,38 @@ void bta_sys_start_timer(alarm_t *alarm, period_ms_t interval, uint16_t event,
-+                        btu_bta_alarm_queue);
-+ }
-+ 
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++void fmr_sys_start_timer(void *p_tle, UINT16 type, INT32 timeout_ms) {
-++    assert(p_tle != NULL);
-++
-++    // Get the alarm for this p_tle.
-++    pthread_mutex_lock(&bta_alarm_lock);
-++    if (!hash_map_has_key(bta_alarm_hash_map, p_tle)) {
-++      hash_map_set(bta_alarm_hash_map, p_tle, alarm_new("fmradio.legacy"));
-++    }
-++    pthread_mutex_unlock(&bta_alarm_lock);
-++
-++    alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
-++    if (alarm == NULL) {
-++      LOG_ERROR("%s unable to create alarm.", __func__);
-++      return;
-++    }
-++
-++    bta_sys_start_timer(alarm, timeout_ms, type, 0);
-++}
-++
-++void fmr_sys_stop_timer(void *p_tle) {
-++    assert(p_tle != NULL);
-++
-++    alarm_t *alarm = hash_map_get(bta_alarm_hash_map, p_tle);
-++    if (alarm == NULL) {
-++        LOG_DEBUG("%s expected alarm was not in bta alarm hash map.", __func__);
-++        return;
-++    }
-++    alarm_cancel(alarm);
-++}
-++#endif
-++
-+ /*******************************************************************************
-+ **
-+ ** Function         bta_sys_disable
-+@@ -627,7 +676,7 @@ void bta_sys_disable(tBTA_SYS_HW_MODULE module)
-+             return;
-+     }
-+ 
-+-    for ( ; bta_id <= bta_id_max; bta_id++)
-++    for ( ; bta_id < bta_id_max; bta_id++)
-+     {
-+         if (bta_sys_cb.reg[bta_id] != NULL)
-+         {
-+diff --git a/btcore/src/module.c b/btcore/src/module.c
-+index ab7710a..07b3dd0 100644
-+--- a/btcore/src/module.c
-++++ b/btcore/src/module.c
-+@@ -33,8 +33,7 @@
-+ typedef enum {
-+   MODULE_STATE_NONE = 0,
-+   MODULE_STATE_INITIALIZED = 1,
-+-  MODULE_STATE_STARTED = 2,
-+-  MODULE_STATE_STARTUP_ERROR = 3
-++  MODULE_STATE_STARTED = 2
-+ } module_state_t;
-+ 
-+ static const size_t number_of_metadata_buckets = 42;
-+@@ -101,8 +100,8 @@ bool module_start_up(const module_t *module) {
-+ 
-+   LOG_INFO(LOG_TAG, "%s Starting module \"%s\"", __func__, module->name);
-+   if (!call_lifecycle_function(module->start_up)) {
-+-    LOG_ERROR(LOG_TAG, "%s failed to start up \"%s\"", __func__, module->name);
-+-    set_module_state(module, MODULE_STATE_STARTUP_ERROR);
-++    LOG_ERROR(LOG_TAG, "%s Failed to start up module \"%s\"",
-++              __func__, module->name);
-+     return false;
-+   }
-+   LOG_INFO(LOG_TAG, "%s Started module \"%s\"", __func__, module->name);
-+@@ -115,6 +114,7 @@ void module_shut_down(const module_t *module) {
-+   assert(metadata != NULL);
-+   assert(module != NULL);
-+   module_state_t state = get_module_state(module);
-++  assert(state <= MODULE_STATE_STARTED);
-+ 
-+   // Only something to do if the module was actually started
-+   if (state < MODULE_STATE_STARTED)
-+diff --git a/btif/include/btif_api.h b/btif/include/btif_api.h
-+index 14e16cb..bde9881 100644
-+--- a/btif/include/btif_api.h
-++++ b/btif/include/btif_api.h
-+@@ -431,4 +431,10 @@ bt_status_t btif_config_hci_snoop_log(uint8_t enable);
-+ **
-+ *******************************************************************************/
-+ void btif_debug_bond_event_dump(int fd);
-++
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++void btif_enable_radio();
-++void btif_disable_radio();
-++#endif
-++
-+ #endif /* BTIF_API_H */
-+diff --git a/btif/include/stack_manager.h b/btif/include/stack_manager.h
-+index 97fd02f..81d087a 100644
-+--- a/btif/include/stack_manager.h
-++++ b/btif/include/stack_manager.h
-+@@ -29,6 +29,13 @@ typedef struct {
-+   void (*clean_up_stack)(void);
-+ 
-+   bool (*get_stack_is_running)(void);
-++
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++  bool (*start_up_radio)(void);
-++  bool (*shut_down_radio)(void);
-++
-++  bool (*get_radio_is_running)(void);
-++#endif
-+ } stack_manager_t;
-+ 
-+ const stack_manager_t *stack_manager_get_interface();
-+diff --git a/btif/src/bluetooth.c b/btif/src/bluetooth.c
-+index eaa8cd8..5c5d3be 100644
-+--- a/btif/src/bluetooth.c
-++++ b/btif/src/bluetooth.c
-+@@ -25,7 +25,6 @@
-+  ***********************************************************************************/
-+ 
-+ #define LOG_TAG "bt_btif"
-+-
-+ #include <assert.h>
-+ #include <stdio.h>
-+ #include <stdlib.h>
-+@@ -43,6 +42,10 @@
-+ #include <hardware/bt_rc.h>
-+ #include <hardware/bt_sdp.h>
-+ #include <hardware/bt_sock.h>
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++#include <hardware/bt_fm.h>
-++#endif
-++
-+ #include <hardware/vendor.h>
-+ 
-+ #include "bt_utils.h"
-+@@ -117,6 +120,13 @@ extern btrc_interface_t *btif_rc_get_interface();
-+ extern btrc_interface_t *btif_rc_ctrl_get_interface();
-+ /*SDP search client*/
-+ extern btsdp_interface_t *btif_sdp_get_interface();
-++
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++/* fm */
-++extern btfm_interface_t *btif_fm_get_interface();
-++#endif
-++
-++
-+ /* vendor  */
-+ extern btvendor_interface_t *btif_vendor_get_interface();
-+ 
-+@@ -436,6 +446,11 @@ static const void* get_profile_interface (const char *profile_id)
-+     if (is_profile(profile_id, BT_PROFILE_VENDOR_ID))
-+         return btif_vendor_get_interface();
-+ 
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++    if (is_profile(profile_id, BT_PROFILE_FM_ID))
-++        return btif_fm_get_interface();
-++#endif
-++
-+     return NULL;
-+ }
-+ 
-+diff --git a/btif/src/btif_core.c b/btif/src/btif_core.c
-+index 0938f01..ef301c3 100644
-+--- a/btif/src/btif_core.c
-++++ b/btif/src/btif_core.c
-+@@ -262,6 +262,14 @@ int btif_is_enabled(void)
-+ 
-+ void btif_init_ok(UNUSED_ATTR uint16_t event, UNUSED_ATTR char *p_param) {
-+   BTIF_TRACE_DEBUG("btif_task: received trigger stack init event");
-++
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++  if (!event && stack_manager_get_interface()->get_radio_is_running()) {
-++    future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
-++    return;
-++  }
-++#endif
-++
-+ #if (BLE_INCLUDED == TRUE)
-+   btif_dm_load_ble_local_keys();
-+ #endif
-+@@ -670,11 +678,22 @@ bt_status_t btif_disable_bluetooth(void)
-+ void btif_disable_bluetooth_evt(void)
-+ {
-+     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
-++
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++    if (stack_manager_get_interface()->get_radio_is_running()) {
-++        future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
-++        return;
-++    }
-++#endif
-++
-++
-++
-+     if (ssr_triggered == TRUE)
-+     {
-+-        BTIF_TRACE_DEBUG("%s SSR triggered,Ignore EVT",__FUNCTION__);
-+-        return;
-++       BTIF_TRACE_DEBUG("%s SSR triggered,Ignore EVT",__FUNCTION__);
-++       return;
-+     }
-++
-+ #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
-+     bte_main_enable_lpm(FALSE);
-+ #endif
-+diff --git a/btif/src/stack_manager.c b/btif/src/stack_manager.c
-+index 031faa9..13db7b1 100644
-+--- a/btif/src/stack_manager.c
-++++ b/btif/src/stack_manager.c
-+@@ -21,7 +21,6 @@
-+ #include "stack_manager.h"
-+ 
-+ #include <hardware/bluetooth.h>
-+-
-+ #include "btcore/include/module.h"
-+ #include "btcore/include/osi_module.h"
-+ #include "btif_api.h"
-+@@ -36,6 +35,7 @@
-+ #include "btif_config.h"
-+ #include "btif_profile_queue.h"
-+ #include "bt_utils.h"
-++#include "btif_sock.h"
-+ 
-+ static thread_t *management_thread;
-+ 
-+@@ -44,6 +44,9 @@ static thread_t *management_thread;
-+ static bool stack_is_initialized;
-+ // If running, the stack is fully up and able to bluetooth.
-+ static bool stack_is_running;
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++static bool radio_is_running;
-++#endif
-+ 
-+ static void event_init_stack(void *context);
-+ static void event_start_up_stack(void *context);
-+@@ -53,6 +56,13 @@ static void event_clean_up_stack(void *context);
-+ static void event_signal_stack_up(void *context);
-+ static void event_signal_stack_down(void *context);
-+ 
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++static void event_start_up_radio(void *context);
-++static void event_shut_down_radio(void *context);
-++
-++static future_t *radio_future;
-++#endif
-++
-+ // Unvetted includes/imports, etc which should be removed or vetted in the future
-+ static future_t *hack_future;
-+ void bte_main_enable();
-+@@ -93,6 +103,26 @@ static bool get_stack_is_running(void) {
-+   return stack_is_running;
-+ }
-+ 
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++static bool start_up_radio(void) {
-++  radio_future = future_new();
-++  thread_post(management_thread, event_start_up_radio, NULL);
-++  future_await(radio_future);
-++  return radio_is_running;
-++}
-++
-++static bool shut_down_radio(void) {
-++  radio_future = future_new();
-++  thread_post(management_thread, event_shut_down_radio, NULL);
-++  future_await(radio_future);
-++  return !radio_is_running;
-++}
-++
-++static bool get_radio_is_running(void) {
-++  return radio_is_running;
-++}
-++#endif
-++
-+ // Internal functions
-+ 
-+ // Synchronous function to initialize the stack
-+@@ -114,6 +144,11 @@ static void event_init_stack(void *context) {
-+ 
-+     // stack init is synchronous, so no waiting necessary here
-+     stack_is_initialized = true;
-++
-++    stack_is_running = false;
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++    radio_is_running = false;
-++#endif
-+   }
-+ 
-+   LOG_INFO(LOG_TAG, "%s finished", __func__);
-+@@ -143,17 +178,25 @@ static void event_start_up_stack(UNUSED_ATTR void *context) {
-+   future_t *local_hack_future = future_new();
-+   hack_future = local_hack_future;
-+ 
-+-  // Include this for now to put btif config into a shutdown-able state
-+-  module_start_up(get_module(BTIF_CONFIG_MODULE));
-+-  bte_main_enable();
-++  if (!radio_is_running) {
-++    LOG_INFO(LOG_TAG, "%s FM_DBG radio_is_not running", __func__);
-++    // Include this for now to put btif config into a shutdown-able state
-++    module_start_up(get_module(BTIF_CONFIG_MODULE));
-++    bte_main_enable();
-++  } else {
-++    LOG_INFO(LOG_TAG, "%s FM_DBG radio is running", __func__);
-++    btif_transfer_context(btif_init_ok, 1, NULL, 0, NULL);
-++  }
-+ 
-+   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
-+-    LOG_ERROR(LOG_TAG, "%s failed to start up the stack", __func__);
-++    LOG_INFO(LOG_TAG, "%s FM_DBG failed to start up the stack", __func__);
-+     stack_is_running = true; // So stack shutdown actually happens
-+     event_shut_down_stack(NULL);
-+     return;
-+   }
-+ 
-++
-++
-+   stack_is_running = true;
-+   LOG_INFO(LOG_TAG, "%s finished", __func__);
-+   btif_thread_post(event_signal_stack_up, NULL);
-+@@ -171,16 +214,24 @@ static void event_shut_down_stack(UNUSED_ATTR void *context) {
-+   hack_future = local_hack_future;
-+   stack_is_running = false;
-+ 
-+-  btif_disable_bluetooth();
-+-  module_shut_down(get_module(BTIF_CONFIG_MODULE));
-++  if (!radio_is_running) {
-++    LOG_INFO(LOG_TAG, "%s FM_DBG radio is not running", __func__);
-++    btif_disable_bluetooth();
-++    module_shut_down(get_module(BTIF_CONFIG_MODULE));
-++
-++    future_await(hack_future);
-++    module_shut_down(get_module(CONTROLLER_MODULE)); // Doesn't do any work, just puts it in a restartable state
-++  } else {
-+ 
-+-  future_await(local_hack_future);
-+-  module_shut_down(get_module(CONTROLLER_MODULE)); // Doesn't do any work, just puts it in a restartable state
-++    LOG_INFO(LOG_TAG, "%s FM_DBG radio running", __func__);
-++    btif_disable_bluetooth();
-++    future_await(hack_future);
-++  }
-+ 
-+   LOG_INFO(LOG_TAG, "%s finished", __func__);
-+-  hack_future = future_new();
-++//  hack_future = future_new();
-+   btif_thread_post(event_signal_stack_down, NULL);
-+-  future_await(hack_future);
-++//  future_await(hack_future);
-+ }
-+ 
-+ static void ensure_stack_is_not_running(void) {
-+@@ -200,6 +251,8 @@ static void event_clean_up_stack(void *context) {
-+   ensure_stack_is_not_running();
-+ 
-+   LOG_INFO(LOG_TAG, "%s is cleaning up the stack", __func__);
-++  future_t *local_hack_future = future_new();
-++  hack_future = local_hack_future;
-+   stack_is_initialized = false;
-+ 
-+   btif_cleanup_bluetooth();
-+@@ -224,9 +277,66 @@ static void event_signal_stack_up(UNUSED_ATTR void *context) {
-+ 
-+ static void event_signal_stack_down(UNUSED_ATTR void *context) {
-+   HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_OFF);
-+-  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
-++//  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
-+ }
-+ 
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++static void event_start_up_radio(void *context) {
-++  if (radio_is_running) {
-++    LOG_DEBUG("%s radio already brought up.", __func__);
-++    return;
-++  }
-++
-++  if (!stack_is_running) {
-++  ensure_stack_is_initialized();
-++  }
-++
-++  LOG_INFO(LOG_TAG,"%s FM_DBG is bringing up the radio.", __func__);
-++  radio_is_running = true;
-++
-++  if (!stack_is_running) {
-++    hack_future = future_new();
-++
-++    // Include this for now to put btif config into a shutdown-able state
-++    module_start_up(get_module(BTIF_CONFIG_MODULE));
-++    bte_main_enable();
-++
-++    if (future_await(hack_future) != FUTURE_SUCCESS) {
-++      LOG_INFO(LOG_TAG, "%s FM_DBG await not disable radio", __func__);
-++      event_shut_down_radio(NULL);
-++      return;
-++    }
-++  }
-++
-++//  future_ready(hack_future);
-++
-++  LOG_DEBUG("%s finished", __func__);
-++  future_ready(radio_future, FUTURE_SUCCESS);
-++}
-++
-++static void event_shut_down_radio(void *context) {
-++  if (!radio_is_running) {
-++    LOG_INFO(LOG_TAG, "%s radio is already brought down.", __func__);
-++    return;
-++  }
-++
-++  LOG_INFO(LOG_TAG, "%s is bringing down the radio.", __func__);
-++  radio_is_running = false;
-++
-++  if (!stack_is_running) {
-++    hack_future = future_new();
-++    btif_disable_bluetooth_evt();
-++    future_await(hack_future);
-++
-++    module_shut_down(get_module(BTIF_CONFIG_MODULE));
-++    module_shut_down(get_module(CONTROLLER_MODULE)); // Doesn't do any work, just puts it in a restartable state
-++  }
-++
-++  LOG_INFO(LOG_TAG, "%s finished.", __func__);
-++  future_ready(radio_future, FUTURE_SUCCESS);
-++}
-++#endif
-++
-+ static void ensure_manager_initialized(void) {
-+   if (management_thread)
-+     return;
-+@@ -244,7 +354,14 @@ static const stack_manager_t interface = {
-+   shut_down_stack_async,
-+   clean_up_stack,
-+ 
-+-  get_stack_is_running
-++  get_stack_is_running,
-++
-++#ifdef BOARD_HAVE_FMRADIO_BCM
-++  start_up_radio,
-++  shut_down_radio,
-++
-++  get_radio_is_running,
-++#endif
-+ };
-+ 
-+ const stack_manager_t *stack_manager_get_interface() {
-+diff --git a/hci/src/btsnoop.c b/hci/src/btsnoop.c
-+index 0ef6fe0..961a86b 100644
-+--- a/hci/src/btsnoop.c
-++++ b/hci/src/btsnoop.c
-+@@ -17,10 +17,8 @@
-+  ******************************************************************************/
-+ 
-+ #define LOG_TAG "bt_snoop"
-+-
-+ #include <arpa/inet.h>
-+ #include <assert.h>
-+-#include <cutils/properties.h>
-+ #include <errno.h>
-+ #include <fcntl.h>
-+ #include <inttypes.h>
-+@@ -30,10 +28,8 @@
-+ #include <stdio.h>
-+ #include <stdlib.h>
-+ #include <string.h>
-+-#include <time.h>
-+ #include <sys/stat.h>
-+ #include <sys/time.h>
-+-#include <sys/poll.h>
-+ #include <unistd.h>
-+ 
-+ #include "bt_types.h"
-+@@ -54,19 +50,6 @@ typedef enum {
-+ static const uint64_t BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000ULL;
-+ 
-+ static const stack_config_t *stack_config;
-+-extern int client_socket_btsnoop;
-+-static long int gmt_offset;
-+-#define USEC_PER_SEC 1000000L
-+-#define MAX_SNOOP_BUF_SIZE 1200
-+-
-+-// External BT snoop
-+-bool hci_ext_dump_enabled = false;
-+-
-+-/* snoop config from the config file, required for userdebug
-+-   build where snoop is enabled by default.
-+-   power/perf measurements need the snoop to be disabled.
-+-*/
-+-bool btsnoop_conf_from_file = false;
-+ 
-+ static int logfile_fd = INVALID_FD;
-+ static bool module_started;
-+@@ -84,20 +67,7 @@ static void update_logging();
-+ // Module lifecycle functions
-+ 
-+ static future_t *start_up(void) {
-+-  time_t t = time(NULL);
-+-  struct tm tm_cur;
-+-
-+-  localtime_r (&t, &tm_cur);
-+-  LOG_INFO(LOG_TAG, "%s Time GMT offset %ld\n", __func__, tm_cur.tm_gmtoff);
-+-  gmt_offset = tm_cur.tm_gmtoff;
-+-
-+   module_started = true;
-+-  stack_config->get_btsnoop_ext_options(&hci_ext_dump_enabled, &btsnoop_conf_from_file);
-+-#if (BTSNOOP_DEFAULT == TRUE)
-+-  if (btsnoop_conf_from_file == false) {
-+-    hci_ext_dump_enabled = true;
-+-  }
-+-#endif
-+   update_logging();
-+ 
-+   return NULL;
-+@@ -105,9 +75,6 @@ static future_t *start_up(void) {
-+ 
-+ static future_t *shut_down(void) {
-+   module_started = false;
-+-  if (hci_ext_dump_enabled == true) {
-+-    property_set("bluetooth.startbtsnoop", "false");
-+-  }
-+   update_logging();
-+ 
-+   return NULL;
-+@@ -173,7 +140,6 @@ const btsnoop_t *btsnoop_get_interface() {
-+ static uint64_t btsnoop_timestamp(void) {
-+   struct timeval tv;
-+   gettimeofday(&tv, NULL);
-+-  tv.tv_sec += gmt_offset;
-+ 
-+   // Timestamp is in microseconds.
-+   uint64_t timestamp = tv.tv_sec * 1000 * 1000LL;
-+@@ -184,7 +150,7 @@ static uint64_t btsnoop_timestamp(void) {
-+ 
-+ static void update_logging() {
-+   bool should_log = module_started &&
-+-    (logging_enabled_via_api || stack_config->get_btsnoop_turned_on() || hci_ext_dump_enabled);
-++    (logging_enabled_via_api || stack_config->get_btsnoop_turned_on());
-+ 
-+   if (should_log == is_logging)
-+     return;
-+@@ -193,9 +159,6 @@ static void update_logging() {
-+   if (should_log) {
-+     btsnoop_net_open();
-+ 
-+-    if (hci_ext_dump_enabled == true) {
-+-      property_set("bluetooth.startbtsnoop", "true");
-+-    }
-+     const char *log_path = stack_config->get_btsnoop_log_path();
-+ 
-+     // Save the old log if configured to do so
-+@@ -228,37 +191,17 @@ static void update_logging() {
-+ }
-+ 
-+ static void btsnoop_write(const void *data, size_t length) {
-+-  if (client_socket_btsnoop != -1) {
-+-    btsnoop_net_write(data, length);
-+-    /* skip writing to file if external client is connected*/
-+-    return;
-+-  }
-+-
-+   if (logfile_fd != INVALID_FD)
-+     write(logfile_fd, data, length);
-+-}
-+ 
-+-#ifdef DEBUG_SNOOP
-+-static uint64_t time_now_us() {
-+-    struct timespec ts_now;
-+-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
-+-    return ((uint64_t)ts_now.tv_sec * USEC_PER_SEC) + ((uint64_t)ts_now.tv_nsec / 1000);
-++  btsnoop_net_write(data, length);
-+ }
-+-#endif
-+ 
-+ static void btsnoop_write_packet(packet_type_t type, const uint8_t *packet, bool is_received) {
-+   int length_he = 0;
-+   int length;
-+   int flags;
-+   int drops = 0;
-+-  struct pollfd pfd;
-+-#ifdef DEBUG_SNOOP
-+-  uint64_t ts_begin;
-+-  uint64_t ts_end, ts_diff;
-+-#endif
-+-  uint8_t snoop_buf[MAX_SNOOP_BUF_SIZE] = {0};
-+-  uint32_t offset = 0;
-+-
-+   switch (type) {
-+     case kCommandPacket:
-+       length_he = packet[2] + 4;
-+@@ -288,73 +231,12 @@ static void btsnoop_write_packet(packet_type_t type, const uint8_t *packet, bool
-+   time_hi = htonl(time_hi);
-+   time_lo = htonl(time_lo);
-+ 
-+-  /* store the length in both original and included fields */
-+-  memcpy(snoop_buf + offset, &length, 4);
-+-  offset += 4;
-+-  memcpy(snoop_buf + offset, &length, 4);
-+-  offset += 4;
-+-
-+-  /* flags:  */
-+-  memcpy(snoop_buf + offset, &flags, 4);
-+-  offset += 4;
-+-
-+-  /* drops: none */
-+-  memcpy(snoop_buf + offset, &drops, 4);
-+-  offset += 4;
-+-
-+-  /* time */
-+-  memcpy(snoop_buf + offset, &time_hi, 4);
-+-  offset += 4;
-+-  memcpy(snoop_buf + offset, &time_lo, 4);
-+-  offset = offset + 4;
-+-
-+-  snoop_buf[offset] = type;
-+-  offset += 1;
-+-  if (offset + length_he + 1 > MAX_SNOOP_BUF_SIZE) {
-+-    LOG_ERROR(LOG_TAG, "Bad packet length, downgrading the length to %d from %d",
-+-                                      MAX_SNOOP_BUF_SIZE - offset - 1, length_he);
-+-    length_he = MAX_SNOOP_BUF_SIZE - offset - 1;
-+-  }
-+-  memcpy(snoop_buf + offset, packet, length_he - 1);
-+-
-+-  if (client_socket_btsnoop != -1) {
-+-    pfd.fd = client_socket_btsnoop;
-+-    pfd.events = POLLOUT;
-+-#ifdef DEBUG_SNOOP
-+-    ts_begin = time_now_us();
-+-#endif
-+-
-+-    if (poll(&pfd, 1, 10) == 0) {
-+-      LOG_ERROR(LOG_TAG, "btsnoop poll : Taking more than 10 ms : skip dump");
-+-#ifdef DEBUG_SNOOP
-+-      ts_end = time_now_us();
-+-      ts_diff = ts_end - ts_begin;
-+-      if (ts_diff > 10000) {
-+-        LOG_ERROR(LOG_TAG, "btsnoop poll T/O : took more time %08lld us", ts_diff);
-+-      }
-+-#endif
-+-      return;
-+-    }
-+-
-+-#ifdef DEBUG_SNOOP
-+-    ts_end = time_now_us();
-+-    ts_diff = ts_end - ts_begin;
-+-    if (ts_diff > 10000) {
-+-      LOG_ERROR(LOG_TAG, "btsnoop poll : took more time %08lld us", ts_diff);
-+-    }
-+-#endif
-+-  }
-+-#ifdef DEBUG_SNOOP
-+-  ts_begin = time_now_us();
-+-#endif
-+-
-+-  btsnoop_write(snoop_buf, offset + length_he - 1);
-+-
-+-#ifdef DEBUG_SNOOP
-+-  ts_end = time_now_us();
-+-  ts_diff = ts_end - ts_begin;
-+-  if (ts_diff > 10000) {
-+-    LOG_ERROR(LOG_TAG, "btsnoop write : Write took more time %08lld us", ts_diff);
-+-  }
-+-#endif
-++  btsnoop_write(&length, 4);
-++  btsnoop_write(&length, 4);
-++  btsnoop_write(&flags, 4);
-++  btsnoop_write(&drops, 4);
-++  btsnoop_write(&time_hi, 4);
-++  btsnoop_write(&time_lo, 4);
-++  btsnoop_write(&type, 1);
-++  btsnoop_write(packet, length_he - 1);
-+ }
-+diff --git a/hci/src/btsnoop_net.c b/hci/src/btsnoop_net.c
-+index 274b546..7f1b02f 100644
-+--- a/hci/src/btsnoop_net.c
-++++ b/hci/src/btsnoop_net.c
-+@@ -19,9 +19,6 @@
-+ #define LOG_TAG "bt_snoop_net"
-+ 
-+ #include <assert.h>
-+-#include <cutils/sockets.h>
-+-#include <sys/un.h>
-+-#include <sys/poll.h>
-+ #include <errno.h>
-+ #include <netinet/in.h>
-+ #include <pthread.h>
-+@@ -35,6 +32,7 @@
-+ #include "osi/include/log.h"
-+ #include "osi/include/osi.h"
-+ 
-++
-+ static void safe_close_(int *fd);
-+ static void *listen_fn_(void *context);
-+ 
-+@@ -46,37 +44,12 @@ static pthread_t listen_thread_;
-+ static bool listen_thread_valid_ = false;
-+ static pthread_mutex_t client_socket_lock_ = PTHREAD_MUTEX_INITIALIZER;
-+ static int listen_socket_ = -1;
-+-int client_socket_btsnoop = -1;
-+-
-+-/*
-+-    local socket for writing from different process
-+-    to limit blocking of HCI threads.
-+-*/
-+-#define LOCAL_SOCKET_NAME "bthcitraffic"
-+-static int listen_socket_local_ = -1;
-+-
-+-static int local_socket_create(void) {
-+-
-+-  listen_socket_local_ = socket(AF_LOCAL, SOCK_STREAM, 0);
-+-  if(listen_socket_local_ < 0) {
-+-    return -1;
-+-  }
-+-
-+-  if(socket_local_server_bind(listen_socket_local_, LOCAL_SOCKET_NAME,
-+-      ANDROID_SOCKET_NAMESPACE_ABSTRACT) < 0) {
-+-    LOG_ERROR(LOG_TAG, "Failed to create Local Socket (%s)", strerror(errno));
-+-    return -1;
-+-  }
-+-
-+-  if (listen(listen_socket_local_, 1) < 0) {
-+-    LOG_ERROR(LOG_TAG, "Local socket listen failed (%s)", strerror(errno));
-+-    close(listen_socket_local_);
-+-    return -1;
-+-  }
-+-  return listen_socket_local_;
-+-}
-++static int client_socket_ = -1;
-+ 
-+ void btsnoop_net_open() {
-++#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
-++  return;               // Disable using network sockets for security reasons
-++#endif
-+ 
-+   listen_thread_valid_ = (pthread_create(&listen_thread_, NULL, listen_fn_, NULL) == 0);
-+   if (!listen_thread_valid_) {
-+@@ -87,55 +60,44 @@ void btsnoop_net_open() {
-+ }
-+ 
-+ void btsnoop_net_close() {
-++#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
-++  return;               // Disable using network sockets for security reasons
-++#endif
-+ 
-+   if (listen_thread_valid_) {
-+-#if (defined(BT_NET_DEBUG) && (NET_DEBUG == TRUE))
-+-    // Disable using network sockets for security reasons
-+     shutdown(listen_socket_, SHUT_RDWR);
-+-#endif
-+-    shutdown(listen_socket_local_, SHUT_RDWR);
-+     pthread_join(listen_thread_, NULL);
-+-    safe_close_(&client_socket_btsnoop);
-++    safe_close_(&client_socket_);
-+     listen_thread_valid_ = false;
-+   }
-+ }
-+ 
-+ void btsnoop_net_write(const void *data, size_t length) {
-+-  ssize_t ret;
-++#if (!defined(BT_NET_DEBUG) || (BT_NET_DEBUG != TRUE))
-++  return;               // Disable using network sockets for security reasons
-++#endif
-+ 
-+   pthread_mutex_lock(&client_socket_lock_);
-+-  if (client_socket_btsnoop != -1) {
-+-    do {
-+-      if ((ret = send(client_socket_btsnoop, data, length, 0)) == -1 && errno == ECONNRESET) {
-+-        safe_close_(&client_socket_btsnoop);
-+-        LOG_INFO(LOG_TAG, "%s conn closed", __func__);
-+-      }
-+-      if ((size_t) ret < length) {
-+-        LOG_ERROR(LOG_TAG, "%s: send : not able to write complete packet", __func__);
-+-      }
-+-      length -= ret;
-+-    } while ((length > 0) && (ret != -1));
-+-  }
-++  if (client_socket_ != -1) {
-++    ssize_t ret;
-++    OSI_NO_INTR(ret = send(client_socket_, data, length, 0));
-+ 
-++    if (ret == -1 && errno == ECONNRESET) {
-++      safe_close_(&client_socket_);
-++    }
-++  }
-+   pthread_mutex_unlock(&client_socket_lock_);
-+ }
-+ 
-+ static void *listen_fn_(UNUSED_ATTR void *context) {
-+-  fd_set sock_fds;
-+-  int fd_max = -1, retval;
-+ 
-+   prctl(PR_SET_NAME, (unsigned long)LISTEN_THREAD_NAME_, 0, 0, 0);
-+ 
-+-  FD_ZERO(&sock_fds);
-+-
-+-  // Disable using network sockets for security reasons
-+   listen_socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-+   if (listen_socket_ == -1) {
-+     LOG_ERROR(LOG_TAG, "%s socket creation failed: %s", __func__, strerror(errno));
-+     goto cleanup;
-+   }
-+-  FD_SET(listen_socket_, &sock_fds);
-+-  fd_max = listen_socket_;
-+ 
-+   int enable = 1;
-+   if (setsockopt(listen_socket_, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) == -1) {
-+@@ -157,73 +119,29 @@ static void *listen_fn_(UNUSED_ATTR void *context) {
-+     goto cleanup;
-+   }
-+ 
-+-  if (local_socket_create() != -1) {
-+-    if (listen_socket_local_ > fd_max) {
-+-      fd_max = listen_socket_local_;
-+-    }
-+-    FD_SET(listen_socket_local_, &sock_fds);
-+-  }
-+-
-+-  if (fd_max == -1) {
-+-    LOG_ERROR(LOG_TAG, "%s No sockets to wait for conn..", __func__);
-+-    return NULL;
-+-  }
-+-
-+   for (;;) {
-+-    int client_socket = -1;
-+-
-+-    LOG_DEBUG(LOG_TAG, "waiting for client connection");
-+-
-+-    if ((retval = select(fd_max + 1, &sock_fds, NULL, NULL, NULL)) == -1) {
-+-      LOG_ERROR(LOG_TAG, "%s select failed %s", __func__, strerror(errno));
-+-      goto cleanup;
-+-    }
-+-
-+-    if ((listen_socket_ != -1) && FD_ISSET(listen_socket_, &sock_fds)) {
-+-      client_socket = accept(listen_socket_, NULL, NULL);
-+-      if (client_socket == -1) {
-+-        if (errno == EINVAL || errno == EBADF) {
-+-          LOG_WARN(LOG_TAG, "%s error accepting TCP socket: %s", __func__, strerror(errno));
-+-          break;
-+-        }
-+-        LOG_WARN(LOG_TAG, "%s error accepting TCP socket: %s", __func__, strerror(errno));
-+-        continue;
-+-      }
-+-    } else if ((listen_socket_local_ != -1) && FD_ISSET(listen_socket_local_, &sock_fds)){
-+-      struct sockaddr_un cliaddr;
-+-      int length;
-+-
-+-      client_socket = accept(listen_socket_local_, (struct sockaddr *)&cliaddr, (socklen_t *)&length);
-+-      if (client_socket == -1) {
-+-        if (errno == EINVAL || errno == EBADF) {
-+-          LOG_WARN(LOG_TAG, "%s error accepting LOCAL socket: %s", __func__, strerror(errno));
-+-          break;
-+-        }
-+-        LOG_WARN(LOG_TAG, "%s error accepting LOCAL socket: %s", __func__, strerror(errno));
-+-        continue;
-++    int client_socket;
-++    OSI_NO_INTR(client_socket = accept(listen_socket_, NULL, NULL));
-++    if (client_socket == -1) {
-++      if (errno == EINVAL || errno == EBADF) {
-++        break;
-+       }
-++      LOG_WARN(LOG_TAG, "%s error accepting socket: %s", __func__, strerror(errno));
-++      continue;
-+     }
-+ 
-+     /* When a new client connects, we have to send the btsnoop file header. This allows
-+        a decoder to treat the session as a new, valid btsnoop file. */
-+     pthread_mutex_lock(&client_socket_lock_);
-+-    safe_close_(&client_socket_btsnoop);
-+-    client_socket_btsnoop = client_socket;
-+-    send(client_socket_btsnoop, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16, 0);
-+-    pthread_mutex_unlock(&client_socket_lock_);
-++    safe_close_(&client_socket_);
-++    client_socket_ = client_socket;
-+ 
-+-    FD_ZERO(&sock_fds);
-+-    if(listen_socket_ != -1) {
-+-      FD_SET(listen_socket_, &sock_fds);
-+-    }
-+-    if(listen_socket_local_ != -1) {
-+-        FD_SET(listen_socket_local_, &sock_fds);
-+-    }
-++    OSI_NO_INTR(send(client_socket_, "btsnoop\0\0\0\0\1\0\0\x3\xea", 16, 0));
-++    pthread_mutex_unlock(&client_socket_lock_);
-+   }
-+ 
-+ cleanup:
-+   safe_close_(&listen_socket_);
-+-  safe_close_(&listen_socket_local_);
-+   return NULL;
-+ }
-+ 
-+diff --git a/hci/src/hci_layer.c b/hci/src/hci_layer.c
-+index 10172d4..9a0f649 100644
-+--- a/hci/src/hci_layer.c
-++++ b/hci/src/hci_layer.c
-+@@ -320,7 +320,12 @@ static future_t *start_up(void) {
-+   power_state = BT_VND_PWR_ON;
-+   vendor->send_command(VENDOR_CHIP_POWER_CONTROL, &power_state);
-+ 
-+-  LOG_DEBUG(LOG_TAG, "%s starting async portion", __func__);
-++  LOG_INFO(LOG_TAG, "%s PIN_DBG start pcm pin config", __func__);
-++
-++  //int test_parm = 0x503;
-++  //vendor->send_command(11, &test_parm);
-++
-++  LOG_INFO(LOG_TAG, "%s starting async portion", __func__);
-+   thread_post(thread, event_finish_startup, NULL);
-+   hci_state = HCI_STARTED;
-+   return local_startup_future;
-+diff --git a/main/Android.mk b/main/Android.mk
-+index 2286997..6d1070b 100644
-+--- a/main/Android.mk
-++++ b/main/Android.mk
-+@@ -1,5 +1,29 @@
-+ LOCAL_PATH:= $(call my-dir)
-+ 
-++ifeq ($(strip $(BOARD_HAVE_FMRADIO_BCM)),true)
-++
-++#
-++# FM core lib
-++#
-++include $(CLEAR_VARS)
-++LOCAL_MODULE := libbt-fmcore
-++LOCAL_MODULE_CLASS :=  STATIC_LIBRARIES
-++LOCAL_SRC_FILES := ../bta/fm/libbt-fmcore.a
-++LOCAL_MODULE_SUFFIX := .a
-++include $(BUILD_PREBUILT)
-++
-++#
-++# FM rds lib
-++#
-++include $(CLEAR_VARS)
-++LOCAL_MODULE := libbt-fmrds
-++LOCAL_MODULE_CLASS :=  STATIC_LIBRARIES
-++LOCAL_SRC_FILES := ../bta/fm/libbt-fmrds.a
-++LOCAL_MODULE_SUFFIX := .a
-++include $(BUILD_PREBUILT)
-++
-++endif
-++
-+ # Bluetooth main HW module / shared library for target
-+ # ========================================================
-+ include $(CLEAR_VARS)
-+@@ -83,6 +107,16 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
-+     libbtcore \
-+     libosi
-+ 
-++ifeq ($(strip $(BOARD_HAVE_FMRADIO_BCM)),true)
-++LOCAL_CFLAGS += -DBOARD_HAVE_FMRADIO_BCM
-++LOCAL_SRC_FILES += \
-++    ../btif/src/btif_fm.c \
-++    ../btif/co/bta_fm_co.c \
-++    ../bta/fm/bta_fm_legacy.c \
-++    ../gki_legacy/legacy.c
-++LOCAL_STATIC_LIBRARIES += libbt-fmcore libbt-fmrds
-++endif
-++
-+ LOCAL_MODULE := bluetooth.default
-+ LOCAL_MODULE_RELATIVE_PATH := hw
-+ LOCAL_MODULE_TAGS := optional
++++ b/bta/fm/bta_fm_legacy.c
+@@ -0,0 +1,74 @@
++/******************************************************************************
++ *
++ *  Copyright (C) 2003-2012 Broadcom Corporation
++ *
++ *  Licensed under the Apache License, Version 2.0 (the "License");
++ *  you may not use this file except in compliance with the License.
++ *  You may obtain a copy of the License at:
++ *
++ *  http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing, software
++ *  distributed under the License is distributed on an "AS IS" BASIS,
++ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ *  See the License for the specific language governing permissions and
++ *  limitations under the License.
++ *
++ ******************************************************************************/
++
++#include "bt_target.h"
++#include "btm_api.h"
++#include "btcore/include/module.h"
++#include "device/include/controller.h"
++
++void LogMsg_0(UINT32 trace_set_mask, const char *fmt_str) {
++    LogMsg(trace_set_mask, fmt_str);
++}
++
++void LogMsg_1(UINT32 trace_set_mask, const char *fmt_str, UINT32 p1) {
++
++    LogMsg(trace_set_mask, fmt_str, p1);
++}
++
++void LogMsg_2(UINT32 trace_set_mask, const char *fmt_str, UINT32 p1, UINT32 p2) {
++    LogMsg(trace_set_mask, fmt_str, p1, p2);
++}
++
++void LogMsg_3(UINT32 trace_set_mask, const char *fmt_str, UINT32 p1, UINT32 p2,
++        UINT32 p3) {
++    LogMsg(trace_set_mask, fmt_str, p1, p2, p3);
++}
++
++void LogMsg_4(UINT32 trace_set_mask, const char *fmt_str, UINT32 p1, UINT32 p2,
++        UINT32 p3, UINT32 p4) {
++    LogMsg(trace_set_mask, fmt_str, p1, p2, p3, p4);
++}
++
++void LogMsg_5(UINT32 trace_set_mask, const char *fmt_str, UINT32 p1, UINT32 p2,
++        UINT32 p3, UINT32 p4, UINT32 p5) {
++    LogMsg(trace_set_mask, fmt_str, p1, p2, p3, p4, p5);
++}
++
++void LogMsg_6(UINT32 trace_set_mask, const char *fmt_str, UINT32 p1, UINT32 p2,
++        UINT32 p3, UINT32 p4, UINT32 p5, UINT32 p6) {
++    LogMsg(trace_set_mask, fmt_str, p1, p2, p3, p4, p5, p6);
++}
++
++void GKI_sched_lock(void) {
++
++}
++
++void GKI_sched_unlock(void) {
++
++}
++
++tBTM_STATUS BTM_ReadLocalVersion (bt_version_t *p_vers) {
++    if (module_start_up(get_module(CONTROLLER_MODULE))) {
++        const controller_t *controller = controller_get_interface();
++
++        *p_vers = *(controller->get_bt_version());
++        return BTM_SUCCESS;
++    }
++
++    return BTM_ERR_PROCESSING;
++}
 diff --git a/bta/fm/libbt-fmcore.a b/bta/fm/libbt-fmcore.a
 new file mode 100644
 index 0000000000000000000000000000000000000000..24f3ff6132b0318cd62136a651f75c12dd2bcf27
@@ -4367,6 +3432,1726 @@ UJ-4E}O|@&dZz6l&vsU~5FRnU(1ONa4
 literal 0
 HcmV?d00001
 
+diff --git a/bta/include/bta_fm_api.h b/bta/include/bta_fm_api.h
+new file mode 100644
+index 0000000..9086991
+--- /dev/null
++++ b/bta/include/bta_fm_api.h
+@@ -0,0 +1,809 @@
++/******************************************************************************
++ *
++ *  Copyright (C) 2003-2012 Broadcom Corporation
++ *
++ *  Licensed under the Apache License, Version 2.0 (the "License");
++ *  you may not use this file except in compliance with the License.
++ *  You may obtain a copy of the License at:
++ *
++ *  http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing, software
++ *  distributed under the License is distributed on an "AS IS" BASIS,
++ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ *  See the License for the specific language governing permissions and
++ *  limitations under the License.
++ *
++ ******************************************************************************/
++
++/******************************************************************************
++ *
++ *  This is the public interface file for the FM subsystem of
++ *  BTA, Broadcom's Bluetooth application layer for mobile phones.
++ *
++ ******************************************************************************/
++#ifndef BTA_FM_API_H
++#define BTA_FM_API_H
++
++#include "bta_api.h"
++
++/*****************************************************************************
++**  Constants and data types
++*****************************************************************************/
++/* Extra Debug Code */
++#ifndef BTA_FM_DEBUG
++#define BTA_FM_DEBUG           FALSE
++#endif
++
++#ifndef BTA_FM_AF_INCLUDED
++#define BTA_FM_AF_INCLUDED      TRUE
++#endif
++
++#ifndef BTA_FM_10KHZ_INCLUDED
++#define BTA_FM_10KHZ_INCLUDED      TRUE
++#endif
++
++/* Scanning step option provided by software algorithm */
++#ifndef BTA_FM_SCAN_STEP_ALGO
++#define BTA_FM_SCAN_STEP_ALGO           TRUE
++#endif
++
++/* noise floor estimation */
++#ifndef     BTA_FM_NFE_DEFAILT
++#define     BTA_FM_NFE_DEFAILT      93      /* default Noise floor value */
++#endif
++#ifndef     BTA_FM_NFE_THRESH
++#define     BTA_FM_NFE_THRESH       0x32    /* default NFE threshold 53 db */
++#endif
++#ifndef     BTA_FM_NFE_SNR_STEREO
++#define     BTA_FM_NFE_SNR_STEREO   19      /* Stereo audio mode SNR level above NFL */
++#endif
++#ifndef     BTA_FM_NFE_SNR_MONO
++#define     BTA_FM_NFE_SNR_MONO     10      /* Mono audio mode SNR level above NFL */
++#endif
++
++/* Max AF number */
++#ifndef BTA_FM_AF_MAX_NUM
++#define BTA_FM_AF_MAX_NUM   25
++#endif
++
++/* preset channel register max size 248 bytes, each channel will take 4/5 bytes depend on search mode
++   so max preset channel n has to be 5*n <= 248. set default to be 48 */
++#define BTA_FM_MAX_PRESET_STA       48      /* same number defined as I2C_PRESET_STA_MAX */
++
++enum
++{
++    BTA_FM_ENABLE_EVT,          /* 0 BTA FM is enabled */
++    BTA_FM_DISABLE_EVT,         /* 1 BTA FM is disabled */
++    BTA_FM_RDS_UPD_EVT,         /* 2 read RDS data event */
++    BTA_FM_SEARCH_CMPL_EVT,     /* 3 FM scanning is completed event */
++    BTA_FM_TUNE_EVT,			/* 4 FM TUNE event */
++    BTA_FM_AUD_MODE_EVT,        /* 5 Set audio mode completed  */
++    BTA_FM_MUTE_AUD_EVT,        /* 6 audio mute/unmute event */
++    BTA_FM_SCAN_STEP_EVT,       /* 7 config scan step */
++    BTA_FM_RDS_MODE_EVT,        /* 8 set RDS mode event */
++    BTA_FM_AUD_PATH_EVT,        /* 9 set audio path completed */
++    BTA_FM_AUD_DATA_EVT,        /* 10 audio quality live updating call back event */
++    BTA_FM_SET_DEEMPH_EVT,      /* 11 configure deempahsis parameter event */
++    BTA_FM_SET_REGION_EVT,      /* 12 set band region */
++    BTA_FM_NFL_EVT,				/* 13 noise floor estimation event */
++    BTA_FM_RDS_TYPE_EVT,		/* 14 Set RDS type event */
++    BTA_FM_CFG_BLEND_MUTE_EVT,  /* 15 stereo/mono blend and soft mute configuration event */
++    BTA_FM_VOLUME_EVT,          /* 16 volume event */
++    BTA_FM_SEARCH_EVT,		    /* 17 search event */
++    BTA_FM_AF_JMP_EVT           /* 18 AF jump event */
++};
++
++
++typedef UINT8  tBTA_FM_EVT;
++
++enum
++{
++    BTA_FM_OK,
++    BTA_FM_SCAN_RSSI_LOW,
++    BTA_FM_SCAN_FAIL,
++    BTA_FM_SCAN_ABORT,
++    BTA_FM_SCAN_NO_RES,
++    BTA_FM_ERR,
++    BTA_FM_UNSPT_ERR,
++    BTA_FM_FLAG_TOUT_ERR,
++    BTA_FM_FREQ_ERR,
++    BTA_FM_VCMD_ERR,
++    BTA_FM_BUSY
++};
++typedef UINT8   tBTA_FM_STATUS;
++
++
++/* FM band region, bit 0, 1,2 of func_mask */
++#ifndef BTA_MAX_REGION_SETTING
++#if BTA_FM_10KHZ_INCLUDED == TRUE
++#define BTA_MAX_REGION_SETTING  6   /* max region code defined */
++#else
++#define BTA_MAX_REGION_SETTING  4   /* max region code defined */
++#endif
++#endif
++
++/* FM function mask */
++#define     BTA_FM_REGION_NA    0x00        /* bit0/bit1/bit2: north america */
++#define     BTA_FM_REGION_EUR   0x01        /* bit0/bit1/bit2: Europe           */
++#define     BTA_FM_REGION_JP    0x02        /* bit0/bit1/bit2: Japan            */
++#define     BTA_FM_REGION_JP_II    0x03        /* bit0/bit1/bit2: Japan  II        */
++#if BTA_FM_10KHZ_INCLUDED
++#define     BTA_FM_REGION_RUS   0x04        /* bit0/bit1/bit2: Russia with extended        */
++#define     BTA_FM_REGION_CHN   0x05        /* bit0/bit1/bit2: China: 70.0 ~ 108.0  */
++#endif
++#define     BTA_FM_RDS_BIT      1<<4        /* bit4: RDS functionality */
++#define     BTA_FM_RBDS_BIT     1<<5        /* bit5: RBDS functionality, exclusive with RDS bit */
++#define     BTA_FM_AF_BIT       1<<6        /* bit6: AF functionality */
++#define     BTA_FM_SOFTMUTE_BIT       1<<8        /* bit8: SOFTMUTE functionality */
++typedef UINT16   tBTA_FM_FUNC_MASK;
++
++/* low 3 bits (bit0, 1, 2)of FUNC mask is region code */
++#if BTA_FM_10KHZ_INCLUDED
++#define     BTA_FM_REGION_MAX           BTA_FM_REGION_CHN
++#define     BTA_FM_REGION_MASK          (BTA_FM_REGION_EUR | BTA_FM_REGION_JP | BTA_FM_REGION_JP_II | BTA_FM_REGION_RUS | BTA_FM_REGION_CHN)
++#else
++#define     BTA_FM_REGION_MAX           BTA_FM_REGION_JP_II
++#define     BTA_FM_REGION_MASK          (BTA_FM_REGION_EUR | BTA_FM_REGION_JP | BTA_FM_REGION_JP_II)             /* low 3 bits (bit0, 1)of FUNC mask is region code */
++#endif
++
++typedef UINT8  tBTA_FM_REGION_CODE;
++
++#define     BTA_FM_DEEMPHA_50U      0       /* 6th bit in FM_AUDIO_CTRL0 set to 0, Europe default */
++#define     BTA_FM_DEEMPHA_75U      1<<6    /* 6th bit in FM_AUDIO_CTRL0 set to 1, US  default */
++typedef UINT8 tBTA_FM_DEEMPHA_TIME;
++
++#define BTA_FM_GET_FREQ(x)  ((UINT16)((x * 10) - 64000))
++
++enum
++{
++    BTA_FM_SCH_RDS_NONE,
++    BTA_FM_SCH_RDS_PTY,
++    BTA_FM_SCH_RDS_TP
++};
++typedef UINT8 tBTA_FM_SCH_RDS_TYPE;
++
++typedef struct
++{
++    tBTA_FM_SCH_RDS_TYPE    cond_type;
++    UINT8                   cond_val;
++} tBTA_FM_SCH_RDS_COND;
++
++/* FM audio output mode */
++enum
++{
++    BTA_FM_AUTO_MODE,       /* auto blend by default */
++    BTA_FM_STEREO_MODE,     /* manual stereo switch */
++    BTA_FM_MONO_MODE,       /* manual mono switch */
++    BTA_FM_SWITCH_MODE      /* auto stereo, and switch activated */
++};
++typedef UINT8  tBTA_FM_AUDIO_MODE;
++
++/* FM audio output quality */
++#define BTA_FM_STEREO_ACTIVE    0x01     /* audio stereo detected */
++#define BTA_FM_MONO_ACTIVE      0x02     /* audio mono */
++#define BTA_FM_BLEND_ACTIVE     0x04     /* stereo blend active */
++
++typedef UINT8  tBTA_FM_AUDIO_QUALITY;
++
++/* FM audio routing configuration */
++#define BTA_FM_AUDIO_NONE       BTA_DM_ROUTE_NONE       /* No FM audio output */
++#define BTA_FM_AUDIO_DAC        BTA_DM_ROUTE_DAC        /* routing FM over analog output */
++#define BTA_FM_AUDIO_I2S        BTA_DM_ROUTE_I2S        /* routing FM over digital (I2S) output */
++#define BTA_FM_AUDIO_BT_MONO    BTA_DM_ROUTE_BT_MONO    /* routing FM over SCO */
++#define BTA_FM_AUDIO_BT_STEREO  BTA_DM_ROUTE_BT_STEREO  /* routing FM over BT Stereo */
++
++typedef UINT8 tBTA_FM_AUDIO_PATH;
++
++/* scan mode */
++#define BTA_FM_PRESET_SCAN      I2C_FM_SEARCH_PRESET        /* preset scan : bit0 = 1 */
++#define BTA_FM_NORMAL_SCAN      I2C_FM_SEARCH_NORMAL        /* normal scan : bit0 = 0 */
++typedef UINT8 tBTA_FM_SCAN_METHOD;
++
++/* frequency scanning direction */
++#define BTA_FM_SCAN_DOWN        0x00        /* bit7 = 0 scanning toward lower frequency */
++#define BTA_FM_SCAN_UP          0x80        /* bit7 = 1 scanning toward higher frequency */
++typedef UINT8 tBTA_FM_SCAN_DIR;
++
++#define BTA_FM_SCAN_FULL        (BTA_FM_SCAN_UP | BTA_FM_NORMAL_SCAN|0x02)       /* full band scan */
++#define BTA_FM_FAST_SCAN        (BTA_FM_SCAN_UP | BTA_FM_PRESET_SCAN)       /* use preset scan */
++#define BTA_FM_SCAN_NONE        0xff
++
++typedef UINT8 tBTA_FM_SCAN_MODE;
++
++#define  BTA_FM_STEP_100KHZ     0x00
++#define  BTA_FM_STEP_50KHZ      0x10
++typedef UINT8   tBTA_FM_STEP_TYPE;
++
++/* minimum and maximum value of start/stop SNR for stereo/mono blend */
++#define     BTA_FM_START_SNR_MIN        0
++#define     BTA_FM_START_SNR_MAX        63
++
++#define     BTA_FM_STOP_SNR_MIN         0
++#define     BTA_FM_STOP_SNR_MAX         63
++/* minimum and maximum value of start/stop RSSI for stereo/mono blend */
++#define     BTA_FM_START_RSSI_MIN       -128
++#define     BTA_FM_START_RSSI_MAX       127
++
++#define     BTA_FM_STOP_RSSI_MIN        -128
++#define     BTA_FM_STOP_RSSI_MAX        127
++/* minimum and maximum value of start SNR for soft mute */
++#define     BTA_FM_START_MUTE_MIN       0
++#define     BTA_FM_START_MUTE_MAX       63
++/* minimum and maximum value of ultimate mute attenuation level */
++#define     BTA_FM_STOP_ATTEN_MIN       -128
++#define     BTA_FM_STOP_ATTEN_MAX       127
++/* minimum and maximum value of mute rate */
++#define     BTA_FM_MUTE_RATE_MIN        0
++#define     BTA_FM_MUTE_RATE_MAX        63
++/* minimum and maximum value of SNR reading adjustment */
++#define     BTA_FM_SNR40_MIN            -128
++#define     BTA_FM_SNR40_MAX            127
++
++/* maximum FM audio volume */
++#define     BTA_FM_VOLUME_MAX       255 //0x100
++
++typedef struct
++{
++    UINT8       start_snr;  /* Above this SNR, the chip will be in stereo mode
++                               if the RSSI is high enough, valid range 0 -63 default 43 */
++    UINT8       stop_snr;   /* Below this SNR, the chip will be in MONO mode. valid range 0 -63, default 20*/
++    INT8        start_rssi; /* RSSI to start blending, assuming the FMRX_START_SNR
++                               is exceeded. valid range -128 ~ 127, default - 56 */
++    INT8        stop_rssi;   /* RSSI to stop blending, assuming FMRX_STOP_SNR is
++                               not yet exceeded. valid range -128 ~ 127, default - 85 */
++}tBTA_FM_BLEND_CFG;
++
++typedef struct
++{
++    UINT8       start_mute; /* SNR to start muting. Below this SNR the chip will
++                               partially mute until the ultimate mute attenuation
++                               is reached. valid range 0 - 63, default 19 */
++    INT8       stop_atten; /* Ultimate mute attenuation level. valid range -128 ~ 127, default 26 */
++    UINT8      mute_rate;  /* Rate at which muting occurs valid range 0 - 63, default 8 */
++    INT8       snr40;     /* constant to add to SNR reading to get the actual SNR,
++                               i.e. snr40 - snr_read = 40. valid range -128 ~ 127, default -77 */
++}tBTA_FM_SOFT_MUTE_CFG;
++
++/* struct of stereo/mono audio blend and soft mute parameters */
++typedef struct
++{
++    tBTA_FM_BLEND_CFG       blend;  /* stereo/mono blend threshold */
++    tBTA_FM_SOFT_MUTE_CFG   soft_mute; /* soft mute parameters */
++
++}tBTA_FM_BLEND_MUTE;
++
++/* search criteria type */
++#define BTA_FM_CTYPE_SNR        (1)         /* SNR criteria */
++#define BTA_FM_CTYPE_QUALITY    (2)         /* preset scan quality (COS slope) threshold criteria */
++typedef UINT8 tBTA_FM_CTYPE;
++
++/* maximum SNR value */
++#define BTA_FM_SNR_MAX      31
++
++/* maximum COS value */
++#define BTA_FM_COS_MAX      127
++#define BTA_FM_COS_MIN      -128
++
++typedef union
++{
++    INT8   snr;            /* valid SNR value range from 0 ~ BTA_FM_SNR_MAX */
++    INT8   cos;            /* valid COS slope value range from BTA_FM_COS_MIN ~ BTA_FM_COS_MAX */
++}tBTA_FM_CVALUE;
++
++/* RDS mode */
++enum
++{
++    BTA_FM_RDS,
++    BTA_FM_RBDS
++};
++typedef UINT8 tBTA_FM_RDS_B;
++
++enum
++{
++    BTA_FM_AF_FM = 1,
++    BTA_FM_AF_LF,
++    BTA_FM_AF_MF
++};
++typedef UINT8 tBTA_FM_AF_TYPE;
++
++/* AF structure */
++typedef struct
++{
++    UINT16              num_af;     /* number of AF in list */
++    tBTA_FM_AF_TYPE     af_type[BTA_FM_AF_MAX_NUM];
++    UINT16              af_list[BTA_FM_AF_MAX_NUM];
++}tBTA_FM_AF_LIST;
++
++typedef struct
++{
++    UINT16              pi_code;          /* currently tuned frequency PI code */
++    tBTA_FM_AF_LIST     af_list;          /* AF frequency list */
++    UINT8               af_thresh;        /* AF jump RSSI threshold*/
++} tBTA_FM_AF_PARAM;
++
++enum
++{
++    BTA_FM_NFL_LOW,
++    BTA_FM_NFL_MED,
++    BTA_FM_NFL_FINE
++};
++typedef UINT8 tBTA_FM_NFE_LEVL;
++
++/* channel tunning/scanning call back data */
++typedef struct
++{
++    tBTA_FM_STATUS      status;         /* operation status */
++    UINT8               rssi;
++    INT8                snr; /* current channel SNR value */
++    UINT16              freq;           /* tuned frequency */
++}tBTA_FM_CHNL_DATA;
++
++
++/* set FM audio mode callback data */
++typedef struct
++{
++    tBTA_FM_STATUS      status;     /* operation status */
++    tBTA_FM_AUDIO_MODE  audio_mode; /* audio mode */
++}tBTA_FM_MODE_INFO;
++
++/* set FM audio path callback data */
++typedef struct
++{
++    tBTA_FM_STATUS      status;     /* operation status */
++    tBTA_FM_AUDIO_PATH  audio_path; /* audio path */
++}tBTA_FM_PATH_INFO;
++
++/* audio quality live updating call back data */
++typedef struct
++{
++    tBTA_FM_STATUS          status;     /* operation status */
++    UINT8                   rssi;       /* rssi strength    */
++    INT8                    snr;        /* current channel SNR value */
++    tBTA_FM_AUDIO_QUALITY   audio_mode; /* audio mode       */
++}tBTA_FM_AUD_DATA;
++
++
++typedef struct
++{
++    tBTA_FM_STATUS          status;     /* operation status         */
++    tBTA_FM_DEEMPHA_TIME    time_const; /* deemphasis parameter     */
++}tBTA_FM_DEEMPH_DATA;
++
++/* set FM audio mode callback data */
++typedef struct
++{
++    tBTA_FM_STATUS      status;     /* operation status */
++    BOOLEAN             rds_on;
++    BOOLEAN             af_on;  /* audio mode */
++}tBTA_FM_RDS_MODE_INFO;
++
++typedef struct
++{
++    UINT8               rssi;
++    UINT16              freq;
++    INT8                cos; /* carrier offset */
++    INT8                snr; /* only valid when preset sscan mode 3 is used, otherwise set to 0 */
++}tBTA_FM_SCAN_DAT;
++
++typedef struct
++{
++    tBTA_FM_STATUS      status;
++    BOOLEAN             is_mute;
++}tBTA_FM_MUTE_STAT;
++
++typedef struct
++{
++    tBTA_FM_STATUS          status;
++    tBTA_FM_REGION_CODE     region;
++}tBTA_FM_REGION_INFO;
++
++typedef struct
++{
++    tBTA_FM_STATUS          status;
++    tBTA_FM_RDS_B           type;
++}tBTA_FM_RDS_TYPE;
++
++typedef struct
++{
++    tBTA_FM_STATUS          status;
++    UINT8                   data;
++    UINT8                   index;
++    char                    text[65];
++}tBTA_FM_RDS_UPDATE;
++
++typedef struct
++{
++    tBTA_FM_STATUS          status;
++    UINT8                   rssi;
++}tBTA_FM_NFE;
++
++typedef struct
++{
++    tBTA_FM_STATUS      status;
++    UINT16              volume;
++}tBTA_FM_VOLUME;
++
++/* Union of all FM callback structures */
++typedef union
++{
++    tBTA_FM_STATUS          status;             /* BTA_FM_DISABLE_EVT/
++                                                   BTA_FM_ENABLE_EVT/
++                                                   BTA_FM_AUD_PATH_EVT/
++                                                   BTA_FM_RDS_MODE_EVT
++												   BTA_FM_AUD_PATH_EVT
++                                                   BTA_FM_RDS_UPD_EVT
++                                                   BTA_FM_CFG_BLEND_MUTE_EVT call back data*/
++    tBTA_FM_CHNL_DATA       chnl_info;          /* BTA_FM_TUNE_EVT/BTA_FM_SEARCH_CMPL_EVT */
++    tBTA_FM_MODE_INFO       mode_info;          /* BTA_FM_AUD_MODE_EVT */
++    tBTA_FM_PATH_INFO       path_info;          /* BTA_FM_AUD_PATH_EVT */
++    tBTA_FM_AUD_DATA        audio_data;         /* BTA_FM_AUD_DATA_EVT call back data */
++    tBTA_FM_DEEMPH_DATA     deemphasis;         /* BTA_FM_SET_DEEMPH_EVT call back data */
++    tBTA_FM_RDS_MODE_INFO   rds_mode;           /* BTA_FM_RDS_MODE_EVT call back data */
++    tBTA_FM_SCAN_DAT        scan_data;          /* BTA_FM_SEARCH_EVT call back data */
++    tBTA_FM_MUTE_STAT       mute_stat;          /* BTA_FM_MUTE_AUD_EVT call back data */
++    tBTA_FM_STEP_TYPE       scan_step;          /* BTA_FM_SCAN_STEP_EVT callback data */
++    tBTA_FM_REGION_INFO     region_info;        /* BTA_FM_SET_REGION_EVT callback data */
++    tBTA_FM_RDS_TYPE        rds_type;
++    tBTA_FM_RDS_UPDATE      rds_update;
++    tBTA_FM_NFE             nfloor;
++    tBTA_FM_VOLUME          volume;             /* BTA_FM_VOLUME_EVT */
++} tBTA_FM;
++
++/* run-time configuration struct */
++typedef struct
++{
++    UINT16                  low_bound;      /* lowest frequency boundary */
++    UINT16                  high_bound;     /* highest frequency boundary */
++    tBTA_FM_DEEMPHA_TIME    deemphasis;     /* FM de-emphasis time constant */
++    UINT8                   scan_step;      /* scanning step */
++} tBTA_FM_CFG_ENTY;
++
++typedef struct
++{
++    tBTA_FM_CFG_ENTY        reg_cfg_tbl[BTA_MAX_REGION_SETTING];
++                                            /* region related setting table */
++    INT32                   aud_timer_value;/* audio quality live updating timer
++                                               value, must be a non-0 positive value */
++    INT32                   rds_timer_value;/* RDS data update timer */
++    INT32                   enable_delay_val;/* FM enable delay time value, platform dependant */
++    UINT8                   rds_read_size;  /* how many RDS tuples per read */
++    UINT8                   max_station;    /* maximum number of FM stations for a full band scan
++                                                can not exceed BTA_FM_MAX_PRESET_STA */
++} tBTA_FM_CFG;
++
++/* BTA FM callback function */
++typedef void (tBTA_FM_CBACK)(tBTA_FM_EVT event, tBTA_FM *p_data);
++
++
++/*****************************************************************************
++**  External Function Declarations
++*****************************************************************************/
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++
++/*******************************************************************************
++**
++** Function         BTA_FmEnable
++**
++** Description      Enable FM fuctionality.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmEnable(tBTA_FM_FUNC_MASK func_mask,
++                                 tBTA_FM_CBACK *p_cback, UINT8 app_id);
++
++/*******************************************************************************
++**
++** Function         BTA_FmDisable
++**
++** Description      Disable FM functionality.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmDisable(void);
++
++/*******************************************************************************
++**
++** Function         BTA_FmReadRDS
++**
++** Description      Read RDS information. For every BTA_FmReadRDS API call,
++**                  will receive one or more application BTA_FM_RDS_UPD_EVT event
++**                  call back. For each call back event, 50 or less tuples of RDS
++**                  data will be returned.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmReadRDS(void);
++
++/*******************************************************************************
++**
++** Function         BTA_FmSetSchCriteria
++**
++** Description      Set FM search criteria if any special SNR condition wants to
++**                  be used.
++**
++** Parameters       criteria_type: criteria type, can be SNR or preset quality.
++**                  p_value: pointer to search criteria value structure.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern tBTA_FM_STATUS BTA_FmSetSchCriteria(tBTA_FM_CTYPE criteria_type,
++                                                   tBTA_FM_CVALUE *p_value );
++
++/*******************************************************************************
++**
++** Function         BTA_FmSearchFreq
++**
++** Description      Scan FM toward higher/lower frequency for next clear channel.
++**                  If no clear channel is found, BTA_FM_SEARCH_EVT event with
++**                  BTA_FM_SCAN_FAIL status will be returned.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmSearchFreq(tBTA_FM_SCAN_MODE scn_mode, UINT8 rssi_thresh,
++                                    tBTA_FM_SCH_RDS_COND *p_rds_cond);
++
++/*******************************************************************************
++**
++** Function         BTA_FmTuneFreq
++**
++** Description      Tune to a designated frequency, BTA_FM_TUNE_EVT will be returned
++**                  when tuning is finished.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmTuneFreq (UINT16 freq);
++
++/*******************************************************************************
++**
++** Function         BTA_FmSearchAbort
++**
++** Description      Abort a frequency scanning operation. BTA_FM_SEARCH_EVT will
++**                  be sent to application when operation is aborted, and the
++**                  stopping frequency is reported with the event.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmSearchAbort (void);
++
++/*******************************************************************************
++**
++** Function         BTA_FmSetAudioMode
++**
++** Description      Configure FM audio mode to be mono/stereo/blend. When operation
++**                  finishes, event BTA_FM_AUD_MODE_EVT will be returned.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmSetAudioMode ( tBTA_FM_AUDIO_MODE mode);
++
++/*******************************************************************************
++**
++** Function         BTA_FmSetRDSMode
++**
++** Description      Turn on/off RDS feature and AF algorithm.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmSetRDSMode (BOOLEAN rds_on, BOOLEAN af_on, tBTA_FM_AF_PARAM *p_af_struct);
++
++
++/*******************************************************************************
++**
++** Function         BTA_FmConfigAudioPath
++**
++** Description      Set FM audio path. When configuring FM audio over SCO, an
++**                  existing SCO connection is requested.
++**
++** Parameters       audio_path: Bitmask of the paths to be turned ON.
++**
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmConfigAudioPath(tBTA_FM_AUDIO_PATH audio_path);
++
++/*******************************************************************************
++**
++** Function         BTA_FmReadAudioQuality
++**
++** Description      Turn on/off live audio data updating.
++**
++** Parameters       turn_on: TRUE: updating audio quality data(rssi, mode).
++**                           FALSE: stop updaing audio quality data.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmReadAudioQuality(BOOLEAN turn_on);
++
++
++/*******************************************************************************
++**
++** Function         BTA_FmConfigDeemphasis
++**
++** Description      Config deemphasis parameter.
++**
++** Parameters
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmConfigDeemphasis(tBTA_FM_DEEMPHA_TIME time_const);
++
++/*******************************************************************************
++**
++** Function         BTA_FmMute
++**
++** Description      Mute/Unmute FM audio
++**
++** Parameters       TRUE:  mute audio
++**                  FALSE: unmute audio
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmMute(BOOLEAN mute);
++
++/*******************************************************************************
++**
++** Function         BTA_FmSetScanStep
++**
++** Description      Configure FM Scanning Step.
++**
++** Parameters       step: 50KHz/ 100KHz step
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmSetScanStep(tBTA_FM_STEP_TYPE step);
++ /*******************************************************************************
++**
++** Function         BTA_FmEstNoiseFloor
++**
++** Description      Estimate noise floor.
++**
++** Parameters
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmEstNoiseFloor(tBTA_FM_NFE_LEVL level);
++
++/*******************************************************************************
++**
++** Function         BTA_FmSetRegion
++**
++** Description      Set a region for band selection.
++**
++** Parameters       none
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmSetRegion (tBTA_FM_REGION_CODE region);
++
++/*******************************************************************************
++**
++** Function         BTA_FmComboSearch
++**
++** Description      A search function let user define frequency range
++**                  [start_freq, end_freq](inclusive bracket), mode,
++**                  search directions and multiple channel requirement.
++**
++** Parameters       start_freq: Starting frequency of search operation range.
++**                  end_freq: Ending frequency of search operation, if the same
++**                            as start_freq, start_freq will be the only frequency in
++**                            search. When start_freq and end_freq is different and
++**                            back to back, will start from start_freq, hit the
++**                            boundary and wrap around search through the ending frequency.
++**                  rssi: search RSSI threshold.
++**                  direction: the direction to search in, it can only be either
++**                              BTA_FM_SCAN_DOWN or BTA_FM_SCAN_UP.
++**                  scn_method: search method, it can only be either BTA_FM_PRESET_SCAN
++**                            or BTA_FM_NORMAL_SCAN.
++**                  multi_chnl: Is multiple channels are required, or only find
++**                              next valid channel(seek).
++**                  p_rds_cond: RDS search oncdition, can not combine with
++**                              BTA_FM_PRESET_SCAN mode.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmComboSearch(UINT16 start_freq, UINT16 end_freq, UINT8 rssi,
++                      tBTA_FM_SCAN_DIR direction, tBTA_FM_SCAN_METHOD scn_method,
++                      BOOLEAN multi_chnl, tBTA_FM_SCH_RDS_COND * p_rds_cond);
++
++/*******************************************************************************
++**
++** Function         BTA_FmSetRdsRbds
++**
++** Description      Choose the RDS mode - RDS/RBDS.
++**
++** Parameters       rds_type: BTA_FM_RDS or BTA_FM_RBDS.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmSetRdsRbds(tBTA_FM_RDS_B  rds_type);
++
++/*******************************************************************************
++**
++** Function         BTA_FmSetSignalNotifSetting
++**
++** Description      Configure RSSI value polling interval.
++**
++** Parameters       poll_interval: polling interval in milli second unit.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern tBTA_FM_STATUS BTA_FmSetSignalNotifSetting(INT32 poll_interval);
++
++/*******************************************************************************
++**
++** Function         BTA_FmConfigBlendSoftMuteParams
++**
++** Description      Configure RSSI and SNR threshold for audio blending and soft
++**                  mute.
++**
++** Parameters       p_config: The pointer to the blending and soft mute parameters
++**                            structure.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmConfigBlendSoftMuteParams(tBTA_FM_BLEND_MUTE *p_config);
++
++/*******************************************************************************
++**
++** Function         BTA_FmVolumeControl
++**
++** Description      This command control the audio volume. The audio volume is
++**                  a linear value of fraction of 1, range from 0 to 255, where
++**                  255 stands for the highest volume. The default audio volume
++**                  on start is 255.
++**
++** Parameters       volume: is an UINT16 type, value range from 0 to 255, where
++**                          255 indicates the highest volume.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmVolumeControl(UINT16 volume);
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* BTA_FM_API_H */
++
+diff --git a/bta/include/bta_fm_co.h b/bta/include/bta_fm_co.h
+new file mode 100644
+index 0000000..032eec7
+--- /dev/null
++++ b/bta/include/bta_fm_co.h
+@@ -0,0 +1,88 @@
++/******************************************************************************
++ *
++ *  Copyright (C) 2003-2012 Broadcom Corporation
++ *
++ *  Licensed under the Apache License, Version 2.0 (the "License");
++ *  you may not use this file except in compliance with the License.
++ *  You may obtain a copy of the License at:
++ *
++ *  http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing, software
++ *  distributed under the License is distributed on an "AS IS" BASIS,
++ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ *  See the License for the specific language governing permissions and
++ *  limitations under the License.
++ *
++ ******************************************************************************/
++
++/******************************************************************************
++ *
++ *  This is the interface file for FM call-out functions.
++ *
++ ******************************************************************************/
++#ifndef BTA_FM_CO_H
++#define BTA_FM_CO_H
++
++#include "bta_fm_api.h"
++#include "bta_rds_api.h"
++
++/*******************************************************************************
++**
++** Function         bta_fm_co_init
++**
++** Description      This callout function is executed by FM when it is
++**                  started by calling BTA_FmSetRDSMode() and RDS mode is turned
++**                  on.  This function can be used by the phone to initialize
++**                  RDS decoder or other platform dependent and RDS related purposes.
++**
++**
++** Returns
++**
++*******************************************************************************/
++extern tBTA_FM_STATUS bta_fm_co_init(tBTA_FM_RDS_B rds_mode);
++
++/*******************************************************************************
++**
++** Function         bta_fm_co_rds_data
++**
++** Description      This function is called by FM when RDS data is ready.
++**
++** Parameter        p_data: RDS data in three bytes array, which includes 2 bytes
++**                  RDS block data, and one byte control and correction indicator.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern tBTA_FM_STATUS bta_fm_co_rds_data(UINT8 * p_data, UINT16 len);
++
++/*******************************************************************************
++**
++** Function         bta_fm_co_close
++**
++** Description      This callout function is executed by FM when it is
++**                  started by calling BTA_FmSetRDSMode() and RDS mode is turned
++**                  off.  This function can be used by the phone to reset RDS
++**                  decoder.
++**
++**
++** Returns
++**
++*******************************************************************************/
++extern void bta_fm_co_close(void);
++
++/*******************************************************************************
++**
++** Function         bta_fm_co_rds_reset
++**
++** Description      This function can be used by the phone to reset RDS
++**                  decoder.
++**
++**
++** Returns
++**
++*******************************************************************************/
++extern void bta_fm_co_reset_rds_engine(void);
++
++#endif /* BTA_FM_CO_H */
++
+diff --git a/bta/include/bta_fm_hwhdr.h b/bta/include/bta_fm_hwhdr.h
+new file mode 100644
+index 0000000..7ee5b31
+--- /dev/null
++++ b/bta/include/bta_fm_hwhdr.h
+@@ -0,0 +1,293 @@
++/******************************************************************************
++ *
++ *  Copyright (C) 2003-2012 Broadcom Corporation
++ *
++ *  Licensed under the Apache License, Version 2.0 (the "License");
++ *  you may not use this file except in compliance with the License.
++ *  You may obtain a copy of the License at:
++ *
++ *  http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing, software
++ *  distributed under the License is distributed on an "AS IS" BASIS,
++ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ *  See the License for the specific language governing permissions and
++ *  limitations under the License.
++ *
++ ******************************************************************************/
++
++/******************************************************************************
++ *
++ *  FM hardware related register and corresponding bit definition.
++ *
++ ******************************************************************************/
++#ifndef BTA_FM_HWHDR_H
++#define BTA_FM_HWHDR_H
++
++#include "hcidefs.h"
++
++#define BTA_FM_2048_OP_CODE         HCI_BRCM_FM_OPCODE
++#define BTA_FMTX_2048_OP_CODE       HCI_BRCM_FMTX_OPCODE
++
++#define I2C_FM_REG_PAGE_CXT         0xab        /* RX, TX contxt switch */
++
++/* FMRX I2C register Address */
++#define I2C_FM_REG_RDS_SYS          0x00
++#define I2C_FM_REG_FM_CTRL          0x01
++#define I2C_FM_REG_RDS_CTL0         0x02
++
++#define I2C_FM_REG_AUD_PAUS         0x04
++#define I2C_FM_REG_AUD_CTL0         0x05
++#define I2C_FM_REG_AUD_CTL1         0x06
++#define I2C_FM_REG_SCH_CTL0         0x07
++#define I2C_FM_SEARCH_SNR           0x08        /* search criteria for SNR */
++#define I2C_FM_REG_SCH_TUNE         0x09
++#define I2C_FM_REG_FM_FREQ          0x0a
++#define I2C_FM_REG_FM_FREQ1         0x0b
++#define I2C_FM_REG_AF_FREQ0         0x0c
++#define I2C_FM_REG_AF_FREQ1         0x0d
++#define I2C_FM_REG_CARRIER          0x0e
++#define I2C_FM_REG_RSSI             0x0f
++#define I2C_FM_REG_FM_RDS_MSK       0x10
++#define I2C_FM_REG_FM_RDS_MSK1      0x11
++#define I2C_FM_REG_FM_RDS_FLAG      0x12
++#define I2C_FM_REG_FM_RDS_FLAG1     0x13
++#define I2C_FM_REG_RDS_WLINE        0x14
++
++#define I2C_FM_REG_BB_MAC0          0x16
++#define I2C_FM_REG_BB_MAC1          0x17
++#define I2C_FM_REG_BB_MSK0          0x18
++#define I2C_FM_REG_BB_MSK1          0x19
++#define I2C_FM_REG_PI_MAC0          0x1a
++#define I2C_FM_REG_PI_MAC1          0x1b
++#define I2C_FM_REG_PI_MSK0          0x1c
++#define I2C_FM_REG_PI_MSK1          0x1d
++
++#define I2C_FM_REG_RCV_ID           0x28
++#define I2C_FM_REG_I2C_CFG          0x29
++#define I2C_FM_REG_RDS_DATA         0x80
++#define I2C_FM_REG_AF_FAILURE       0x90    /* AF jump failure reason code */
++#define I2C_FM_REG_PCM_ROUTE        0x4d
++#define I2C_FM_RES_PRESCAN_QUALITY  0xde    /* preset scan CO slope threshold */
++#define I2C_FM_REG_SNR              0xdf    /* SNR reading of currently tuned channel */
++#define I2C_FM_REG_VOLUME_CTRL      0xf8    /* audio control register */
++#define I2C_FM_REG_BLEND_MUTE       0xf9
++#define I2C_FM_SEARCH_BOUNDARY      0xfb    /* search boundary */
++#define I2C_FM_SEARCH_METHOD        0xfc    /* scan mode for 2048B0 FW */
++#define I2C_FM_REG_PRESET_MAX       0xfe
++#define I2C_FM_REG_SCH_STEP         0xfd
++#define I2C_FM_REG_PRESET_STA       0xff
++
++/* bits in register I2C_FM_REG_PAGE_CXT  0xab */
++/* Only bit[0] is used to select between FM RX and FM TX register pages
++    and interrupt sourcing. */
++#define I2C_FM_RX_ON                0x00
++#define I2C_FM_TX_ON                0x01
++
++/* bits in register I2C_FM_RDS_SYS  0x00 */
++#define I2C_FM_ON                   0x01
++#define I2C_RDS_ON                  0x02
++
++/* bits in register I2C_FM_REG_FM_CTRL  0x01 */
++#define I2C_BAND_REG_WEST           0x00
++#define I2C_BAND_REG_EAST           0x01
++#define I2C_STEREO_AUTO             0x02
++#define I2C_STEREO_MANUAL           0x04
++#define I2C_STEREO_SWITCH           0x08
++#define I2C_HI_LO_INJ               0x10
++
++/* bits in register I2C_FM_REG_RDS_CTL0  0x02 */
++#define I2C_RDS_CTRL_RDS            0x00
++#define I2C_RDS_CTRL_RBDS           0x01
++#define I2C_RDS_CTRL_FIFO_FLUSH     0x02
++
++/* bits in register I2C_FM_REG_AUD_PAUS 0x04 */
++#define I2C_AUD_PAUSE_21_THRESH     0x00 /* bit [0:3]audio pause RSSI magnitude threshold */
++#define I2C_AUD_PAUSE_18_THRESH     0x01
++#define I2C_AUD_PAUSE_15_THRESH     0x02
++#define I2C_AUD_PAUSE_12_THRESH     0x03
++#define I2C_AUD_PAUSE_20_MS         0x00 /* bit [4:7]audio pause duration */
++#define I2C_AUD_PAUSE_26_MS         0x10
++#define I2C_AUD_PAUSE_33_MS         0x20
++#define I2C_AUD_PAUSE_40_MS         0x30
++
++/* bits in register I2C_FM_REG_AUD_CTL0  0x05 */
++#define I2C_RF_MUTE                 0x0001    /* bit0 */
++#define I2C_MANUAL_MUTE             0x0002    /* bit1 */
++#define I2C_Z_MUTE_LEFT_OFF         0x0004    /* bit2 */
++#define I2C_Z_MUTE_RITE_OFF         0x0008   /* bit3 */
++#define I2C_AUDIO_DAC_ON            0x0010    /* bit4 */
++#define I2C_AUDIO_I2S_ON            0x0020    /* bit5 */
++#define I2C_DEEMPHA_75_ON           0x0040    /* bit6 */
++#define I2C_AUDIO_BAND_WIDTH        0x0080    /* bit7 */
++
++/* FM search control */
++#define I2C_SCH_DIRCT_UP            0x80    /* bit7 on  */
++#define I2C_SCH_DIRCT_DOWN          0x00    /* bit7 off */
++
++/* FM search tune mode, used to set I2C_FM_REG_SCH_TUNE 0x09 register */
++#define I2C_IDLE_MODE            0x00       /* Idle mode */
++#define I2C_PRE_SET_MODE         0x01       /* preset mode, used for tuning */
++#define I2C_AUTO_SCH_MODE        0x02       /* auto search, used for scanning */
++#define I2C_AF_JUMP_MODE         0x03       /* af jump mode */
++
++/* the highest bit on I2C_FM_REG_PCM_ROUTE register */
++#define I2C_PCM_ROUTE_ON_BIT        0x80    /* FM on SCO */
++
++/* MSB in I2C_FM_REG_SCH_CTL0 0x07 */
++#define I2C_SEARCH_UP_CTRL           0x80        /* scan upward        */
++#define I2C_SEARCH_DN_CTRL           0x00         /* scan downward    */
++
++
++/* bits in I2C_FM_REG_FM_RDS_FLAG 0x12 */
++#define I2C_MASK_SRH_TUNE_CMPL_BIT     (0x0001 << 0)    /* FM/RDS register search/tune cmpl bit */
++#define I2C_MASK_SRH_TUNE_FAIL_BIT     (0x0001 << 1)    /* FM/RDS register search/tune fail bit */
++#define I2C_MASK_RSSI_LOW_BIT          (0x0001 << 2)    /* FM/RDS registerRSSI low bit */
++#define I2C_MASK_CARR_HI_ERR_BIT       (0x0001 << 3)    /* FM/RDS register carrier high err bit */
++#define I2C_MASK_AUDIO_PAUSE_BIT       (0x0001 << 4)    /* audio has paused for the specific threshold and duration */
++#define I2C_MASK_STEREO_DETC_BIT       (0x0001 << 5)    /* FM/RDS register search/tune cmpl bit */
++#define I2C_MASK_STEREO_ACTIVE_BIT     (0x0001 << 6)    /* FM/RDS register search/tune fail bit */
++/* second bytes of FM_RDS_FLG 0x13 */
++#define I2C_MASK_RDS_FIFO_WLINE_BIT    (0x0100 << 1)    /* RDS tuples are currently available at
++                                                        a level >= waterline */
++#define I2C_MASK_BB_MATCH_BIT          (0x0100 << 3)    /* PI code match found */
++#define I2C_MASK_PI_MATCH_BIT          (0x0100 << 5)    /* PI code match found */
++
++
++/* I2C_FM_REG_RDS_DATA 0x80 reading */
++#define I2C_FM_RDS_END_TUPLE_1ST_BYTE    0x7c /* 1st byte of a RDS ending tuple */
++#define I2C_FM_RDS_END_TUPLE_2ND_BYTE    0xff /* 2nd byte of a RDS ending tuple */
++#define I2C_FM_RDS_END_TUPLE_3RD_BYTE    0xff /* 3rd byte of a RDS ending tuple */
++
++
++/* I2C_FM_REG_PRESET_STA readfing */
++#define I2C_PRESET_STA_MAX              62
++
++/* I2C_FM_SEARCH_METHOD */
++#define I2C_FM_SEARCH_NORMAL            0x00
++#define I2C_FM_SEARCH_PRESET            0x01  /* default: preset scan with CO */
++#define I2C_FM_SEARCH_RSSI              0x02
++#define I2C_FM_SEARCH_PRESET_SNR        0x03  /* preset scan with SNR */
++
++/* I2C_FM_REG_AF_FAILURE reason code detail */
++#define I2C_AF_FAIL_RESV        0x00    /* reserved */
++#define I2C_AF_FAIL_RSSI_LOW    (1 << 4)    /* RSSI low,  bit 4*/
++#define I2C_AF_FAIL_FREQ_OSHI   (1 << 5)    /* Frequency Offset high, bit 5 */
++#define I2C_AF_FAIL_PI_ERR      (3 << 4)    /* PI mismatch, bit 4 & 5 */
++
++
++/* FMTX I2C register Address */
++#define I2C_FMTX_REG_MOD_CTRL           0x31    /*   FMTX control */
++#define I2C_FMTX_CHRP_AFC_1             0x4f
++#define I2C_FMTX_CHRP_AFC_2             0x51
++#define I2C_FMTX_CHRP_FC_1              0x53
++#define I2C_FMTX_CHRP_FC_2              0x55
++#define I2C_FMTX_CHRP_MRK_1             0x57
++#define I2C_FMTX_CHRP_MRK_2             0x59
++#define I2C_FMTX_CHRP_SPC_1             0x5b
++#define I2C_FMTX_CHRP_SPC_2             0x5d
++#define I2C_FMTX_REG_MUTE               0x63
++#define I2C_FMTX_REG_CHNL_SET           0x6b
++#define I2C_FMTX_REG_CHNL_SET1          0x6c
++#define I2C_FMTX_REG_CHNL_BW_SET        0x6d
++#define I2C_FMTX_REG_REF_SET            0x70
++#define I2C_FMTX_REG_LOCK_GET           0x71
++#define I2C_FMTX_REG_PA_CTRL            0x72
++#define I2C_FMTX_REG_DEV_SET            0x74
++#define I2C_FMTX_CHRP_SET               0x75
++#define I2C_FMTX_SCAN_START             0x77    /* 4329A0 0xd0 */
++#define I2C_FMTX_SCAN_END               0x79    /* 4329A0 0xd3 */
++#define I2C_FMTX_AUDIO_LO_COUNT         0x7B
++#define I2C_FMTX_AUDIO_HI_COUNT         0x7C
++#define I2C_FMTX_AUDIO_THRESH_LO        0x7D
++#define I2C_FMTX_AUDIO_THRESH_HI        0x7E
++#define I2C_FMTX_REG_RDS_DATA           0x80
++#define I2C_FMTX_REG_MPX_LMT            0x97
++#define I2C_FMTX_REG_CTRL_SET           0xa3
++#define I2C_FMTX_REG_PI_SET             0xa4
++#define I2C_FMTX_REG_PI_SET1            0xa5
++#define I2C_FMTX_REG_RDS_TYPE           0xa6
++#define I2C_FMTX_REG_AF                 0xa8
++#define I2C_FMTX_REG_DISP_SIZE          0xa9
++#define I2C_FMTX_REG_RDS_MODE           0xaa
++#define I2C_FMTX_REG_SCRL_RATE          0xad
++#define I2C_FMTX_REG_TOGL_AB            0xaf
++#define I2C_FMTX_REG_RDS_RPTR           0xb0
++#define I2C_FMTX_REG_RDS_COMIT          0xb1
++#define I2C_FMTX_REG_IRQ_MASK           0xbb
++#define I2C_FMTX_REG_IRQ_MASK1          0xbc
++#define I2C_FMTX_REG_IRQ_FLAG           0xbf
++#define I2C_FMTX_REG_IRQ_FLAG1          0xc0
++#define I2C_FMTX_REG_RDS_WLINE          0xc9
++#define I2C_FMTX_REG_RDS_WLINE1         0xca
++#define I2C_FMTX_REG_RDS_SPR0_CTRL      0xd0      /* used for scroll step on 4329A0 FPGA */
++#define I2C_FMTX_REG_RDS_SPR2_CTRL      0xd2      /* used for scroll step on 4329A0 */
++#define I2C_FMTX_REG_RDS_SPR3_CTRL      0xd3
++#define I2C_FMTX_AUDIO_MEAS_COUNT       0xd5
++#define I2C_FMTX_AUDIO_DETECT_STATUS    0xd7
++
++#define I2C_FMTX_REG_AUD_DEV            0xd4
++#define I2C_FMTX_REG_PILOT_DEV          0xd3
++
++
++#define I2C_FMTX_REG_PRESET_STA           I2C_FM_REG_PRESET_STA
++
++
++/* I2C_FMTX_REG_MUTE values */
++#define I2C_FMTX_MUTE_R                 (1<<2)    /* bit 2 */
++#define I2C_FMTX_MUTE_L                 (1<<1)    /* bit 1 */
++#define I2C_FMTX_MUTE_BOTH              1
++#define I2C_FMTX_UNMUTE                 0
++
++/* I2C_FMTX_REG_CTRL_SET values */
++#define I2C_FMTX_PLL_ON                 0x01        /* bit 0*/
++#define I2C_FMTX_MONO_ON                (0x01 << 1) /* bit 1*/
++#define I2C_FMTX_STEREO_ON              0x00        /* bit1 = 0*/
++#define I2C_FMTX_AUD_ROUTE_I2S          0x00        /* bit 3:2 = 0 */
++#define I2C_FMTX_AUD_ROUTE_ADC          (0x01 << 2) /* bit3:2 : 1 */
++#define I2C_FMTX_AUD_ROUTE_LITE_STACK   (0x02 << 2) /* bit3:2 : 10 */
++#define I2C_FMTX_PREEMPH_OFF            0x00        /* bit5:4: 0 */
++#define I2C_FMTX_PREEMPH_50             (0x01 << 4) /* bit5:4: 1 */
++#define I2C_FMTX_PREEMPH_75             (0x01 << 5) /* bit5:4: 2 */
++#define I2C_FMTX_REG_US_EUR             0x00        /* bit6: 0 */
++#define I2C_FMTX_REG_JAPAN              (0x1 << 6) /* bit6: 1 */
++
++/* I2C_FMTX_REG_PA_CTRL values */
++#define I2C_FMTX_PWR_OUT_ENB            1
++#define I2C_FMTX_PWR_OUT_DSB            0
++#define I2C_FMTX_PWR_COARSE_0           (0 << 1)
++#define I2C_FMTX_PWR_COARSE_6           (1 << 1)
++#define I2C_FMTX_PWR_COARSE_12          (2 << 1)
++#define I2C_FMTX_PWR_COARSE_18          (3 << 1)
++#define I2C_FMTX_PWR_COARSE_MAX         (7 << 1)
++#define I2C_FMTX_PWR_FINE_0             (0 << 4)
++#define I2C_FMTX_PWR_FINE_1             (1 << 4)
++#define I2C_FMTX_PWR_FINE_2             (2 << 4)
++#define I2C_FMTX_PWR_FINE_3             (3 << 4)
++#define I2C_FMTX_PWR_FINE_4             (4 << 4)
++#define I2C_FMTX_PWR_FINE_5             (5 << 4)
++#define I2C_FMTX_PWR_FINE_6             (6 << 4)
++#define I2C_FMTX_PWR_FINE_MAX           (7 << 4)
++
++/* I2C_FMTX_REG_RDS_TYPE values */
++#define I2C_FMTX_RDS_TYPE_0A            0
++#define I2C_FMTX_RDS_TYPE_0B            1
++#define I2C_FMTX_RDS_TYPE_2A            2
++#define I2C_FMTX_RDS_TYPE_2B            3
++
++/* commit register setting */
++#define I2C_FMTX_RDS_COMIT_NOW          1
++#define I2C_FMTX_RDS_STOP_NOW           2
++
++/* I2C_FMTX_REG_IRQ_MASK/FLAG values */
++#define I2C_IRQ_AUD_SCLIP_BIT       (0x0001 << 0)
++#define I2C_IRQ_AUD_HCLIP_BIT       (0x0001 << 1)
++#define I2C_IRQ_SIG_FULL_BIT        (0x0001 << 2)
++#define I2C_IRQ_TUNE_CMPL_BIT       (0x0001 << 3)
++#define I2C_IRQ_AUD_STATUS_BIT      (0x0001 << 4)
++#define I2C_IRQ_RSSI_SCAN_BIT       (0x0001 << 5)
++/* second bytes of I2C_FMTX_REG_IRQ_MASK/FLAG */
++#define I2C_IRQ_COMIT_CMPL_BIT      (0x0100 << 0)
++#define I2C_IRQ_RDS_TRANS_CMPL_BIT  (0x0100 << 1)
++
++#endif /* BTA_FM_HWHDR_H */
+diff --git a/bta/include/bta_rds_api.h b/bta/include/bta_rds_api.h
+new file mode 100644
+index 0000000..840030e
+--- /dev/null
++++ b/bta/include/bta_rds_api.h
+@@ -0,0 +1,506 @@
++/******************************************************************************
++ *
++ *  Copyright (C) 2003-2012 Broadcom Corporation
++ *
++ *  Licensed under the Apache License, Version 2.0 (the "License");
++ *  you may not use this file except in compliance with the License.
++ *  You may obtain a copy of the License at:
++ *
++ *  http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing, software
++ *  distributed under the License is distributed on an "AS IS" BASIS,
++ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ *  See the License for the specific language governing permissions and
++ *  limitations under the License.
++ *
++ ******************************************************************************/
++
++/******************************************************************************
++ *
++ *  This is the public interface file for the RDS decoder.
++ *
++ ******************************************************************************/
++#ifndef BTA_RDS_API_H
++#define BTA_RDS_API_H
++
++#include "bta_api.h"
++#include "bta_fm_api.h"
++
++/*****************************************************************************
++**  Constants and data types
++*****************************************************************************/
++
++// TODO: FIx the issue
++// Defining the MACRO will cause compilation issue
++#ifndef BTA_RDS_DEBUG
++#define BTA_RDS_DEBUG    FALSE
++#endif
++
++/* Maxinum number of different RDS streams supported by the decoder */
++#ifndef BTA_RDS_MAX_STREAM
++#define BTA_RDS_MAX_STREAM      1
++#endif
++
++/* RDS Decoder structure */
++#define BTA_RDS_PI_BIT           (1<<0)
++#define BTA_RDS_PTY_BIT          (1<<1)
++#define BTA_RDS_TP_BIT           (1<<2)
++#define BTA_RDS_DI_BIT           (1<<3)
++#define BTA_RDS_MS_BIT           (1<<4)
++#define BTA_RDS_AF_BIT           (1<<5)
++#define BTA_RDS_PS_BIT           (1<<6)
++#define BTA_RDS_PTYN_BIT         (1<<7)
++#define BTA_RDS_RT_BIT           (1<<8)
++#define BTA_RDS_PIN_BIT          (1<<9)
++#define BTA_RDS_CT_BIT           (1<<10)
++#define BTA_RDS_ODA_BIT          (1 <<11)
++#define BTA_RDS_TDC_BIT          (1 <<12)
++#define BTA_RDS_EWS_BIT          (1 << 13)
++#define BTA_RDS_SLC_BIT          (1 << 14)
++#define BTA_RDS_EON_BIT          (1 << 15)
++#define BTA_RDS_TMC_BIT          (1 << 16)
++#define BTA_RDS_RTP_BIT          (1 << 17)
++
++typedef UINT32  tBTA_RDS_FEATURE;
++
++
++
++/* RDS decoder event */
++enum
++{
++    BTA_RDS_REG_EVT,        /* RDS decoder user register event*/
++    BTA_RDS_PI_EVT,         /* PI code */
++    BTA_RDS_PTY_EVT,        /* program type */
++    BTA_RDS_TP_EVT,         /* traffic program identification */
++    BTA_RDS_DI_EVT,         /* Decoder Identification */
++    BTA_RDS_MS_EVT,         /* music speech content */
++    BTA_RDS_AF_EVT,         /* Alternative Frequency */
++    BTA_RDS_PS_EVT,         /* Program service name */
++    BTA_RDS_PTYN_EVT,       /* program type name */
++    BTA_RDS_RT_EVT,         /* Radio Text */
++    BTA_RDS_PIN_EVT,        /* program Item number */
++    BTA_RDS_CT_EVT,         /* clock time */
++    BTA_RDS_ODA_EVT,        /* open data application */
++    BTA_RDS_TDC_EVT,        /* transparent data channel */
++    BTA_RDS_EWS_EVT,        /* emergency warning system */
++    BTA_RDS_SLC_EVT,         /* slow labelling code */
++    BTA_RDS_RPTOR_EVT,      /* charcter repertoire set */
++    BTA_RDS_EON_EVT,        /* EON information, should be evalute with sub code */
++    BTA_RDS_TMC_EVT,        /* Traffic Message Channel */
++    BTA_RDS_RTP_EVT,        /* RT plus event */
++    BTA_RDS_STATS_EVT
++};
++typedef UINT32   tBTA_RDS_EVT;
++
++
++/* RDS status code */
++enum
++{
++    BTA_RDS_OK,
++    BTA_RDS_ERR,            /* general error */
++    BTA_RDS_ERR_DAT,        /* error RDS data */
++    BTA_RDS_ERR_INTL,       /* internal error */
++    BTA_RDS_ERR_BAD_AID     /* bad application ID error */
++};
++typedef UINT8 tBTA_RDS_STATUS;
++
++/* TP/TA flag */
++#define BTA_RDS_TP_NONE         0x00    /* TP, TA all 0 */
++#define BTA_RDS_TP_EON          0x10    /* TA 1; TP 0, no traffic serrvice, available on EON*/
++#define BTA_RDS_TP_AVAIL        0x01    /* TA 0; TP 1: traffic service available */
++#define BTA_RDS_TP_ACTIVE       0x11    /* TA: 1 TP 1: traffic service active now */
++#define BTA_RDS_TP_INVAL        0xff    /* invalid TP/TA code */
++
++typedef UINT8  tBTA_FM_RDS_TP_TYPE;
++
++/* PTY definition, RDS set */
++enum
++{
++    BTA_RDS_PTY_NONE,   /* 0    */
++    BTA_RDS_PTY_NEWS,   /* 1    */
++    BTA_RDS_PTY_AFIRS,  /* 2    */
++    BTA_RDS_PTY_INFO,   /* 3    */
++    BTA_RDS_PTY_SPRT,   /* 4    */
++    BTA_RDS_PTY_EDCT,   /* 5    */
++    BTA_RDS_PTY_DRMA,   /* 6    */
++    BTA_RDS_PTY_CLTR,   /* 7    */
++    BTA_RDS_PTY_SCI,    /* 8    */
++    BTA_RDS_PTY_VARI,   /* 9    */
++    BTA_RDS_PTY_POP,    /* 10   */
++    BTA_RDS_PTY_ROCK,   /* 11   */
++    BTA_RDS_PTY_EASY,   /* 12   */
++    BTA_RDS_PTY_LITE,   /* 13   */
++    BRA_RDS_PTY_CLSC,   /* 14   */
++    BTA_RDS_PTY_OTHR,   /* 15   */
++    BTA_RDS_PTY_WTHR,   /* 16   */
++    BTA_RDS_PTY_FINC,   /* 17   */
++    BTA_RDS_PTY_CHLD,   /* 18   */
++    BTA_RDS_PTY_SOCL,   /* 19   */
++    BTA_RDS_PTY_RELG,   /* 20   */
++    BTA_RDS_PTY_FONE,   /* 21   */
++    BTA_RDS_PTY_TRVL,   /* 22   */
++    BTA_RDS_PTY_LESR,   /* 23   */
++    BTA_RDS_PTY_JAZZ,   /* 24   */
++    BTA_RDS_PTY_CNTY,   /* 25   */
++    BTA_RDS_PTY_NATI,   /* 26   */
++    BTA_RDS_PTY_OLDI,   /* 27   */
++    BTA_RDS_PTY_FOLK,   /* 28   */
++    BTA_RDS_PTY_DOC,    /* 29   */
++    BTA_RDS_PTY_TEST,   /* 30   */
++    BTA_RDS_PTY_ALRM    /* 31   */
++};
++
++/* PTY definition, RBDS set */
++enum
++{
++    BTA_RBDS_PTY_NONE,   /* 0    */
++    BTA_RBDS_PTY_NEWS,   /* 1    */
++    BTA_RBDS_PTY_INFM,   /* 2    */
++    BTA_RBDS_PTY_SPRT,   /* 3    */
++    BTA_RBDS_PTY_TALK,   /* 4    */
++    BTA_RBDS_PTY_ROCK,   /* 5    */
++    BTA_RBDS_PTY_CROCK,  /* 6    */
++    BTA_RBDS_PTY_ADLT,   /* 7    */
++    BTA_RBDS_PTY_SROCK,  /* 8    */
++    BTA_RBDS_PTY_TOP,    /* 9    */
++    BTA_RBDS_PTY_CNTY,   /* 10   */
++    BTA_RBDS_PTY_OLDI,   /* 11   */
++    BTA_RBDS_PTY_SOFT,   /* 12   */
++    BTA_RBDS_PTY_NSTG,   /* 13   */
++    BTA_RBDS_PTY_JAZZ,   /* 14   */
++    BTA_RBDS_PTY_CLCS,   /* 15   */
++    BTA_RBDS_PTY_RNB,    /* 16   */
++    BTA_RBDS_PTY_SRNB,   /* 17   */
++    BTA_RBDS_PTY_LAGU,   /* 18   */
++    BTA_RBDS_PTY_RELM,   /* 19   */
++    BTA_RBDS_PTY_RELT,   /* 20   */
++    BTA_RBDS_PTY_PERS,   /* 21   */
++    BTA_RBDS_PTY_PBLK,   /* 22   */
++    BTA_RBDS_PTY_COLL,   /* 23   */
++    BTA_RBDS_PTY_UN24,   /* 24   */
++    BTA_RBDS_PTY_UN25,   /* 25   */
++    BTA_RBDS_PTY_UN26,   /* 26   */
++    BTA_RBDS_PTY_UN27,   /* 27   */
++    BTA_RBDS_PTY_UN28,   /* 28   */
++    BTA_RBDS_PTY_WTHR,   /* 29   */
++    BTA_RBDS_PTY_TEST,   /* 30   */
++    BTA_RBDS_PTY_ALER,   /* 31   */
++    BTA_RDS_PTY_UNDEF    /* 32   */
++};
++typedef UINT8   tBTA_RDS_PTY_VAL;
++
++
++/* PTY */
++typedef struct
++{
++    tBTA_RDS_PTY_VAL    pty_val;    /* PTY  value */
++    UINT8               *p_str;  /* PTY display string */
++} tBTA_RDS_PTY;
++
++/* CT data */
++typedef struct
++{
++    UINT32  day;
++    UINT8   hour;
++    UINT8   minute;
++    UINT8   sense;
++    UINT8   offset;
++} tBTA_RDS_CT;
++
++/* PIN data */
++typedef struct
++{
++    UINT8   day;
++    UINT8   hour;
++    UINT8   minute;
++} tBTA_RDS_PIN;
++
++/* music speech content type */
++enum
++{
++    BTA_RDS_SPEECH = 1,
++    BTA_RDS_MUSIC
++};
++typedef UINT8 tBTA_RDS_M_S;
++
++/* transprant data channell structure */
++typedef struct
++{
++    UINT8       chnl_num;   /* channel number */
++    UINT8       len;        /* data length */
++    UINT8       tdc_seg[4]; /* TDC data, max to 4 bytes */
++
++}tBTA_RDS_TDC_DATA;
++
++/* TMC coding Protocol types corresponding Application ID */
++#define BTA_RDS_TMC_ALERT         0xCD46
++#define BTA_RDS_TMC_ALERT_PLUS    0x4B02
++
++#define BTA_RDS_RT_PLUS_AID       0x4BD7
++
++/* segment data type, used for EWS, and ODA */
++typedef struct
++{
++    UINT8               data_5b;        /* the 5 bits data carried in 2nd block */
++    UINT16              data_16b_1;     /* 16 bits data carried in block 3 if group type A */
++    UINT16              data_16b_2;     /* 16 bits data carried in block 4 */
++} tBTA_RDS_SEG_DATA;
++
++/* ODA */
++typedef struct
++{
++    UINT16              aid;        /* ODA application ID */
++    UINT8               grp_type;   /* group type which is carrying this AID */
++    union
++    {
++        tBTA_RDS_SEG_DATA       msg_body;    /* ODA message information */
++        UINT16                  sys_info;    /* ODA system information carried in group 3A block C */
++    }                           data_info;
++}tBTA_RDS_ODA_DATA;
++
++/* slow labelling code type */
++enum
++{
++    BTA_RDS_SLC_ECC,            /* enhanced country code */
++    BTA_RDS_SLC_TMC,
++    BTA_RDS_SLC_PID,
++    BTA_RDS_SLC_LAG,
++    BTA_RDS_SLC_UNASSIGNED,
++    BTA_RDS_SLC_BRCST,
++    BTA_RDS_SLC_EWS
++};
++typedef UINT8   tBTA_RDS_SLC_TYPE;
++
++typedef struct
++{
++    UINT8           paging;
++    UINT8           ecc_code;
++}tBTA_RDS_ECC;  /* ECC code */
++
++/* Slow labelling Code data */
++typedef union
++{
++    tBTA_RDS_ECC        ecc;            /* ECC code */
++    UINT16              language;       /* language code */
++    UINT16              tmc_id;         /* TMC ID */
++    UINT16              paging_id;      /* paging ID */
++    UINT16              ews_channel;    /* EWS channel ID */
++    UINT16              other;           /* broadcaster data */
++}  tBTA_RDS_SLC ;
++
++/* Slow labelling Code call back data*/
++typedef struct
++{
++    tBTA_RDS_SLC_TYPE   slc_type;
++    tBTA_RDS_SLC        data;
++
++}tBTA_RDS_SLC_DATA;
++
++
++enum
++{
++    BTA_RDS_RPTOR_SI,
++    BTA_RDS_RPTOR_SO,
++    BTA_RDS_RPTOR_LS2,
++    BTA_RDS_RPTOR_UNKNOW
++};
++typedef UINT8 tBTA_RDS_RPTOR_SET;
++
++enum
++{
++    BTA_RDS_EON_PS,         /* EON PS */
++    BTA_RDS_EON_AF,         /* EON AF method-A AF list */
++    BTA_RDS_EON_MAP_FREQ,   /* EON mapped AF frequency */
++    BTA_RDS_EON_PIN,        /* EON PIN info */
++    BTA_RDS_EON_PTY,        /* EON PTY informtion */
++    BTA_RDS_EON_TA,         /* TA information from 14A group, information only */
++    BTA_RDS_EON_TA_B,       /* TA/TP information from group 14B */
++    BTA_RDS_EON_LINK        /* EON linkage information */
++};
++typedef UINT8 tBTA_RDS_EON_CODE;
++
++typedef struct
++{
++    UINT16  tn_freq;
++    UINT16  on_freq;
++}tBTA_RDS_MAP_FREQ;
++
++typedef struct
++{
++    UINT8   la;     /* Linkage Actuator */
++    UINT8   eg;     /* Extended Generic indicator */
++    UINT8   ils;    /* Internaltional Linkage Set Indicator */
++    UINT8   lsn_ci;    /* Linkage Set Number : contry identifier */
++    UINT8   lsn_li;    /* Linkage Set Number: linkage identifier */
++
++}tBTA_RDS_LINK_DATA;
++
++/* AF encoding method */
++enum
++{
++    BTA_RDS_AF_M_U, /* unknown */
++    BTA_RDS_AF_M_A, /* method - A */
++    BTA_RDS_AF_M_B  /* method - B */
++};
++typedef UINT8 tBTA_RDS_AF_M_TYPE;
++
++typedef struct
++{
++    tBTA_FM_AF_LIST         list;
++    tBTA_RDS_AF_M_TYPE      method; /* method-A or method-B */
++                                    /* when method-B is used, the tuning frequency, for which
++                                  the associated Af list is valid, will be thelist.af_list[0] */
++
++}tBTA_RDS_AF_LIST;
++
++typedef struct
++{
++    UINT16                  pi_eon;
++    tBTA_RDS_EON_CODE       sub_code;
++    union
++    {
++        UINT8               *p_data;    /* PS, PTY */
++        tBTA_FM_RDS_TP_TYPE ta_tp;
++        UINT8               ta;         /* TA flag */
++        tBTA_RDS_AF_LIST    af_data;    /* AF */
++        tBTA_RDS_PIN        pin;        /* PIN */
++        tBTA_RDS_MAP_FREQ   map_freq;
++        tBTA_RDS_LINK_DATA  linkage;    /* Linkage information */
++    }data;
++}tBTA_RDS_EON_DATA;
++
++#ifndef BTA_RDS_RTP_TAG_MAX
++#define BTA_RDS_RTP_TAG_MAX     6
++#endif
++
++typedef struct
++{
++    UINT8               content_type;
++    UINT8               start;
++    UINT8               len;
++} tBTA_RDS_RTP_TAG;
++
++typedef struct
++{
++    BOOLEAN             running;
++    UINT8               tag_toggle;
++    UINT8               tag_num;
++    tBTA_RDS_RTP_TAG    tag[BTA_RDS_RTP_TAG_MAX];
++} tBTA_RDS_RTP;
++
++typedef struct
++{
++    UINT8           *p_data;
++    UINT8           g_type;
++    BOOLEAN         complete;
++} tBTA_RDS_RT;
++
++/* RDS callback data */
++typedef union
++{
++    tBTA_RDS_CT         ct;             /* Clock time */
++    tBTA_RDS_PIN        pin;            /* Program Item Number */
++    tBTA_RDS_STATUS     status;         /* status */
++    tBTA_RDS_AF_LIST    af_data;        /* AF */
++    tBTA_RDS_PTY        pty;            /* PTY callback data */
++    UINT16              pi_code;       /* PI code */
++    UINT8               data8;         /* UINT8 data, used for DI callback */
++    tBTA_FM_RDS_TP_TYPE ta_tp;          /* TP/TA status */
++    UINT8               *p_data;        /* data pointer to UINT8, used for PS, PTYN */
++    tBTA_RDS_RPTOR_SET  rptor_set;
++    tBTA_RDS_M_S        m_s;            /* music speech feature */
++    tBTA_RDS_ODA_DATA   oda;            /* Open data application data, TMC */
++    tBTA_RDS_TDC_DATA   tdc_data;       /* transparent data channel data */
++    tBTA_RDS_SEG_DATA   seg_data;       /* EWS data */
++    tBTA_RDS_SLC_DATA   slc;            /* slow labelling codes */
++    tBTA_RDS_EON_DATA   eon;            /* EON data */
++    tBTA_RDS_RTP        rtplus;
++    UINT32              stats[4];       /* statistics data */
++    tBTA_RDS_RT         rt;             /* used for RT */
++} tBTA_FM_RDS;
++
++typedef void (tBTA_RDS_CBACK)(tBTA_RDS_EVT event, tBTA_FM_RDS *p_data, UINT8 app_id);
++
++
++/*****************************************************************************
++**  External Function Declarations
++*****************************************************************************/
++#ifdef __cplusplus
++extern "C"
++{
++#endif
++
++/*******************************************************************************
++**
++** Function         BTA_FmRDSInitDecoder
++**
++** Description      This funtion initialize the RDS group decoder by resetting
++**                  default values to the RDS parser control block.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern void BTA_FmRDSInitDecoder(void);
++/*******************************************************************************
++**
++** Function         BTA_FmRDSRegister
++**
++** Description      This funtion register the user callback and app ID with RDS
++**                  decoder, together with the RDS feature mask they are interested
++**                  in. Use the function, a client:
++**
++**                  I.   can be registered at RDS decoder,
++**                  II.  deregister at decoder by sending the same app_id with a NULL
++**                       call back function; or
++**                  III. re-register the call back with different RDS feature mask.
++**
++**
++** Parameter        rds_mask: RDS feature this client interested in
++**                  p_cback: call back function of the client
++**                  app_id: application ID associate with this client, it must be a
++**                           NONE-ZERO number.
++**
++** Returns          void
++**
++*******************************************************************************/
++extern tBTA_RDS_STATUS BTA_FmRDSRegister(tBTA_FM_RDS_B mode, tBTA_RDS_FEATURE rds_mask,
++                                      tBTA_RDS_CBACK *p_cback, UINT8 app_id);
++
++/*******************************************************************************
++**
++** Function         BTA_FmRDSResetDecoder
++**
++** Description      Reset RDS decoder decoding control variable for a new parsing.
++**                  Usually this function is called when jumping to a new frequency,
++**                  and all the old RDS information should be erased.
++**
++** Returns          app_id: application ID associate with a RDS stream, it must be a
++**                           NONE-ZERO positive number.
++**
++*******************************************************************************/
++extern tBTA_RDS_STATUS BTA_FmRDSResetDecoder(UINT8 app_id);
++/*******************************************************************************
++**
++** Function         BTA_FmRDSDecode
++**
++** Description      Parse the rds group
++**
++** Parameter        p_data : input rds data in multiple tuples, which means it's
++**                           always 3n bytes.
++**                  len    : the total length of p_data.
++**s
++**                  app_id: application ID associate with a RDS stream, it must be a
++**                           NONE-ZERO positive number.
++** Returns          void
++**
++*******************************************************************************/
++extern tBTA_RDS_STATUS BTA_FmRDSDecode(UINT8 app_id, UINT8 *p_data, UINT16 length);
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* BTA_RDS_API_H */
++
 diff --git a/bta/sys/bta_sys_main.c b/bta/sys/bta_sys_main.c
 index 6bb64c6..0c8db58 100644
 --- a/bta/sys/bta_sys_main.c
@@ -4490,6 +5275,105 @@ index ab7710a..07b3dd0 100644
  
    // Only something to do if the module was actually started
    if (state < MODULE_STATE_STARTED)
+diff --git a/btif/co/bta_fm_co.c b/btif/co/bta_fm_co.c
+new file mode 100644
+index 0000000..bfe20fe
+--- /dev/null
++++ b/btif/co/bta_fm_co.c
+@@ -0,0 +1,93 @@
++/*****************************************************************************
++**
++**  Name:           bta_fm_co.c
++**
++**  Description:    This file contains the FM callout function implementation
++**                   for Insight.
++**
++**  Copyright (c) 2003-2010, Broadcom Corp., All Rights Reserved.
++**  Widcomm Bluetooth Core. Proprietary and confidential.
++**
++*****************************************************************************/
++
++#include "bta_api.h"
++#include "bta_sys.h"
++#include "bta_fm_api.h"
++#include "bta_fm_co.h"
++#include "btif_fm.h"
++
++
++/*******************************************************************************
++**
++** Function         bta_fm_co_init
++**
++** Description      This callout function is executed by FM when it is
++**                  started by calling BTA_FmSetRDSMode().  This function can be
++**                  used by the phone to initialize RDS decoder.
++**
++**
++** Returns
++**
++*******************************************************************************/
++tBTA_FM_STATUS bta_fm_co_init(tBTA_FM_RDS_B rds_mode)
++{
++    APPL_TRACE_DEBUG("bta_fm_init_co");
++
++    BTA_FmRDSInitDecoder();
++
++    BTA_FmRDSRegister(rds_mode, 0xffffffff,
++            /*BTA_FM_RDS_PI_BIT|BTA_FM_RDS_AF_BIT|BTA_FM_RDS_PS_BIT|BTA_FM_RDS_RT_BIT,*/
++                btif_fm_rdsp_cback, BTIF_RDS_APP_ID);
++
++    BTA_FmRDSResetDecoder(BTIF_RDS_APP_ID);
++
++    return BTA_FM_OK;
++}
++
++/*******************************************************************************
++**
++** Function         bta_fm_co_close
++**
++** Description      This callout function is executed by FM when it is
++**                  started by calling BTA_FmSetRDSMode() to turn off RDS mode.
++**                  This function can be used by the phone to reset RDS decoder.
++**
++** Returns
++**
++*******************************************************************************/
++void bta_fm_co_close(void)
++{
++    BTA_FmRDSResetDecoder(BTIF_RDS_APP_ID);
++}
++
++/*******************************************************************************
++**
++** Function         bta_fm_co_reset_rds_engine
++**
++** Description      This function can be used by the phone to reset RDS decoder.
++**                  after the TUNE/SEARCH operation
++**
++** Returns
++**
++*******************************************************************************/
++void bta_fm_co_reset_rds_engine(void)
++{
++    BTA_FmRDSResetDecoder(BTIF_RDS_APP_ID);
++}
++
++/*******************************************************************************
++**
++** Function         bta_fm_co_rds_data/
++**
++** Description      This function is called by FM when RDS data is ready.
++**
++**
++**
++** Returns          void
++**
++*******************************************************************************/
++tBTA_FM_STATUS bta_fm_co_rds_data(UINT8 * p_data, UINT16 len)
++{
++    return BTA_FmRDSDecode(BTIF_RDS_APP_ID, p_data, len);
++}
++
 diff --git a/btif/include/btif_api.h b/btif/include/btif_api.h
 index 14e16cb..bde9881 100644
 --- a/btif/include/btif_api.h
@@ -4505,6 +5389,113 @@ index 14e16cb..bde9881 100644
 +#endif
 +
  #endif /* BTIF_API_H */
+diff --git a/btif/include/btif_fm.h b/btif/include/btif_fm.h
+new file mode 100644
+index 0000000..523030e
+--- /dev/null
++++ b/btif/include/btif_fm.h
+@@ -0,0 +1,101 @@
++/******************************************************************************
++ *
++ *  Copyright (C) 2009-2012 Broadcom Corporation
++ *
++ *  This program is the proprietary software of Broadcom Corporation and/or its
++ *  licensors, and may only be used, duplicated, modified or distributed
++ *  pursuant to the terms and conditions of a separate, written license
++ *  agreement executed between you and Broadcom (an "Authorized License").
++ *  Except as set forth in an Authorized License, Broadcom grants no license
++ *  (express or implied), right to use, or waiver of any kind with respect to
++ *  the Software, and Broadcom expressly reserves all rights in and to the
++ *  Software and all intellectual property rights therein.
++ *  IF YOU HAVE NO AUTHORIZED LICENSE, THEN YOU HAVE NO RIGHT TO USE THIS
++ *  SOFTWARE IN ANY WAY, AND SHOULD IMMEDIATELY NOTIFY BROADCOM AND DISCONTINUE
++ *  ALL USE OF THE SOFTWARE.
++ *
++ *  Except as expressly set forth in the Authorized License,
++ *
++ *  1.     This program, including its structure, sequence and organization,
++ *         constitutes the valuable trade secrets of Broadcom, and you shall
++ *         use all reasonable efforts to protect the confidentiality thereof,
++ *         and to use this information only in connection with your use of
++ *         Broadcom integrated circuit products.
++ *
++ *  2.     TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SOFTWARE IS PROVIDED
++ *         "AS IS" AND WITH ALL FAULTS AND BROADCOM MAKES NO PROMISES,
++ *         REPRESENTATIONS OR WARRANTIES, EITHER EXPRESS, IMPLIED, STATUTORY,
++ *         OR OTHERWISE, WITH RESPECT TO THE SOFTWARE.  BROADCOM SPECIFICALLY
++ *         DISCLAIMS ANY AND ALL IMPLIED WARRANTIES OF TITLE, MERCHANTABILITY,
++ *         NONINFRINGEMENT, FITNESS FOR A PARTICULAR PURPOSE, LACK OF VIRUSES,
++ *         ACCURACY OR COMPLETENESS, QUIET ENJOYMENT, QUIET POSSESSION OR
++ *         CORRESPONDENCE TO DESCRIPTION. YOU ASSUME THE ENTIRE RISK ARISING
++ *         OUT OF USE OR PERFORMANCE OF THE SOFTWARE.
++ *
++ *  3.     TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL BROADCOM
++ *         OR ITS LICENSORS BE LIABLE FOR
++ *         (i)   CONSEQUENTIAL, INCIDENTAL, SPECIAL, INDIRECT, OR EXEMPLARY
++ *               DAMAGES WHATSOEVER ARISING OUT OF OR IN ANY WAY RELATING TO
++ *               YOUR USE OF OR INABILITY TO USE THE SOFTWARE EVEN IF BROADCOM
++ *               HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES; OR
++ *         (ii)  ANY AMOUNT IN EXCESS OF THE AMOUNT ACTUALLY PAID FOR THE
++ *               SOFTWARE ITSELF OR U.S. $1, WHICHEVER IS GREATER. THESE
++ *               LIMITATIONS SHALL APPLY NOTWITHSTANDING ANY FAILURE OF
++ *               ESSENTIAL PURPOSE OF ANY LIMITED REMEDY.
++ *
++ *****************************************************************************/
++
++/*****************************************************************************
++ *
++ *  Filename:      btif_fm.h
++ *
++ *  Description:   Main API header file for all BTIF FM functions accessed
++ *                 from internal stack.
++ *
++ *****************************************************************************/
++
++#ifndef BTIF_FM_H
++#define BTIF_FM_H
++
++
++#include "bta_fm_api.h"
++#include "bta_rds_api.h"
++
++
++
++/*****************************************************************************
++**  Constants & Macros
++******************************************************************************/
++#define BTIF_RDS_APP_ID         1
++
++/*****************************************************************************
++**  Type definitions for callback functions
++******************************************************************************/
++
++/*****************************************************************************
++**  Type definitions and return values
++******************************************************************************/
++
++/*****************************************************************************
++**  Extern variables and functions
++******************************************************************************/
++    extern void btif_fm_rdsp_cback(tBTA_RDS_EVT event, tBTA_FM_RDS *p_data, UINT8 app_id);
++
++/*****************************************************************************
++**  Functions
++******************************************************************************/
++
++
++/*****************************************************************************
++**  BTIF CORE API
++******************************************************************************/
++
++/*****************************************************************************
++**  BTIF AV API
++******************************************************************************/
++
++
++
++#endif /* BTIF_FM_H */
++
++
 diff --git a/btif/include/stack_manager.h b/btif/include/stack_manager.h
 index 97fd02f..81d087a 100644
 --- a/btif/include/stack_manager.h
@@ -4616,6 +5607,939 @@ index 0938f01..ef301c3 100644
  #if (defined(HCILP_INCLUDED) && HCILP_INCLUDED == TRUE)
      bte_main_enable_lpm(FALSE);
  #endif
+diff --git a/btif/src/btif_fm.c b/btif/src/btif_fm.c
+new file mode 100644
+index 0000000..a8e6850
+--- /dev/null
++++ b/btif/src/btif_fm.c
+@@ -0,0 +1,927 @@
++/******************************************************************************
++ *
++ *  Copyright (C) 2009-2012 Broadcom Corporation
++ *
++ *  Licensed under the Apache License, Version 2.0 (the "License");
++ *  you may not use this file except in compliance with the License.
++ *  You may obtain a copy of the License at:
++ *
++ *  http://www.apache.org/licenses/LICENSE-2.0
++ *
++ *  Unless required by applicable law or agreed to in writing, software
++ *  distributed under the License is distributed on an "AS IS" BASIS,
++ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ *  See the License for the specific language governing permissions and
++ *  limitations under the License.
++ *
++ ******************************************************************************/
++
++
++/*****************************************************************************
++ *
++ *  Filename:      btif_fm.c
++ *
++ *  Description:   Bluedroid Fm implementation
++ *
++ *****************************************************************************/
++
++#include <hardware/bluetooth.h>
++#include <hardware/bt_fm.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <errno.h>
++#include <string.h>
++
++#define LOG_TAG "BTIF_FM"
++
++#include "bta_api.h"
++#include "bta_rds_api.h"
++
++
++#include "btif_common.h"
++#include "btif_util.h"
++#include "btif_fm.h"
++#include "bt_common.h"
++#include "stack_manager.h"
++#include "hci/include/bt_vendor_lib.h"
++#include "hci/include/vendor.h"
++#include "osi/include/log.h"
++
++
++/*****************************************************************************
++**  Constants & Macros
++******************************************************************************/
++
++
++/* originally 85. however 85 is quite low causing continuous jumps. NFL should be run too
++ * to give a better estimation */
++#ifndef BTIF_FM_AF_THRESH
++#define BTIF_FM_AF_THRESH 95
++#endif
++
++#define BTIF_RDS_STR_LEN_8      8
++#define BTIF_RDS_STR_LEN_64     64
++
++
++#define CHECK_BTFM_INIT() if (bt_fm_callbacks == NULL)\
++    {\
++        BTIF_TRACE_EVENT("BTFM: %s: BTFM not initialized", __func__);\
++        return BTA_WRONG_MODE;\
++    } else {\
++        BTIF_TRACE_EVENT("BTFM: %s", __func__);\
++    }
++/* remapping of bta values. BT over SCO and A2DP are missing. keep in sync with is sent from jni! */
++#define BTIF_FM_AUDIO_PATH_NONE            0
++#define BTIF_FM_AUDIO_PATH_SPEAKER         1
++#define BTIF_FM_AUDIO_PATH_WIRED_HEADSET   2
++#define BTIF_FM_AUDIO_PATH_DIGITAL         3
++
++//HACK copyright © 2017 stenkinevgeniy@gmail.com reversed from samsung blob (Galaxy A3 2016)
++#define FM_PCM_CONFIG_OPCODE               11
++
++
++/*****************************************************************************
++**  Local type definitions
++******************************************************************************/
++
++
++
++/* FM data */
++
++typedef struct
++{
++    BOOLEAN             af_avail;
++    BOOLEAN             af_on;
++    UINT16              pi_code;
++    tBTA_FM_AF_LIST     af_list;
++}tBTIF_FM_AF_CB;
++
++typedef struct
++{
++    BOOLEAN                 rds_on;
++    BOOLEAN                 audio_mute;
++    BOOLEAN                 search_in_progress;
++    tBTA_FM_AUDIO_MODE      mode;
++    tBTA_FM_AUDIO_PATH      path;       /* this relies on bta_fm_api.h (and bta_fm_act.c) channges */
++    tBTA_FM_STEP_TYPE       scan_step;
++    UINT16                  cur_freq;
++    tBTIF_FM_AF_CB          af_cb;
++    UINT16                  volume;
++    int                     current_bta_path;
++} tBTIF_FM_Data;
++
++/*****************************************************************************
++**  Static variables
++******************************************************************************/
++static btfm_callbacks_t *bt_fm_callbacks = NULL;
++static tBTIF_FM_Data btif_fm_data;
++
++/*************************************************************************
++** Extern functions
++*************************************************************************/
++    extern void bta_fm_co_reset_rds_engine(void);
++
++
++/*****************************************************************************
++** Local helper functions
++******************************************************************************/
++    static void btif_fm_cback(tBTA_FM_EVT event, tBTA_FM *p_data);
++    static int btif_fm_set_rds_mode(BOOLEAN rdsOn, BOOLEAN afOn);
++    static void btif_fm_set_rds_mode_int(BOOLEAN rds_on, BOOLEAN af_on);
++
++    static int btif_fm_tune(int freq);
++    static int btif_fm_set_audio_path(int audioPath);
++    static int btif_fm_set_volume(int volume);
++
++
++    /*******************************************************************************
++    **
++    ** Function         btif_fm_af_merge_list
++    **
++    ** Description      For method-B AF encoding, merge up the AF list for seperate
++    **                  short lists based on the same currently tuned service.
++    **
++    ** Returns          BOOLEAN: TRUE: when AF list is updated
++    **                           FALSE: No AF list updating needed.
++    **
++    *******************************************************************************/
++    static BOOLEAN btif_fm_af_merge_list(tBTA_FM_AF_LIST *p_af_data)
++    {
++        UINT8 i, j ;
++        BOOLEAN duplicate, add_up = FALSE;
++        tBTA_FM_AF_LIST *p_local_lst = &btif_fm_data.af_cb.af_list;
++        BTIF_TRACE_DEBUG("%s", __func__);
++
++        for (i = 0; i < p_af_data->num_af; i ++)
++        {
++            duplicate = FALSE;
++
++            for (j = 0; j < p_local_lst->num_af; j ++)
++            {
++                if (p_af_data->af_list[i] == p_local_lst->af_list[j])
++                {
++                    duplicate = TRUE;
++                    break;
++                }
++            }
++            if ( ! duplicate)
++            {
++                add_up = TRUE;
++                p_local_lst->af_type[p_local_lst->num_af] = p_af_data->af_type[i];
++                p_local_lst->af_list[p_local_lst->num_af ++] = p_af_data->af_list[i];
++            }
++        }
++        return add_up;
++    }
++
++
++    /*******************************************************************************
++    **
++    ** Function         btif_fm_rdsp_cback
++    **
++    ** Description      RDS decoder call back function.
++    **
++    ** Returns          void
++    *******************************************************************************/
++    void btif_fm_rdsp_cback(tBTA_RDS_EVT event, tBTA_FM_RDS *p_data, UINT8 app_id)
++    {
++        UINT8   i = 0;
++        BOOLEAN new_af = TRUE;
++
++        switch(event)
++        {
++        case BTA_RDS_REG_EVT:
++            BTIF_TRACE_DEBUG("Client register status: %d", p_data->status);
++            break;
++        case BTA_RDS_PI_EVT:
++            BTIF_TRACE_DEBUG("%s: BTA_RDS_PI_EVT pi_code = %d", __func__, p_data->pi_code);
++            btif_fm_data.af_cb.pi_code = p_data->pi_code;
++            break;
++        case BTA_RDS_AF_EVT:
++            BTIF_TRACE_DEBUG("BTA_RDS_AF_EVT received in %s, tn_freq = %d, num_af = %d",
++                  (p_data->af_data.method == BTA_RDS_AF_M_B)? "Method-B" :"Method-A",
++                  p_data->af_data.list.af_list[0], btif_fm_data.af_cb.af_list.num_af);
++
++            if (btif_fm_data.af_cb.af_on)
++            {
++                new_af = TRUE; /* needs to be true handle first time setup of AF */
++
++                if (p_data->af_data.method == BTA_RDS_AF_M_B)
++                {
++                    if (p_data->af_data.list.af_list[0] == btif_fm_data.cur_freq)
++                        new_af = btif_fm_af_merge_list(&p_data->af_data.list);
++                    else
++                        /* Application can choose to remember other tuned frequency AF list */
++                        /* btui_app, other TN af list, skip */
++                        new_af = FALSE;
++                }
++                else
++                    memcpy(&btif_fm_data.af_cb.af_list, &p_data->af_data.list, sizeof(tBTA_FM_AF_LIST));
++                if (new_af)
++                {
++                    btif_fm_data.af_cb.af_avail = TRUE;
++                    /* when a new AF arrives, update AF list by calling set RDS mode */
++                    if (btif_fm_data.af_cb.af_on)
++                    {
++                        btif_fm_set_rds_mode_int(TRUE, TRUE);
++                    }
++                }
++
++                i = 0;
++                while (i < btif_fm_data.af_cb.af_list.num_af)
++                {
++                    BTIF_TRACE_DEBUG(">>>>>>>>>>>>>>>>>>>>>>>>>AF[%d] [%d]", i+1,
++                        btif_fm_data.af_cb.af_list.af_list[i]);
++                    i++;
++                }
++            }
++            break;
++        case BTA_RDS_PS_EVT:
++            {
++                BTIF_TRACE_DEBUG("BTA_RDS_PS_EVT received");
++                /* Reformat for transport to app via standard callback event. */
++                tBTA_FM rds_event_data;
++                rds_event_data.rds_update.status = BTA_FM_OK;
++                rds_event_data.rds_update.data = BTA_RDS_PS_EVT;
++                rds_event_data.rds_update.index = 0;
++                memcpy(rds_event_data.rds_update.text, p_data->p_data, BTIF_RDS_STR_LEN_8+1);
++
++                btif_fm_cback(BTA_FM_RDS_UPD_EVT, (tBTA_FM *)&rds_event_data);
++            }
++            break;
++        case BTA_RDS_TP_EVT:
++            BTIF_TRACE_DEBUG("BTA_RDS_TP_EVT received");
++            break;
++        case BTA_RDS_PTY_EVT:
++            {
++                BTIF_TRACE_DEBUG("BTA_RDS_TPY_EVT received");
++                /* Reformat for transport to app via standard callback event. */
++                tBTA_FM rds_event_data;
++                rds_event_data.rds_update.status = BTA_FM_OK;
++                rds_event_data.rds_update.data = BTA_RDS_PTY_EVT;
++                rds_event_data.rds_update.index = p_data->pty.pty_val;
++                memcpy(rds_event_data.rds_update.text, p_data->pty.p_str, BTIF_RDS_STR_LEN_8+1);
++
++                btif_fm_cback(BTA_FM_RDS_UPD_EVT, (tBTA_FM *)&rds_event_data);
++            }
++            break;
++        case BTA_RDS_PTYN_EVT:
++            {
++                BTIF_TRACE_DEBUG("BTA_RDS_TPYN_EVT received");
++                /* Reformat for transport to app via standard callback event. */
++                tBTA_FM rds_event_data;
++                rds_event_data.rds_update.status = BTA_FM_OK;
++                rds_event_data.rds_update.data = BTA_RDS_PTYN_EVT;
++                rds_event_data.rds_update.index = 0;
++                memcpy(rds_event_data.rds_update.text, p_data->p_data, BTIF_RDS_STR_LEN_8+1);
++
++                btif_fm_cback(BTA_FM_RDS_UPD_EVT, (tBTA_FM *)&rds_event_data);
++            }
++            break;
++        case BTA_RDS_RT_EVT:
++            BTIF_TRACE_DEBUG("BTA_RDS_RT_EVT received");
++            if (p_data->rt.complete != FALSE) {
++                /* Reformat for transport to app via standard callback event. */
++                tBTA_FM rds_event_data;
++                rds_event_data.rds_update.status = BTA_FM_OK;
++                rds_event_data.rds_update.data = BTA_RDS_RT_EVT;
++                rds_event_data.rds_update.index = p_data->rt.g_type;
++                memcpy(rds_event_data.rds_update.text, p_data->rt.p_data, BTIF_RDS_STR_LEN_64+1);
++
++                btif_fm_cback(BTA_FM_RDS_UPD_EVT, (tBTA_FM *)&rds_event_data);
++            }
++            break;
++        case BTA_RDS_RTP_EVT:
++            if (NULL != p_data) {
++                int k = 0;
++                BTIF_TRACE_DEBUG("BTA_RDS_RTP_EVT");
++                tBTA_RDS_RTP *p_rtp_data = (tBTA_RDS_RTP*)p_data;
++
++                    BTIF_TRACE_DEBUG("%s: bRunning: %d bToggle = %d tag_num - %d",__func__,
++                       p_rtp_data->running,p_rtp_data->tag_toggle,
++                       p_rtp_data->tag_num);
++                   k = p_rtp_data->tag_num;
++                   while(k){
++
++                        BTIF_TRACE_DEBUG("%s: content_type: %d start: %d len: %d",__func__,
++                           p_rtp_data->tag[k].content_type,p_rtp_data->tag[k].start,
++                           p_rtp_data->tag[k].len);
++                        k--;
++                   }
++                btif_fm_cback(BTA_RDS_RTP_EVT, (tBTA_FM *)&p_rtp_data);
++
++             } else {
++                 BTIF_TRACE_DEBUG("BTIF_FM: BTA_RDS_RTP_EVT FAILED!!! (DATA == NULL)");
++             }
++
++            break;
++        default:
++            BTIF_TRACE_DEBUG("RDS register status: %d", event);
++            break;
++        }
++    }
++
++
++
++
++
++ /*******************************************************************************
++ **
++ ** Function         btif_fm_set_rds_mode_int
++ **
++ ** Description      Turn on/off RDS/AF mode.
++ **
++ ** Returns          void
++ *******************************************************************************/
++
++static void btif_fm_set_rds_mode_int(BOOLEAN rds_on, BOOLEAN af_on)
++{
++    UINT8   i = 0;
++    tBTA_FM_AF_PARAM *p_af_param = NULL;
++    //tBTA_FM_AF_LIST af_list = {2, {BTA_FM_AF_FM, BTA_FM_AF_FM}, { 1079, 880}};
++
++    BTIF_TRACE_DEBUG("%s: rds_on = %d, af_on = %d, af_avail = %d",
++          __func__, rds_on, af_on, btif_fm_data.af_cb.af_avail);
++
++    if (af_on && btif_fm_data.af_cb.af_avail &&
++        ((p_af_param = osi_malloc(sizeof(tBTA_FM_AF_PARAM))) != NULL))
++    {
++        p_af_param->af_thresh = (UINT8) BTIF_FM_AF_THRESH;
++        p_af_param->pi_code = btif_fm_data.af_cb.pi_code;
++        memcpy(&p_af_param->af_list, &btif_fm_data.af_cb.af_list, sizeof(tBTA_FM_AF_LIST));
++        while(i < p_af_param->af_list.num_af)
++        {
++            BTIF_TRACE_DEBUG(">>>>> pi_code [%d]", p_af_param->pi_code);
++            BTIF_TRACE_DEBUG(">>>>> AF[%d] [%d]", i+1, p_af_param->af_list.af_list[i]);
++            i++;
++        }
++    }
++
++    /* enable RDS data polling with once every 3 seconds */
++    BTA_FmSetRDSMode(rds_on, af_on, p_af_param);
++
++    if (p_af_param)
++        osi_free((void *)p_af_param);
++}
++
++/*******************************************************************************
++**
++** Function         btif_fm_clear_af_info
++**
++** Description      Reset AF information if a new frequency is set.
++**
++** Returns          void
++*******************************************************************************/
++static void btif_fm_clear_af_info(void)
++{
++    BOOLEAN af_on = btif_fm_data.af_cb.af_on ;
++
++    memset(&btif_fm_data.af_cb, 0, sizeof(tBTIF_FM_AF_CB));
++    if ((btif_fm_data.af_cb.af_on = af_on) == TRUE)
++        btif_fm_set_rds_mode_int(btif_fm_data.rds_on, btif_fm_data.af_cb.af_on);
++
++}
++
++
++
++static void btif_fm_upstreams_evt(UINT16 event, char* p_evt_data)
++{
++    tBTA_FM *p_fm_evt_data = (tBTA_FM *)p_evt_data;
++
++    switch (event)
++    {
++        case BTA_FM_ENABLE_EVT:
++            APPL_TRACE_DEBUG("%s: event= BTA_FM_ENABLE_EVT", __func__);
++            // wait 150 ms for the FM engine to stabilize in stress situation
++            // TODO Fine tune
++            usleep(15000);
++            memset(&btif_fm_data, 0, sizeof(tBTIF_FM_Data));
++            HAL_CBACK(bt_fm_callbacks, enable_cb, p_fm_evt_data->status);
++            break;
++        case BTA_FM_TUNE_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_TUNE_EVT status = %i rssi = %i freq = %i ",
++                 __func__, (int)p_fm_evt_data->chnl_info.status, (int)p_fm_evt_data->chnl_info.rssi,
++                 (int)p_fm_evt_data->chnl_info.freq);
++
++            btif_fm_data.search_in_progress = FALSE;
++            btif_fm_clear_af_info();
++
++            if (btif_fm_data.rds_on)
++            {
++                // Reset the RDS engine
++                bta_fm_co_reset_rds_engine();
++            }
++
++            /* keep track of current radio frequency as required by AF for example */
++            btif_fm_data.cur_freq = p_fm_evt_data->chnl_info.freq;
++            HAL_CBACK(bt_fm_callbacks, tune_cb,
++                p_fm_evt_data->status, p_fm_evt_data->chnl_info.rssi,
++                p_fm_evt_data->chnl_info.snr, p_fm_evt_data->chnl_info.freq);
++            break;
++        case BTA_FM_DISABLE_EVT:
++            APPL_TRACE_DEBUG("%s: event= BTA_FM_DISABLE_EVT", __func__);
++            // TODO Fine tune
++            usleep(30000);
++            stack_manager_get_interface()->shut_down_radio();
++            HAL_CBACK(bt_fm_callbacks, disable_cb, p_fm_evt_data->status);
++            break;
++
++        case BTA_FM_AF_JMP_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_AF_JMP_EVT status = %i rssi = %i freq = %i ",
++                 __func__, (int)p_fm_evt_data->chnl_info.status, (int)p_fm_evt_data->chnl_info.rssi,
++                 (int)p_fm_evt_data->chnl_info.freq);
++            /* keep track of current radio frequency as required by AF */
++            btif_fm_data.cur_freq = p_fm_evt_data->chnl_info.freq;
++            HAL_CBACK(bt_fm_callbacks, af_jump_cb,
++                p_fm_evt_data->status, p_fm_evt_data->chnl_info.rssi,
++                p_fm_evt_data->chnl_info.snr, p_fm_evt_data->chnl_info.freq);
++            break;
++
++        case BTA_FM_SEARCH_CMPL_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_SEARCH_CMPL_EVT status = %i rssi = %i freq = %i ",
++                 __func__, (int)p_fm_evt_data->chnl_info.status, (int)p_fm_evt_data->chnl_info.rssi,
++                 (int)p_fm_evt_data->chnl_info.freq);
++
++            btif_fm_data.search_in_progress = FALSE;
++            btif_fm_clear_af_info();
++            if (btif_fm_data.rds_on)
++            {
++                bta_fm_co_reset_rds_engine();
++            }
++            btif_fm_data.cur_freq = p_fm_evt_data->chnl_info.freq;
++
++            HAL_CBACK(bt_fm_callbacks, search_complete_cb,
++                p_fm_evt_data->status, p_fm_evt_data->chnl_info.rssi,
++                p_fm_evt_data->chnl_info.snr, p_fm_evt_data->chnl_info.freq);
++            break;
++
++        case BTA_FM_SEARCH_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_SEARCH_EVT rssi = %i snr = %i freq = %i ",
++                 __func__, (int)p_fm_evt_data->scan_data.rssi, (int)p_fm_evt_data->scan_data.snr,
++                 (int)p_fm_evt_data->scan_data.freq);
++
++            btif_fm_data.search_in_progress = FALSE;
++            btif_fm_clear_af_info();
++
++            btif_fm_data.cur_freq = p_fm_evt_data->scan_data.freq;
++
++            //No status sent from stack so treat the event received as BTA_FM_OK
++            HAL_CBACK(bt_fm_callbacks, search_cb,
++                BTA_FM_OK, p_fm_evt_data->scan_data.rssi,
++                p_fm_evt_data->scan_data.snr, p_fm_evt_data->scan_data.freq);
++            break;
++
++        case BTA_FM_AUD_MODE_EVT:
++            APPL_TRACE_DEBUG("%s: event= BTA_FM_AUD_MODE_EVT,audio_mode = %d",
++                __func__, p_fm_evt_data->mode_info.audio_mode);
++
++            btif_fm_data.mode = p_fm_evt_data->mode_info.audio_mode;
++            HAL_CBACK(bt_fm_callbacks, audio_mode_cb, p_fm_evt_data->status,
++                p_fm_evt_data->mode_info.audio_mode);
++            break;
++
++        case BTA_FM_RDS_UPD_EVT:
++            HAL_CBACK(bt_fm_callbacks, rds_data_cb,
++                p_fm_evt_data->status, p_fm_evt_data->rds_update.data,
++                p_fm_evt_data->rds_update.index, p_fm_evt_data->rds_update.text);
++            break;
++
++        case BTA_RDS_RTP_EVT:
++            HAL_CBACK(bt_fm_callbacks, rtp_data_cb, (btfm_rds_rtp_info_t *)p_fm_evt_data);
++            break;
++
++        case BTA_FM_AUD_DATA_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_SEARCH_EVT status = %i rssi = %i freq = %i ",
++                 __func__, (int)p_fm_evt_data->audio_data.status, (int)p_fm_evt_data->audio_data.rssi,
++                 (int)p_fm_evt_data->chnl_info.freq);
++
++            if (btif_fm_data.search_in_progress == FALSE)
++            {
++                HAL_CBACK(bt_fm_callbacks, audio_data_cb,
++                    p_fm_evt_data->audio_data.status, p_fm_evt_data->audio_data.rssi,
++                    p_fm_evt_data->audio_data.snr, p_fm_evt_data->audio_data.audio_mode);
++            }
++            break;
++
++        case BTA_FM_AUD_PATH_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_AUD_PATH_EVT, bta audio_path: %d, status: %d",
++                  __func__, p_fm_evt_data->path_info.audio_path,
++                  p_fm_evt_data->path_info.status);
++            btif_fm_data.current_bta_path = p_fm_evt_data->path_info.audio_path;
++            HAL_CBACK(bt_fm_callbacks, audio_path_cb, p_fm_evt_data->status,
++                p_fm_evt_data->path_info.audio_path);
++            break;
++
++        case BTA_FM_RDS_MODE_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_RDS_MODE_EVT: status=%d, RDS=%s, AF=%s", __func__,
++                  (UINT8)(p_fm_evt_data->rds_mode.status),
++                  p_fm_evt_data->rds_mode.rds_on ? "TRUE" : "FALSE",
++                  p_fm_evt_data->rds_mode.af_on  ? "TRUE" : "FALSE");
++
++            btif_fm_data.af_cb.af_on = p_fm_evt_data->rds_mode.af_on;
++            if (btif_fm_data.rds_on != p_fm_evt_data->rds_mode.rds_on)
++            {
++                btif_fm_data.rds_on = p_fm_evt_data->rds_mode.rds_on;
++            }
++            HAL_CBACK(bt_fm_callbacks,rds_mode_cb,p_fm_evt_data->rds_mode.status,
++                p_fm_evt_data->rds_mode.rds_on, p_fm_evt_data->rds_mode.af_on);
++            break;
++
++        case BTA_FM_SET_DEEMPH_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_SET_DEEMPH_EVT", __func__);
++            HAL_CBACK(bt_fm_callbacks, deemphasis_cb, p_fm_evt_data->deemphasis.status,
++                p_fm_evt_data->deemphasis.time_const);
++            break;
++
++        case BTA_FM_MUTE_AUD_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_MUTE_AUD_EVT", __func__);
++
++            btif_fm_data.audio_mute = p_fm_evt_data->mute_stat.is_mute;
++            HAL_CBACK(bt_fm_callbacks, mute_cb, p_fm_evt_data->mute_stat.status,
++                p_fm_evt_data->mute_stat.is_mute);
++            break;
++
++        case BTA_FM_SCAN_STEP_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_SCAN_STEP_EVT", __func__);
++            btif_fm_data.scan_step = p_fm_evt_data->scan_step ;
++            HAL_CBACK(bt_fm_callbacks, scan_step_cb, p_fm_evt_data->status,
++                 p_fm_evt_data->scan_step);
++            break;
++
++        case BTA_FM_SET_REGION_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_SET_REGION_EVT", __func__);
++            HAL_CBACK(bt_fm_callbacks, region_cb, p_fm_evt_data->region_info.status,
++                 p_fm_evt_data->region_info.region);
++            break;
++
++        case BTA_FM_NFL_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_NFL_EVT: NFL = %d", __func__, (int)p_fm_evt_data->nfloor.rssi);
++            HAL_CBACK(bt_fm_callbacks, nfl_cb, p_fm_evt_data->region_info.status,
++                 p_fm_evt_data->region_info.region);
++            break;
++
++        case BTA_FM_RDS_TYPE_EVT:
++            APPL_TRACE_DEBUG("%s: BTA_FM_RDS_TYPE_EVT: status=%d rds_type=0x%x", __func__,
++                  (UINT8)p_fm_evt_data->rds_type.status, (UINT8)p_fm_evt_data->rds_type.type);
++            HAL_CBACK(bt_fm_callbacks, rds_type_cb, p_fm_evt_data->rds_type.status,
++                 p_fm_evt_data->rds_type.type);
++            break;
++
++        case BTA_FM_VOLUME_EVT:
++            {
++             APPL_TRACE_DEBUG("%s: BTA_FM_VOLUME_EVT: status = %d, volume = %d", __func__,
++                  p_fm_evt_data->volume.status, p_fm_evt_data->volume.volume);
++
++            HAL_CBACK(bt_fm_callbacks, volume_cb, p_fm_evt_data->volume.status,
++                         p_fm_evt_data->volume.volume);
++
++            }
++            break;
++
++        default:
++            APPL_TRACE_DEBUG("%s: Unhandled event %i", __func__, event);
++            break;
++    }
++}
++
++/*******************************************************************************
++**
++** Function         btif_fm_cback
++**
++** Description      transfer context for processing  the events from FM
++**
++** Returns          void
++*******************************************************************************/
++static void btif_fm_cback(tBTA_FM_EVT event, tBTA_FM *p_data)
++{
++    bt_status_t status;
++    status = btif_transfer_context(btif_fm_upstreams_evt, (UINT16) event,
++        (void*)p_data, sizeof(tBTA_FM), NULL);
++    ASSERTC(status == BT_STATUS_SUCCESS, "Context transfer failed!", status);
++}
++
++
++/**
++ * Opens the interface and provides the callback routines
++ * to the implemenation of this interface.
++ */
++static int btif_fm_init (btfm_callbacks_t* callbacks )
++{
++    BTIF_TRACE_EVENT("%s", __func__);
++    bt_fm_callbacks = callbacks;
++    return BTA_SUCCESS;
++}
++
++//HACK copyright © 2017 stenkinevgeniy@gmail.com reversed from samsung blob (Galaxy A3 2016)
++void vendor_pcm_config()
++{
++    
++    UINT16 test_parm = 0;
++    LOG_INFO(LOG_TAG, "%s FM_DBG  try pcm pin config", __func__);
++
++    vendor_get_interface()->send_command((vendor_opcode_t)FM_PCM_CONFIG_OPCODE, (void*)&test_parm);
++    usleep(40000);
++}
++
++
++
++/** Enable Fm. */
++int btif_fm_enable (int functionalityMask)
++{
++    CHECK_BTFM_INIT();
++
++    stack_manager_get_interface()->start_up_radio();
++
++    vendor_pcm_config();
++
++    BTA_FmEnable(functionalityMask, btif_fm_cback, BTIF_RDS_APP_ID);
++
++    return BTA_SUCCESS;
++}
++
++
++/** Tune Fm. */
++static int btif_fm_tune(int freq)
++{
++    CHECK_BTFM_INIT();
++    btif_fm_data.search_in_progress = TRUE;
++
++    BTA_FmTuneFreq(freq);
++    return BTA_SUCCESS;
++}
++
++
++/** Mute/unmute Fm. */
++static int btif_fm_mute(BOOLEAN mute)
++{
++    CHECK_BTFM_INIT();
++    BTA_FmMute(mute);
++    return BTA_SUCCESS;
++}
++
++
++/** Search Fm. */
++static int btif_fm_search(int scanMode, int rssiThresh, int condType, int CondValue)
++{
++    tBTA_FM_SCH_RDS_COND temp_cond;
++    CHECK_BTFM_INIT();
++
++    temp_cond.cond_type = condType;
++    temp_cond.cond_val = CondValue;
++    if ((0 == temp_cond.cond_type) && (0 == temp_cond.cond_val))
++    {
++        BTA_FmSearchFreq(scanMode,
++                rssiThresh, NULL);
++    }
++    else
++    {
++        BTA_FmSearchFreq(scanMode,
++                rssiThresh, (tBTA_FM_SCH_RDS_COND*) (&temp_cond));
++    }
++    return BTA_SUCCESS;
++}
++
++
++/** Search Fm.with frequency wrap */
++static int btif_fm_combo_search(int startFreq, int endFreq, int rssiThresh, int direction, int scanMode,
++                        BOOLEAN multiChannel, int condType, int condValue)
++{
++    tBTA_FM_SCH_RDS_COND temp_cond;
++    CHECK_BTFM_INIT();
++
++    temp_cond.cond_type = condType;
++    temp_cond.cond_val = condValue;
++
++    if ((0 == temp_cond.cond_type) && (0 == temp_cond.cond_val))
++    {
++         BTA_FmComboSearch(startFreq, endFreq,
++             rssiThresh, direction, scanMode,
++             multiChannel, NULL);
++    }
++    else
++    {
++        BTA_FmComboSearch(startFreq, endFreq,
++            rssiThresh, direction, scanMode,
++            multiChannel, (&temp_cond));
++    }
++    btif_fm_data.search_in_progress= TRUE;
++    return BTA_SUCCESS;
++}
++
++
++/** Abort Search for Fm. */
++static int btif_fm_search_abort()
++{
++    CHECK_BTFM_INIT();
++
++    BTIF_TRACE_EVENT("%s btif_fm_data.Current search_in_progress: %d",
++        __func__,btif_fm_data.search_in_progress);
++    btif_fm_data.search_in_progress = FALSE;
++    /* Abort search for station. */
++    BTA_FmSearchAbort();
++
++    return BTA_SUCCESS;
++}
++
++
++/** Enable rds/af for Fm. */
++static int btif_fm_set_rds_mode(BOOLEAN rdsOn, BOOLEAN afOn)
++{
++    //tBTA_FM_AF_PARAM *p_af_param = NULL;
++
++    CHECK_BTFM_INIT();
++    btif_fm_data.rds_on = rdsOn;
++    btif_fm_data.af_cb.af_on = afOn;
++
++    btif_fm_set_rds_mode_int(rdsOn, afOn);
++    return BTA_SUCCESS;
++}
++
++
++/** Set Rds type. */
++static int btif_fm_set_rds_type(int rdsType)
++{
++    CHECK_BTFM_INIT();
++
++    BTA_FmSetRdsRbds(rdsType);
++    return BTA_SUCCESS;
++}
++
++
++/** Set audio mode */
++static int btif_fm_set_audio_mode(int audioMode)
++{
++    CHECK_BTFM_INIT();
++
++    BTA_FmSetAudioMode(audioMode);
++    return BTA_SUCCESS;
++}
++
++/** Set audio path. */
++static int btif_fm_set_audio_path(int audioPath)
++{
++    CHECK_BTFM_INIT();
++    APPL_TRACE_DEBUG(
++        "btif_fm_set_audio_path(requested audioPath: %d) , current_bta_path: %d",
++                       audioPath, btif_fm_data.current_bta_path );
++
++    BTA_FmConfigAudioPath((tBTA_FM_AUDIO_PATH)audioPath);
++    return BTA_SUCCESS;
++}
++
++
++/** Set Fm region */
++static int btif_fm_set_region(int regionType)
++{
++    CHECK_BTFM_INIT();
++
++    BTA_FmSetRegion(regionType);
++    return BTA_SUCCESS;
++}
++
++/** Set Fm region */
++static int btif_fm_set_scan_step(int scanStep)
++{
++    CHECK_BTFM_INIT();
++
++    BTA_FmSetScanStep(scanStep);
++    return BTA_SUCCESS;
++}
++
++/** Config de-emphasis param. */
++static int btif_fm_config_deemphasis(int timeType)
++{
++    CHECK_BTFM_INIT();
++
++    BTA_FmConfigDeemphasis(timeType);
++    return BTA_SUCCESS;
++}
++
++
++/** Estimate noise floor. */
++static int btif_fm_estimate_noise_floor(int level)
++{
++    CHECK_BTFM_INIT();
++
++    BTA_FmEstNoiseFloor(level);
++    return BTA_SUCCESS;
++}
++
++
++/** Reads audio quality of current station .Turn audio date live update on/off */
++static int btif_fm_read_audio_quality(BOOLEAN turnOn)
++{
++    CHECK_BTFM_INIT();
++
++    BTA_FmReadAudioQuality(turnOn);
++    return BTA_SUCCESS;
++}
++
++
++/** Used to configure RSSI value polling interval */
++static int btif_fm_config_signal_notification(int time)
++{
++    CHECK_BTFM_INIT();
++
++    BTA_FmSetSignalNotifSetting(time);
++    return BTA_SUCCESS;
++}
++
++
++/** Set fm volume. */
++static int btif_fm_set_volume(int volume)
++{
++    CHECK_BTFM_INIT();
++
++    APPL_TRACE_DEBUG( "btif_fm_volume_control(volume: %d) on current_bta_path: %d",
++                       volume, btif_fm_data.current_bta_path );
++
++    BTA_FmVolumeControl(volume);
++
++    return BTA_SUCCESS;
++}
++
++
++/** Set SNR thresh for search. */
++static int btif_fm_set_search_criteria(int value)
++{
++    tBTA_FM_CVALUE      criteria;
++    CHECK_BTFM_INIT();
++
++    criteria.snr = value;
++
++    return BTA_FmSetSchCriteria(BTA_FM_CTYPE_SNR, &criteria);
++}
++
++
++/** Disable Fm. */
++static int btif_fm_disable(void)
++{
++    CHECK_BTFM_INIT();
++    LOG_INFO(LOG_TAG, "%s FM_DBG FM_DISABLE start", __func__);
++
++
++
++    /* Disable FM */
++    memset(&btif_fm_data, 0, sizeof(tBTIF_FM_Data));
++
++    BTA_FmDisable();
++
++    LOG_INFO(LOG_TAG, "%s FM_DBG FM_DISABLE end", __func__);
++
++
++    return BTA_SUCCESS;
++
++}
++
++
++/** Closes the interface. */
++static void btif_fm_cleanup(void)
++{
++    BTIF_TRACE_EVENT("%s bt_fm_callbacks: %d", __func__,bt_fm_callbacks);
++
++    bt_fm_callbacks = NULL;
++}
++
++
++static const btfm_interface_t btfmInterface = {
++    sizeof(btfmInterface),
++    btif_fm_init,
++    btif_fm_enable,
++    btif_fm_tune,
++    btif_fm_mute,
++    btif_fm_search,
++    btif_fm_combo_search,
++    btif_fm_search_abort,
++    btif_fm_set_rds_mode,
++    btif_fm_set_rds_type,
++    btif_fm_set_audio_mode,
++    btif_fm_set_audio_path,
++    btif_fm_set_region,
++    btif_fm_set_scan_step,
++    btif_fm_config_deemphasis,
++    btif_fm_estimate_noise_floor,
++    btif_fm_read_audio_quality,
++    btif_fm_config_signal_notification,
++    btif_fm_set_volume,
++    btif_fm_set_search_criteria,
++    btif_fm_disable,
++    btif_fm_cleanup
++};
++
++/*******************************************************************************
++**
++** Function         btif_fm_get_interface
++**
++** Description      Get the fm callback interface
++**
++** Returns          btfm_interface_t
++**
++*******************************************************************************/
++const btfm_interface_t *btif_fm_get_interface()
++{
++    BTIF_TRACE_EVENT("%s", __func__);
++    return &btfmInterface;
++}
++
++
 diff --git a/btif/src/stack_manager.c b/btif/src/stack_manager.c
 index 031faa9..13db7b1 100644
 --- a/btif/src/stack_manager.c
@@ -4853,6 +6777,26 @@ index 031faa9..13db7b1 100644
  };
  
  const stack_manager_t *stack_manager_get_interface() {
+diff --git a/gki_legacy/legacy.c b/gki_legacy/legacy.c
+new file mode 100644
+index 0000000..d840914
+--- /dev/null
++++ b/gki_legacy/legacy.c
+@@ -0,0 +1,14 @@
++/*
++ * for pre-compiled library (FM legacy)
++ */
++
++#include <bt_common.h>
++
++void *GKI_getbuf(size_t size) {
++    return osi_malloc(size);
++}
++
++void GKI_freebuf(void *ptr) {
++    osi_free(ptr);
++}
++
 diff --git a/hci/src/btsnoop.c b/hci/src/btsnoop.c
 index 0ef6fe0..961a86b 100644
 --- a/hci/src/btsnoop.c

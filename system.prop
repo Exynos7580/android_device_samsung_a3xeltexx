@@ -1,9 +1,5 @@
 # Display
 ro.sf.lcd_density=320
-#ro.bq.gpu_to_cpu_unsupported=1
-
-# Games
-#debug.egl.force_msaa=true
 
 # Dalvik/Art
 dalvik.vm.dex2oat-filter=speed
@@ -32,12 +28,6 @@ ro.hwui.text_small_cache_width=1024
 ro.hwui.text_small_cache_height=1024
 ro.hwui.text_large_cache_width=2048
 ro.hwui.text_large_cache_height=1024
-
-
-
-# FRP
-#ro.frp.pst=/dev/block/persistent
-
 
 # Radio
 persist.radio.sib16_support=1
