@@ -33,7 +33,6 @@ on post-fs-data
     chmod 0660 /dev/i2c-14
     chown system system /dev/i2c-14
 
-    #chown system wifi /data/misc/wifi/wpa_supplicant.conf
     mkdir /data/misc/saccessory_manager 0700 system system
     mkdir /data/misc/saccessory_manager/keychain 0700 system system
 
