@@ -14,7 +14,8 @@
 <resources>
 
     <!-- Ambient lux at which to enable outdoor mode when LiveDisplay is enabled -->
-    <integer name="config_outdoorAmbientLux">12000</integer>
+    <integer name="config_outdoorAmbientLux">10000</integer>
+    <integer name="config_outdoorAmbientLuxHysteresis">1000</integer>
 
     <!-- Color temperature settings for LiveDisplay. These were obtained by
          measuring the display at various color balance levels. -->
@@ -23,11 +24,8 @@
 
     <!-- Corresponds to color balance level of zero, this is the native
          display temperature -->
-    <integer name="config_dayColorTemperature">7500</integer>
-    <integer name="config_nightColorTemperature">6000</integer>
-
-    <!-- For high brightness mode -->
-    <integer name="config_outdoorAmbientLux">20000</integer>
+    <integer name="config_dayColorTemperature">6500</integer>
+    <integer name="config_nightColorTemperature">4800</integer>
 
     <!-- BurnIn protection. This should be enabled on devices that have OLED displays -->
     <bool name="config_enableBurnInProtection">true</bool>
@@ -61,5 +59,5 @@
             64 - Volume rocker
          For example, a device with Home, Back and Menu keys would set this
          config to 7. -->
-    <integer name="config_deviceHardwareWakeKeys">65</integer>
+    <integer name="config_deviceHardwareWakeKeys">1</integer>
 </resources>
