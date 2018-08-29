@@ -1,6 +1,5 @@
 #
-# Copyright 2016 The CyanogenMod Project
-# Copyright 2017-2018 The LineageOS Project
+# Copyright (C) 2017 The LineageOS Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +14,6 @@
 # limitations under the License.
 #
 
-#####################
-# Shims
-#####################
+LOCAL_PATH := $(call my-dir)
 
-TARGET_LD_SHIM_LIBS += \
-    /system/bin/gpsd|/vendor/lib/libshim_gpsd.so \
-    /system/lib/hw/camera.vendor.universal7580.so|/vendor/lib/libshim_camera.so \
-    /system/lib/libexynoscamera.so|/vendor/lib/libexynoscamera_shim.so
+include $(call all-makefiles-under,$(LOCAL_PATH))
