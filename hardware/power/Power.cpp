@@ -220,7 +220,9 @@ Return<void> Power::setFeature(Feature feature, bool activate)  {
     {
         case_uint32_t (Feature::POWER_FEATURE_DOUBLE_TAP_TO_WAKE):
         {
-            mIsDT2WEnabled = activate;
+            /* Force double tap 2 wake off */
+            //mIsDT2WEnabled = activate;
+            mIsDT2WEnabled = false;
             setDT2WState();
             break;
         }
