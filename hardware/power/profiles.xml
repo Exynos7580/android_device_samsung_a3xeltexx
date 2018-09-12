@@ -295,7 +295,7 @@
     <!--
         Profile for balanced system performance and efficiency
     -->
-    <balanced extends="power_save">
+    <balanced extends="bias_power_save">
         <enabled>true</enabled>
         <cpu>
             <cluster1>
@@ -340,7 +340,7 @@
         Profile for balanced system performance and efficiency,
         but being closer to the performable system
     -->
-    <bias_performance extends="power_save">
+    <bias_performance extends="balanced">
         <enabled>true</enabled>
         <cpu>
             <cluster1>
