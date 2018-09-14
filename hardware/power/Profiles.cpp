@@ -225,10 +225,10 @@ static inline unsigned int to_uint(const char *c) {
     ALOGV("loadProfileImpl: [%s] " #_name " := '%u'", path, profile->_name);
 
 #define XML_GET_CPUCLUSTER(_cl, _cln)                                                                          \
-    PROFILE_SET     (cpu._cl, governor,     "cpu/" #_cl "/governor",     "nexus");                             \
+    PROFILE_SET     (cpu._cl, governor,     "cpu/" #_cl "/governor",     "interactive");                       \
     PROFILE_SET_UINT(cpu._cl, freq_min,     "cpu/" #_cl "/freq_min",     "200000");                            \
-    PROFILE_SET_UINT(cpu._cl, freq_max,     "cpu/" #_cl "/freq_max",     (_cln == 0 ? "1500000" : "2100000")); \
-    PROFILE_SET_UINT(cpu._cl, freq_hispeed, "cpu/" #_cl "/freq_hispeed", (_cln == 0 ? "1500000" : "2100000")); \
+    PROFILE_SET_UINT(cpu._cl, freq_max,     "cpu/" #_cl "/freq_max",     (_cln == 0 ? "1500000" : "1500000")); \
+    PROFILE_SET_UINT(cpu._cl, freq_hispeed, "cpu/" #_cl "/freq_hispeed", (_cln == 0 ? "1500000" : "1500000")); \
     PROFILE_SET_UINT(cpu._cl, freq_boost,   "cpu/" #_cl "/freq_boost",   "0");                                 \
     if (profile->cpu._cl.cores.enabled) {                                                                      \
         PROFILE_SET_BOOL(cpu._cl.cores, core1, "cpu/" #_cl "/cores/core1", "true");                            \
