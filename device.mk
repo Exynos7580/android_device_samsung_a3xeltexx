@@ -19,9 +19,9 @@ LOCAL_PATH := device/samsung/a3xeltexx
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 
-# Vendor security patch level
+# Vendor security patch level (vendor blobs from A310FXXU4CRG2)
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.lineage.build.vendor_security_patch=2017-12-01
+    ro.lineage.build.vendor_security_patch=2018-07-30
 
 # Inherit board specific products
 -include $(LOCAL_PATH)/configs/product/*.mk
