@@ -45,7 +45,7 @@
                 <governor>interactive</governor>
 
                 <!-- {number} Minimal frequency of this cluster -->
-                <freq_min>200000</freq_min>
+                <freq_min>400000</freq_min>
 
                 <!-- {number} Maximal frequency of this cluster -->
                 <freq_max>1000000</freq_max>
@@ -92,7 +92,7 @@
                 <enabled>false</enabled>
 
                 <governor>interactive</governor>
-                <freq_min>200000</freq_min>
+                <freq_min>400000</freq_min>
                 <freq_max>1000000</freq_max>
                 <freq_hispeed>600000</freq_hispeed>
                 <freq_boost>0</freq_boost>
