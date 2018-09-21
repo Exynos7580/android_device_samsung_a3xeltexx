@@ -19,12 +19,6 @@ import os
 import sys
 import time
 
-LOCAL_DIR = os.path.dirname(os.path.abspath(__file__))
-TARGET_DIR = os.getenv('TOP')
-OUT_DIR = os.getenv('OUT')
-UTILITIES_DIR = os.path.join(TARGET_DIR, 'symbols')
-ROM = os.getenv ('TARGET_PRODUCT').split("_",1)
-
 def addFolderToZip(info, directory, basedir):
     list = os.listdir(directory)
 
@@ -42,6 +36,6 @@ def FullOTA_InstallBegin(info):
     info.script.AppendExtra('ui_print("                Thanks for installing               ");');
     info.script.AppendExtra('ui_print("    Source code available on GitHub : @Exynos7580   ");');
     info.script.AppendExtra('ui_print("                                                    ");');
-    info.script.AppendExtra('ui_print("    --> Maintainer: l-0-w                           ");');
+    info.script.AppendExtra('ui_print("    --> Maintainer: danwood76                       ");');
     info.script.AppendExtra('ui_print("    --> Device: Samsung Galaxy A3 2016              ");');
     info.script.AppendExtra('ui_print("                                                    ");');
