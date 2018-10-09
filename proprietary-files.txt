@@ -25,8 +25,6 @@ vendor/firmware/bcm43438A1_V0051.0217.hcd
 # Camera
 ###################
 
-cameradata/datapattern_420sp.yuv
-cameradata/datapattern_front_420sp.yuv
 lib/hw/camera.universal7580.so
 lib/libexynoscamera.so
 vendor/firmware/setfile_3l2.bin
@@ -44,8 +42,8 @@ vendor/firmware/fimc_is_fw2_3l2.bin
 # Mobicore
 ###################
 
-app/020a0000000000000000000000000000.drbin
 app/FFFFFFFF000000000000000000000001.drbin
+app/020a0000000000000000000000000000.drbin
 app/mcRegistry/00060308060501020000000000000000.tlbin
 app/mcRegistry/02010000080300030000000000000000.tlbin
 app/mcRegistry/07010000000000000000000000000000.tlbin
@@ -68,9 +66,6 @@ app/mcRegistry/ffffffffd00000000000000000000004.tlbin
 app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
 app/mcRegistry/ffffffffd00000000000000000000016.tlbin
 app/mcRegistry/fffffffff0000000000000000000001e.tlbin
-bin/mcDriverDaemon
-lib/libMcClient.so
-lib/libMcRegistry.so
 
 ###################
 # Sensors
@@ -89,6 +84,7 @@ etc/wifi/bcmdhd_mfg.bin
 etc/wifi/bcmdhd_sta.bin
 etc/wifi/nvram_mfg.txt
 etc/wifi/nvram_net.txt
+vendor/firmware/ram_patch.fw
 
 ###################
 # NFC
