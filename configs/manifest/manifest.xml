@@ -107,10 +107,9 @@
     <!--
         GNSS
     -->
-
     <hal format="hidl">
         <name>android.hardware.gnss</name>
-        <transport>hwbinder</transport>
+        <transport>passthrough</transport>
         <version>1.0</version>
         <interface>
             <name>IGnss</name>
