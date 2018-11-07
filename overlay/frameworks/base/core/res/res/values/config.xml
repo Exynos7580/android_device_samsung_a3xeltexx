@@ -2,6 +2,7 @@
 <!--
 /*
 ** Copyright 2013, The CyanogenMod Project
+** Copyright 2017-2018, The LineageOS Project
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -256,6 +257,9 @@
     <!-- If we allow automatic adjustment of screen brightness while dozing, how many times we want
          to reduce it to preserve the battery. Value of 100% means no scaling. -->
     <fraction name="config_screenAutoBrightnessDozeScaleFactor">50%</fraction>
+	
+    <!-- Enable OLED burn-in protection -->
+    <bool name="config_enableBurnInProtection">true</bool>
 
     <!-- Boolean indicating if current platform supports BLE peripheral mode -->
     <bool name="config_bluetooth_le_peripheral_mode_supported">true</bool>
@@ -302,12 +306,12 @@
     <bool name="config_enableWifiDisplay">true</bool>
 
     <!-- These resources are around just to allow their values to be customized
-     for different hardware and product builds. -->
+         for different hardware and product builds. -->
     <string name="config_radio_access_family">GSM | WCDMA | LTE</string>
 
-     <!-- Values for GPS configuration -->
-     <string-array translatable="false" name="config_gpsParameters">
+    <!-- Values for GPS configuration -->
+    <string-array translatable="false" name="config_gpsParameters">
         <item>XTRA_SERVER_1=https://glltos1.glpals.com/4day/v3/latest/lto2.dat</item>
         <item>XTRA_SERVER_2=https://glltos2.glpals.com/4day/v3/latest/lto2.dat</item>
-     </string-array>
+    </string-array>
 </resources>
