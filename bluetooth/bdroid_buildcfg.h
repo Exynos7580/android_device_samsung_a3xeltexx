@@ -21,7 +21,7 @@
 #define BTM_DEF_LOCAL_NAME   "Samsung Galaxy A3 (6)"
 
 #define BTM_WBS_INCLUDED TRUE       /* Enable WBS */
-#define BTIF_HF_WBS_PREFERRED TRUE  /* Use WBS    */
+#define BTIF_HF_WBS_PREFERRED FALSE /* Don't use WBS    */
 
 #define BLE_VND_INCLUDED    TRUE
 
