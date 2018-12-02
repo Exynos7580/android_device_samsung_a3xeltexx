@@ -25,36 +25,7 @@ ro.hwui.text_small_cache_height=512
 ro.hwui.text_large_cache_width=2048 
 ro.hwui.text_large_cache_height=1024
 
-### Suppress some logcat output
-# NFC
+# Suppress some logcat output
 log.tag.BrcmNfcJni=S
 log.tag.BrcmNfcNfa=S
 log.tag.SecHAL=S
-
-# Camera
-log.tag.ExynosCamera=S
-log.tag.ExynosCamera1Parameters=S
-log.tag.ExynosCamera1SecParameters=S
-log.tag.ExynosCameraActivityAutofocus=S
-log.tag.ExynosCameraActivityAutofocusSec=S
-log.tag.ExynosCameraActivityControl=S
-log.tag.ExynosCameraActivityFlash=S
-log.tag.ExynosCameraActivityFlashSec=S
-log.tag.ExynosCameraBufferManager=S
-log.tag.ExynosCameraFrameFactory=S
-log.tag.ExynosCameraFrameFactory3aaIspOtf=S
-log.tag.ExynosCameraFrameFactoryPreview=S
-log.tag.ExynosCameraFrameManager=S
-log.tag.ExynosCameraInterface=S
-log.tag.ExynosCameraMCPipe=S
-log.tag.ExynosCameraMetadataConverter=S
-log.tag.ExynosCameraNode=S
-log.tag.ExynosCameraPipe=S
-log.tag.ExynosCameraPipeFlite=S
-log.tag.ExynosCameraPipeGSC=S
-log.tag.ExynosCameraPipeJpeg=S
-log.tag.ExynosCameraSec=S
-log.tag.ExynosCameraUtils=S
-log.tag.SecCameraPreviewFrameScheduler=S
-log.tag.SecCameraUtil=S
-
