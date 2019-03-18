@@ -8,7 +8,7 @@ etc/bluetooth/bt_did.conf
 etc/bluetooth/bt_stack.conf
 
 ### Camera
-lib/hw/camera.universal7580.so
+lib/hw/camera.vendor.universal7580.so
 lib/libexynosv4l2.so
 lib/libexynoscamera.so
 lib/libhwjpeg.so
