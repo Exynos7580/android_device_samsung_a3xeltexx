@@ -108,7 +108,11 @@ on boot
 
     # Change permission for touch key enabled
     chown system system /sys/class/input/input8/enabled
-    chmod 0664 /sys/class/input/input8/enabled
+    chmod 0660 /sys/class/input/input8/enabled
+    chown system system /sys/class/input/input3/enabled
+    chmod 0660 /sys/class/input/input3/enabled
+    chown system system /sys/class/sec/sec_touchkey/input/enabled
+    chmod 0660 /sys/class/sec/sec_touchkey/input/enabled
 
     # Dynamic cluster hotplug
     chown system system /sys/devices/system/cpu/clusterhotplug/force_hstate
