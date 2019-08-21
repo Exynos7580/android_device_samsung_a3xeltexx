@@ -11,3 +11,15 @@ PRODUCT_PACKAGES += \
     init.samsungexynos7580.usb.rc \
     init.wifi.rc \
     ueventd.samsungexynos7580.rc
+
+# cpboot-daemon
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/cbd:root/sbin/cbd
+
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/healthd:root/sbin/healthd
+
+# samsung's sswap
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/sswap:root/sbin/sswap
+
