@@ -1,0 +1,20 @@
+# Allow rild to connect to gpsd
+allow audioserver rild:unix_stream_socket connectto;
+allow audioserver init:unix_stream_socket connectto;
+allow audioserver efs_file:dir search;
+allow audioserver sec_efs_file:dir search;
+allow audioserver sec_efs_file:file { read open };
+allow audioserver imei_efs_file:dir r_dir_perms;
+allow audioserver imei_efs_file:file r_file_perms;
+allow audioserver imei_efs_file:dir search;
+### AUDIOSERVER
+
+# Allow to manage wake locks
+#wakelock_use(audioserver)
+
+# Allow rild to connect to gpsd
+#unix_socket_connect(audioserver, property, rild)
+unix_socket_connect(audioserver, rild, rild)
+
+allow audioserver sysfs_wake_lock:file rw_file_perms;
+

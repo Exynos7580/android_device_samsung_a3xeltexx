@@ -1,10 +1,5 @@
 [
     {
-	    "remote": "github",
-	    "repository": "Exynos7580/android_device_samsung_exynos7580-common",
-	    "target_path": "device/samsung/exynos7580-common"
-    },
-    {
         "remote": "github",
 	    "repository": "Exynos7580/android_kernel_samsung_exynos7580-common",
 	    "target_path": "kernel/samsung/exynos7580-common"

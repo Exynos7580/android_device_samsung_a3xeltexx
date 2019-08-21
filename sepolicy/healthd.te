@@ -1,0 +1,22 @@
+allow healthd self:capability { chown fowner };
+
+
+# healthd
+allow healthd device:dir rw_dir_perms;
+allow healthd rtc_device:chr_file rw_file_perms;
+
+# /efs
+allow healthd efs_file:dir r_dir_perms;
+allow healthd block_device:dir r_dir_perms;
+allow healthd efs_file:dir search;
+allow healthd efs_file:file { read write open write setattr };
+
+
+allow healthd battery_efs_file:dir r_dir_perms;
+allow healthd battery_efs_file:dir search;
+allow healthd battery_efs_file:file { read write open write setattr };
+
+
+allow healthd app_efs_file:file { read write open write setattr };
+allow healthd app_efs_file:dir search;
+

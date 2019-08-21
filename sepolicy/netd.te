@@ -1,0 +1,5 @@
+# Allow loading the bcmdhd kernel module
+dontaudit netd self:capability sys_module;
+allow netd dhcp_data_file:dir setattr;
+allow netd wifi_data_file:dir create;
+

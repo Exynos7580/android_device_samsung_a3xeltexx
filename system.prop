@@ -41,3 +41,46 @@ ro.ril.telephony.mqanelements=6
 
 # read DS/SS property
 import /efs/factory.prop
+
+# Audio
+af.fast_track_multiplier=1
+
+# Display
+ro.opengles.version=196610
+
+# HWC
+debug.hwc.otf=1
+debug.hwc.winupdate=1
+
+# Zygote
+#ro.zygote.disable_gl_preload=1
+
+# Wifi
+wifi.interface=wlan0
+net.tethering.noprovisioning=true
+
+# media
+media.stagefright.legacyencoder=1
+media.stagefright.less-secure=1
+
+# misc
+ro.chipname=exynos7580
+ro.arch=exynos7580
+
+# Strict Mode
+persist.sys.strictmode.disable=true
+
+# Samsung OEM
+ro.telephony.samsung.realcall=true
+ro.multisim.set_audio_params=true
+
+# NFC
+ro.nfc.sec_hal=true
+ro.nfc.port=I2C
+
+# USB
+persist.sys.usb.config=mtp
+
+# Bluetooth
+qcom.bluetooth.soc=rome
+

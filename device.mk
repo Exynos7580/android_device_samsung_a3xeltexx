@@ -20,10 +20,12 @@ LOCAL_PATH := device/samsung/a3xeltexx
 $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 
 # Inherit board specific products
--include $(LOCAL_PATH)/product/*.mk
-
-# Inherit from Exynos7580-common
-$(call inherit-product, device/samsung/exynos7580-common/device-common.mk)
+-include $(LOCAL_PATH)/product.mk
 
 # Get non-open-source specific aspects
 $(call inherit-product-if-exists, vendor/samsung/a3xeltexx/a3xeltexx-vendor.mk)
+
+# call Samsung LSI board support package
+$(call inherit-product, hardware/samsung_slsi-cm/exynos5/exynos5.mk)
+$(call inherit-product, hardware/samsung_slsi-cm/exynos7580/exynos7580.mk)
+
