@@ -28,6 +28,7 @@
 
 using namespace android;
 static int efs_capacity_max;
+static bool first_upd = 0;
 
 static int read_sysfs(const char *path, char *buf, size_t size) {
     char *cp = NULL;
@@ -102,7 +103,7 @@ static bool battery_status_check(struct BatteryProperties *props)
 int healthd_board_battery_update(struct BatteryProperties *props)
 {
 
-    if (efs_capacity_max != get_int_field(BATTERY_CAPACITY_MAX_PATH))
+    if (efs_capacity_max != get_int_field(BATTERY_CAPACITY_MAX_PATH) && first_upd)
     {
 	KLOG_INFO(LOG_TAG, "Update efs capacity_max to = %d\n",efs_capacity_max);
 	efs_capacity_max = get_int_field(BATTERY_CAPACITY_MAX_PATH);
@@ -117,6 +118,7 @@ void healthd_board_init(struct healthd_config *config)
     efs_capacity_max = get_int_field(EFS_CAPACITY_MAX_PATH);
     KLOG_INFO(LOG_TAG, "Current capacity_max from efs = %d\n",efs_capacity_max);
     write_int_field(BATTERY_CAPACITY_MAX_PATH, efs_capacity_max);
+    first_upd = 1;
 
 }
 

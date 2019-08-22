@@ -18,6 +18,19 @@ TARGET_OTA_ASSERT_DEVICE := a3xelte,a3xeltexx
 
 DEVICE_PATH := device/samsung/a3xeltexx
 
+####################
+# Platform         #
+####################
+
+BOARD_VENDOR := samsung
+TARGET_BOARD_PLATFORM := exynos5
+TARGET_SOC := exynos7580
+TARGET_SLSI_VARIANT := cm
+
+TARGET_NO_BOOTLOADER := true
+TARGET_NO_RADIOIMAGE := true
+
+TARGET_BOOTLOADER_BOARD_NAME := universal7580
 
 ####################
 # Arch             #
@@ -125,7 +138,7 @@ MAX_EGL_CACHE_KEY_SIZE := 12*1024
 MAX_EGL_CACHE_SIZE := 2048*1024
 
 # Screen casting
-BOARD_USES_WFD := true
+#BOARD_USES_WFD := true
 
 # BGRA mixing
 BOARD_USE_BGRA_8888 := true
@@ -244,20 +257,6 @@ BOARD_FLASH_BLOCK_SIZE := 131072
 
 # DAT Compression
 BLOCK_BASED_OTA := true
-
-####################
-# Platform         #
-####################
-
-BOARD_VENDOR := samsung
-TARGET_BOARD_PLATFORM := exynos5
-TARGET_SOC := exynos7580
-TARGET_SLSI_VARIANT := cm
-
-TARGET_NO_BOOTLOADER := true
-TARGET_NO_RADIOIMAGE := true
-
-TARGET_BOOTLOADER_BOARD_NAME := universal7580
 
 ####################
 # Properties       #

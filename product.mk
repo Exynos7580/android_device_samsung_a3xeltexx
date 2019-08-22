@@ -217,7 +217,7 @@ PRODUCT_COPY_FILES += \
 ####################
 
 PRODUCT_PACKAGES += \
-    power.exynos5
+    power.universal7580
 
 TARGET_POWERHAL_VARIANT := samsung
 

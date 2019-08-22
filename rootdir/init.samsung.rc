@@ -352,9 +352,6 @@ on boot
    chmod 0664 /sys/class/power_supply/battery/batt_tune_ui_term_cur_1st
    chmod 0664 /sys/class/power_supply/battery/batt_tune_ui_term_cur_2nd
 
-   #Fix battery percent drop after reboot
-   copy /efs/Battery/batt_capacity_max /sys/class/power_supply/battery/batt_capacity_max
-
     # Sensors permissions
     # Accelerometer_sensor
     chown system radio /sys/class/sensors/accelerometer_sensor/raw_data
