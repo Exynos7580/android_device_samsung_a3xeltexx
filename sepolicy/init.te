@@ -48,3 +48,8 @@ allow init sswap:process { transition siginh rlimitinh noatsecure };
 # camera denials
 allow init camera_device:dir relabelto;
 allow init camera_device:lnk_file relabelto;
+
+allow init self:capability sys_module;
+allow init rootfs:system module_load;
+allow init system_file:system module_load;
+

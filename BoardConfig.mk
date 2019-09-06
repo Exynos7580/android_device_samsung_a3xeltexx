@@ -185,14 +185,12 @@ BOARD_SECCOMP_POLICY += $(DEVICE_PATH)/seccomp
 # Init             #
 ####################
 
-# Init Library
 TARGET_INIT_VENDOR_LIB := libinit_sec
 
 ####################
 # Kernel           #
 ####################
 
-# Kernel configuration
 TARGET_LINUX_KERNEL_VERSION := 3.10
 TARGET_KERNEL_ARCH := arm64
 ifeq ($(FORCE_32_BIT),true)
@@ -281,11 +279,6 @@ BOARD_PROVIDES_RILD := true
 # Recovery         #
 ####################
 
-#BOARD_HAS_NO_SELECT_BUTTON := true
-#BOARD_HAS_LARGE_FILESYSTEM := true
-#BOARD_HAS_NO_MISC_PARTITION := true
-#BOARD_USE_CUSTOM_RECOVERY_FONT := \"roboto_23x41.h\"
-#BOARD_SUPPRESS_SECURE_ERASE := true
 BOARD_HAS_DOWNLOAD_MODE := true
 
 ####################
@@ -300,7 +293,6 @@ BOARD_OVERRIDE_RS_CPU_VARIANT_64 := cortex-a53
 ####################
 
 BOARD_USES_SCALER := true
-#BOARD_USES_DT := true
 
 ####################
 # Sensors          #
@@ -314,8 +306,9 @@ TARGET_NO_SENSOR_PERMISSION_CHECK := true
 ####################
 
 # VSYNC
-VSYNC_EVENT_PHASE_OFFSET_NS := 7500000
-SF_VSYNC_EVENT_PHASE_OFFSET_NS := 5000000
+PRESENT_TIME_OFFSET_FROM_VSYNC_NS := 0
+VSYNC_EVENT_PHASE_OFFSET_NS := 0
+SF_VSYNC_EVENT_PHASE_OFFSET_NS := 0
 
 ####################
 # Wi-Fi            #
@@ -333,8 +326,6 @@ WIFI_DRIVER_FW_PATH_PARAM        := "/sys/module/dhd/parameters/firmware_path"
 WIFI_DRIVER_NVRAM_PATH           := "/system/etc/wifi/nvram_net.txt"
 WIFI_DRIVER_FW_PATH_STA          := "/system/etc/wifi/bcmdhd_sta.bin"
 WIFI_DRIVER_FW_PATH_AP           := "/system/etc/wifi/bcmdhd_apsta.bin"
-
-
 
 # Inherit from the proprietary version
 -include vendor/samsung/a3xeltexx/BoardConfigVendor.mk
