@@ -22,9 +22,8 @@ include $(CLEAR_VARS)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := samsung_gps.cpp
-LOCAL_SHARED_LIBRARIES := libbinder liblog libcutils libgui libutils libsensor
+LOCAL_SHARED_LIBRARIES := libbinder liblog libcutils libgui libutils
 LOCAL_MODULE := libshim_gpsd
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
-LOCAL_PROPRIETARY_MODULE := true
 
 include $(BUILD_SHARED_LIBRARY)

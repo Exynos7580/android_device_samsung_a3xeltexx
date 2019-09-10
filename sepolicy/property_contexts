@@ -1,0 +1,11 @@
+# modemloader
+hw.revision         u:object_r:modemloader_prop:s0
+
+# Mobicore
+sys.mobicoredaemon.enable         u:object_r:tee_prop:s0
+
+# rild
+persist.ril.modem.board        u:object_r:rild_prop:s0
+persist.ril.ims.eutranParam    u:object_r:rild_prop:s0
+persist.ril.ims.utranParam     u:object_r:rild_prop:s0
+

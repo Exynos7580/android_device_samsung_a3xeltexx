@@ -2,30 +2,85 @@
 ro.sf.lcd_density=320
 
 # Dalvik/Art
+dalvik.vm.dex2oat-filter=speed
 dalvik.vm.heapstartsize=8m
 dalvik.vm.heapgrowthlimit=128m
 dalvik.vm.heapsize=512m
 dalvik.vm.heaptargetutilization=0.75
 dalvik.vm.heapminfree=2m
 dalvik.vm.heapmaxfree=8m
+dalvik.vm.image-dex2oat-filter=speed
+dalvik.vm.isa.arm64.variant=generic
+dalvik.vm.isa.arm64.features=default
+dalvik.vm.isa.arm.variant=cortex-a15
+dalvik.vm.isa.arm.features=default
 
-#
-# HWUI_BUILD_PROPERTIES
-#
-ro.hwui.texture_cache_size=24
-ro.hwui.layer_cache_size=16
-ro.hwui.path_cache_size=4
-ro.hwui.texture_cache_flushrate=0.4
-ro.hwui.shape_cache_size=1
-ro.hwui.gradient_cache_size=0.5
-ro.hwui.drop_shadow_cache_size=2
-ro.hwui.r_buffer_cache_size=2
-ro.hwui.text_small_cache_width=1024
-ro.hwui.text_small_cache_height=512
-ro.hwui.text_large_cache_width=2048 
-ro.hwui.text_large_cache_height=1024
+# Hwui
+#ro.hwui.texture_cache_size=50
+#ro.hwui.layer_cache_size=34
+#ro.hwui.path_cache_size=10
+#ro.hwui.texture_cache_flushrate=0.4
+#ro.hwui.shape_cache_size=4
+#ro.hwui.gradient_cache_size=2
+#ro.hwui.drop_shadow_cache_size=6
+#ro.hwui.r_buffer_cache_size=4
+#ro.hwui.text_small_cache_width=1024
+#ro.hwui.text_small_cache_height=1024
+#ro.hwui.text_large_cache_width=2048
+#ro.hwui.text_large_cache_height=1024
 
-# Suppress some logcat output
-log.tag.BrcmNfcJni=S
-log.tag.BrcmNfcNfa=S
-log.tag.SecHAL=S
+# Radio
+persist.radio.sib16_support=1
+rild.libpath=/system/lib/libsec-ril.so
+rild.libpath2=/system/lib/libsec-ril-dsds.so
+ro.telephony.default_network=9
+ro.telephony.ril_class=SlteRIL
+ro.ril.gprsclass=10
+ro.ril.hsxpa=1
+ro.ril.telephony.mqanelements=6
+
+# read DS/SS property
+import /efs/factory.prop
+
+# Audio
+af.fast_track_multiplier=1
+
+# Display
+ro.opengles.version=196610
+
+# HWC
+debug.hwc.otf=1
+debug.hwc.winupdate=1
+
+# Zygote
+#ro.zygote.disable_gl_preload=1
+
+# Wifi
+wifi.interface=wlan0
+net.tethering.noprovisioning=true
+
+# media
+media.stagefright.legacyencoder=1
+media.stagefright.less-secure=1
+
+# misc
+ro.chipname=exynos7580
+ro.arch=exynos7580
+
+# Strict Mode
+persist.sys.strictmode.disable=true
+
+# Samsung OEM
+ro.telephony.samsung.realcall=true
+ro.multisim.set_audio_params=true
+
+# NFC
+ro.nfc.sec_hal=true
+ro.nfc.port=I2C
+
+# USB
+persist.sys.usb.config=mtp
+
+# Bluetooth
+qcom.bluetooth.soc=rome
+

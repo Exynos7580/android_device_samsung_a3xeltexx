@@ -1,6 +1,6 @@
 #
-# Copyright 2016 The CyanogenMod Project
-# Copyright 2017-2018 The LineageOS Project
+# Copyright (C) 2016 The CyanogenMod Project
+#           (C) 2017 The LineageOS Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,15 +19,13 @@ LOCAL_PATH := device/samsung/a3xeltexx
 
 $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 
-# Vendor security patch level (vendor blobs from A310FXXU4CRG2)
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.lineage.build.vendor_security_patch=2018-07-30
-
 # Inherit board specific products
--include $(LOCAL_PATH)/configs/product/*.mk
-
-# Inherit from Exynos7580-common
-$(call inherit-product, device/samsung/exynos7580-common/device-common.mk)
+-include $(LOCAL_PATH)/product.mk
 
 # Get non-open-source specific aspects
 $(call inherit-product-if-exists, vendor/samsung/a3xeltexx/a3xeltexx-vendor.mk)
+
+# call Samsung LSI board support package
+$(call inherit-product, hardware/samsung_slsi-cm/exynos5/exynos5.mk)
+$(call inherit-product, hardware/samsung_slsi-cm/exynos7580/exynos7580.mk)
+

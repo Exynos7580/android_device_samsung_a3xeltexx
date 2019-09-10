@@ -1,26 +1,33 @@
-```
-Copyright (C) 2017-2018 Jan Altensen (Stricted) <info@stricted.net>
-Copyright (C) 2018 Victor Lourme (l0w) <l0w@protonmail.ch>
+Copyright (C) 2016-2017 Apavayan Sinha <info@apavayan.com>
+Copyright (C) 2018-2019 Stenkin Evgeniy <stenkinevgeniy@gmail.com>
 
-Manifest for syncing: https://github.com/Exynos7580/local_manifests
 
-device-tree: a3xeltexx
-target: Android O / LineageOS 15.1 (8.1)
-type: phone
-license: Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0)
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-specifications:
-- size: 4.7"
-- camera: 13MP / 1080p / autofocus / flashlight 
-- secondary camera: 5MP / 1080p
-- soc: Exynos7580 (8x 1.6GHz)
-- ram: 1.5GB
-- battery: 2300mAh non-removable
-- default os: TouchWiz 5.1.1 upgradable to 7.0
-- sdcard: supported up to 256 GB
-- audio: loudspeaker + microphone with noise cancellation
-- wifi: 802.11 b/g/n + wifi direct + hotspot
-- screen: Super AMOLED 720x1080 312ppi
-- gps: GPS + A-GPS + GLONASS
-- sensors: accelerometer / proximity / compass / light 
-```
+      http://www.apache.org/licenses/LICENSE-2.0
+
+
+**Notice:** This is **Work In Progress** so it might not work
+
+Device Tree For Samsung Galaxy A3 (2016)
+=====================================
+
+Basic   | Spec Sheet
+-------:|:-------------------------
+CPU     | Qcta 1.6 GHz Cortex-A53
+CHIPSET | Samsung Exynos 7580
+GPU     | Mali-T720MP2
+Memory  | 1.5GB RAM
+Android | 5.1.1/6.0.1/7.0
+Storage | 16 GB
+MicroSD | Up to 128GB
+Battery | 2300 mAh
+Display | 4,7"
+Rear Camera  | 13 MP, f/1.9, 31mm, 1080p@30fps, autofocus, LED flash
+Front Camera  | 5 MP, f/1.9, 23mm
+
+![Galaxy A3 (2016)](http://drop.ndtv.com/TECH/product_database/images/1232015120413AM_635_samsung_galaxy_a3_2016.jpeg "Galaxy A3 (2016)")
+
+Model Supported : SM-A310F SM-A310M

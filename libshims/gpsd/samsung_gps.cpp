@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include <sensor/SensorManager.h>
+#include <gui/SensorManager.h>
 #include <utils/Log.h>
 
 namespace android {

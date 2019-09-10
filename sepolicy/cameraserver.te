@@ -1,0 +1,49 @@
+# /sys/devices/virtual/camera/*/*_camfw
+# /dev/m2m1shot_jpeg
+allow cameraserver camera_device:dir { search };
+allow cameraserver camera_device:file { read write open getattr };
+allow cameraserver camera_device:chr_file { read open getattr };
+
+allow camera_device sysfs:filesystem associate;
+
+allow cameraserver camera_data_file:file { read open };
+
+# /efs
+allow cameraserver efs_file:dir r_dir_perms;
+
+# /efs/wv.keys
+allow cameraserver efs_file:file r_file_perms;
+
+# /dev/m2m1shot_jpeg
+allow cameraserver camera_device:chr_file { read write open getattr ioctl };
+allow cameraserver video_device:chr_file { read write open getattr ioctl };
+
+#============= cameraserver ==============
+allow cameraserver cameraproxy_service:service_manager find;
+allow cameraserver cameraserver_tmpfs:file { read write };
+allow cameraserver system_data_file:sock_file write;
+
+# Snap permissions
+allow cameraserver sensorservice_service:service_manager { find };
+allow cameraserver system_server:unix_stream_socket { read write };
+
+#
+# All our codecs run in the cameraserver process for now because of
+# media.stagefright.less-secure.
+# The rules below should be moved to mediacodec.te once this is fixed.
+#
+# BEGIN
+
+allow mediadrmserver secmem_device:chr_file { ioctl rw_file_perms };
+
+# /dev/s5p-smem
+allow cameraserver secmem_device:chr_file { ioctl rw_file_perms };
+
+# /system/lib/omx/
+allow cameraserver system_file:dir r_dir_perms;
+
+# /sys/class/video4linux/video6/name
+allow cameraserver sysfs:file r_file_perms;
+
+# END
+
