@@ -8,27 +8,27 @@
 	<pcmdai fmradio_link="4" />
 	<pcmdai playback_jam_link="6" />
 
-	<!-- Reset configurations -->
-	<ctl name="S2801 Mixer En" value="Off" />
-	<ctl name="S2801 SRC1 En" value="Off" />
-	<ctl name="S2801 SRC2 En" value="Off" />
-	<ctl name="S2801 SRC3 En" value="Off" />
-	<ctl name="S2801 CH1 Mixer En" value="Off" />
-	<ctl name="S2801 CH2 Mixer En" value="Off" />
-	<ctl name="S2801 CH3 Mixer En" value="Off" />
-	<ctl name="S2801 CH4 Mixer En" value="Off" />
-	<ctl name="S2801 RMIX1 En" value="Off" />
-	<ctl name="S2801 RMIX2 En" value="Off" />
-	<ctl name="S2801 CH3 Rec En" value="Off" />
-	<ctl name="S2801 CH1 DOUT Select" value="DMIX_OUT" />
-	<ctl name="S2801 CH2 DOUT Select" value="DMIX_OUT" />
-	<ctl name="S2801 CH3 DOUT Select" value="DMIX_OUT" />
-	<ctl name="MonoMix Mode" value="Disable" />
-	<ctl name="HP HP On" value="0" />
-	<ctl name="EP EP On" value="0" />
-	<ctl name="SPK SPK On" value="0" />
-	<ctl name="Chargepump Mode" value="CLASS-G-A" />
-	<ctl name="DNC Max Gain" value="24" />
+        <!-- Reset configurations -->
+        <ctl name="S2801 Mixer En" value="On" />
+        <ctl name="S2801 SRC1 En" value="Off" />
+        <ctl name="S2801 SRC2 En" value="Off" />
+        <ctl name="S2801 SRC3 En" value="Off" />
+        <ctl name="S2801 CH1 Mixer En" value="On" />
+        <ctl name="S2801 CH2 Mixer En" value="Off" />
+        <ctl name="S2801 CH3 Mixer En" value="Off" />
+        <ctl name="S2801 CH4 Mixer En" value="Off" />
+        <ctl name="S2801 RMIX1 En" value="Off" />
+        <ctl name="S2801 RMIX2 En" value="Off" />
+        <ctl name="S2801 CH3 Rec En" value="Off" />
+        <ctl name="S2801 CH1 DOUT Select" value="DMIX_OUT" />
+        <ctl name="S2801 CH2 DOUT Select" value="DMIX_OUT" />
+        <ctl name="S2801 CH3 DOUT Select" value="DMIX_OUT" />
+        <ctl name="MonoMix Mode" value="Disable" />
+        <ctl name="HP HP On" value="0" />
+        <ctl name="EP EP On" value="0" />
+        <ctl name="SPK SPK On" value="1" />
+        <ctl name="Chargepump Mode" value="CLASS-G-A" />
+        <ctl name="DNC Max Gain" value="24" />
 
 	<!-- default routes -->
 
