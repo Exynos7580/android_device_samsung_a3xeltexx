@@ -1,3 +1,9 @@
+PRODUCT_PACKAGES += \
+        libMcClient \
+        libMcRegistry \
+        mcDriverDaemon \
+	libhwjpeg
+
 ####################
 # Audio            #
 ####################
@@ -125,7 +131,6 @@ PRODUCT_COPY_FILES += \
 # Lights           #
 ####################
 
-# Lights
 PRODUCT_PACKAGES += \
     lights.universal7580
 
@@ -165,6 +170,7 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/nfc/nfcee_access.xml:system/etc/nfcee_access.xml \
 
 PRODUCT_PACKAGES += \
+    nfc_nci.universal7580 \
     libnfc \
     libnfc_jni \
     NfcNci \
@@ -215,8 +221,6 @@ PRODUCT_COPY_FILES += \
 
 PRODUCT_PACKAGES += \
     power.universal7580
-
-TARGET_POWERHAL_VARIANT := samsung
 
 ####################
 # Ramdisk          #
