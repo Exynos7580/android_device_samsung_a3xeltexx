@@ -18,6 +18,10 @@ TARGET_OTA_ASSERT_DEVICE := a3xelte,a3xeltexx
 
 DEVICE_PATH := device/samsung/a3xeltexx
 
+TARGET_POWERHAL_VARIANT := a3xelte
+
+
+
 ####################
 # Platform         #
 ####################
@@ -47,6 +51,10 @@ TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
 TARGET_CPU_VARIANT := cortex-a53
 TARGET_CPU_CORTEX_A53 := true
+
+
+BOARD_MEMCPY_AARCH32 := true
+
 
 ####################
 # Bluetooth        #
@@ -140,9 +148,6 @@ MAX_EGL_CACHE_SIZE := 2048*1024
 # Screen casting
 #BOARD_USES_WFD := true
 
-# BGRA mixing
-BOARD_USE_BGRA_8888 := true
-
 # Virtual display
 #BOARD_USES_VIRTUAL_DISPLAY := true
 
@@ -170,7 +175,7 @@ TARGET_SPECIFIC_HEADER_PATH += $(DEVICE_PATH)/include
 BOARD_HARDWARE_CLASS += hardware/samsung/cmhw
 
 # Properties
-TARGET_SYSTEM_PROP := $(DEVICE_PATH)/system.prop
+#TARGET_SYSTEM_PROP := $(DEVICE_PATH)/system.prop
 
 # LED path
 BACKLIGHT_PATH := "/sys/class/backlight/panel/brightness"
@@ -205,13 +210,9 @@ ifneq ($(FORCE_32_BIT),true)
 TARGET_USES_UNCOMPRESSED_KERNEL := true
 endif
 
-# CPUSETS
-#ENABLE_CPUSETS := true
-
 ####################
 # NFC              #
 ####################
-
 
 BOARD_NFC_HAL_SUFFIX := universal7580
 BOARD_HAVE_NFC := true
@@ -219,9 +220,6 @@ BOARD_HAVE_NFC := true
 ####################
 # OMX              #
 ####################
-
-# Samsung LSI OpenMAX
-#TARGET_GLOBAL_CFLAGS += -DUSE_NATIVE_SEC_NV12TILED
 
 # Samsung OpenMAX Video
 BOARD_USE_STOREMETADATA := true
@@ -234,7 +232,6 @@ BOARD_USE_GSC_RGB_ENCODER := true
 BOARD_USE_CSC_HW := false
 BOARD_USE_QOS_CTRL := false
 BOARD_USE_VP8ENC_SUPPORT := true
-
 
 ####################
 # Partitions       #
@@ -261,7 +258,7 @@ BLOCK_BASED_OTA := true
 ####################
 
 # Properties
-TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
+TARGET_SYSTEM_PROP := $(DEVICE_PATH)/system.prop
 
 ####################
 # Radio            #
@@ -309,6 +306,9 @@ TARGET_NO_SENSOR_PERMISSION_CHECK := true
 PRESENT_TIME_OFFSET_FROM_VSYNC_NS := 0
 VSYNC_EVENT_PHASE_OFFSET_NS := 0
 SF_VSYNC_EVENT_PHASE_OFFSET_NS := 0
+NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
+
+
 
 ####################
 # Wi-Fi            #
@@ -326,6 +326,27 @@ WIFI_DRIVER_FW_PATH_PARAM        := "/sys/module/dhd/parameters/firmware_path"
 WIFI_DRIVER_NVRAM_PATH           := "/system/etc/wifi/nvram_net.txt"
 WIFI_DRIVER_FW_PATH_STA          := "/system/etc/wifi/bcmdhd_sta.bin"
 WIFI_DRIVER_FW_PATH_AP           := "/system/etc/wifi/bcmdhd_apsta.bin"
+
+
+#from TO21 sources:
+
+TARGET_LINUX_KERNEL_VERSION := 3.10
+
+# Gralloc
+BOARD_USES_EXYNOS5_COMMON_GRALLOC := true
+
+TARGET_USES_UNIVERSAL_LIBHWJPEG := true
+
+# HWComposer
+BOARD_USES_VPP := true
+
+# Device Tree
+BOARD_USES_DT := true
+
+# SCALER
+BOARD_USES_DEFAULT_CSC_HW_SCALER := true
+BOARD_USES_SCALER_M2M1SHOT := true
+
 
 # Inherit from the proprietary version
 -include vendor/samsung/a3xeltexx/BoardConfigVendor.mk

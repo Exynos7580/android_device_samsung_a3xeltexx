@@ -25,7 +25,7 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 # Get non-open-source specific aspects
 $(call inherit-product-if-exists, vendor/samsung/a3xeltexx/a3xeltexx-vendor.mk)
 
-# call Samsung LSI board support package
-$(call inherit-product, hardware/samsung_slsi-cm/exynos5/exynos5.mk)
-$(call inherit-product, hardware/samsung_slsi-cm/exynos7580/exynos7580.mk)
+$(call inherit-product, hardware/samsung_slsi/exynos5/exynos5.mk)
+#$(call inherit-product-if-exists, vendor/samsung_slsi/exynos7570/exynos7570-vendor.mk)
+$(call inherit-product, hardware/samsung_slsi/exynos7580/exynos7580.mk)
 

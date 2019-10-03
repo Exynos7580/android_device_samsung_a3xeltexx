@@ -9,19 +9,19 @@
     },
     {
         "repository": "android_hardware_samsung_slsi-cm_exynos",
-        "target_path": "hardware/samsung_slsi-cm/exynos"
+        "target_path": "hardware/samsung_slsi/exynos"
     },
     {
         "repository": "android_hardware_samsung_slsi-cm_exynos5",
-        "target_path": "hardware/samsung_slsi-cm/exynos5"
+        "target_path": "hardware/samsung_slsi/exynos5"
     },
     {
 	"remote": "github",
         "repository": "Exynos7580/android_hardware_samsung_slsi-cm_exynos7580",
-        "target_path": "hardware/samsung_slsi-cm/exynos7580"
+        "target_path": "hardware/samsung_slsi/exynos7580"
     },
     {
         "repository": "android_hardware_samsung_slsi-cm_openmax",
-        "target_path": "hardware/samsung_slsi-cm/openmax"
+        "target_path": "hardware/samsung_slsi/openmax"
     }
 ]
