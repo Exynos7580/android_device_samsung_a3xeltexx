@@ -1,2 +1,4 @@
 allow mediacodec system_file:dir { read open };
 allow mediacodec sysfs:file { read open getattr };
+allow mediacodec video_device:chr_file rw_file_perms;
+

@@ -4,6 +4,8 @@ allow mediaserver efs_file:dir r_dir_perms;
 # /efs/wv.keys
 allow mediaserver efs_file:file r_file_perms;
 
+allow mediadrmserver video_device:chr_file rw_file_perms;
+
 # /dev/m2m1shot_jpeg
 allow mediaserver camera_device:chr_file { read write open getattr ioctl };
 allow mediaserver video_device:chr_file { read write open getattr ioctl };

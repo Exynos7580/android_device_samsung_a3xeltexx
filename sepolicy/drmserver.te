@@ -1,0 +1,3 @@
+allow drmserver kernel:system module_request;
+allow drmserver video_device:chr_file rw_file_perms;
+
