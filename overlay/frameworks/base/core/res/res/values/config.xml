@@ -17,9 +17,7 @@
 */
 -->
 
-<resources>
-    <!-- Is the notification LED intrusive? Used to decide if there should be a disable option -->
-    <bool translatable="false" name="config_intrusiveNotificationLed">true</bool> 
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- This string array should be overridden by the device to present a list of network
          attributes.  This is used by the connectivity manager to decide which networks can coexist
          based on the hardware -->
@@ -45,6 +43,11 @@
         <item>"mobile_emergency,15,0,2,-1,true</item>
     </string-array>
 
+
+    <!-- Configure wifi tcp buffersizes in the form:
+         rmem_min,rmem_def,rmem_max,wmem_min,wmem_def,wmem_max -->
+    <string name="config_wifi_tcp_buffers" translatable="false">524288,6291456,8291456,524288,6291456,8291456</string>
+
     <!-- This string array should be overridden by the device to present a list of radio
          attributes.  This is used by the connectivity manager to decide which networks can coexist
          based on the hardware -->
@@ -63,7 +66,8 @@
          USB interfaces.  If the device doesn't want to support tething over USB this should
          be empty.  An example would be "usb.*" -->
     <string-array translatable="false" name="config_tether_usb_regexs">
-        <item>rndis\\d</item>
+        <item>"usb\\d"</item>
+        <item>"rndis\\d"</item>
     </string-array>
 
     <!-- List of regexpressions describing the interface (if any) that represent tetherable
@@ -159,9 +163,6 @@
     <!-- ### DISPLAY                                                    -->
     <!-- ############################################################## -->
 
-    <!-- If this is true, the screen will fade off. -->
-    <bool name="config_animateScreenLights">true</bool>
-
     <!-- If this is true, the screen will come on when you unplug usb/power/whatever. -->
     <bool name="config_unplugTurnsOnScreen">true</bool>
 
@@ -178,32 +179,33 @@
          Zone N:        array[N - 1] <= LUX < array[N]
          Zone N + 1     array[N] <= LUX < infinity
 
+
          Must be overridden in platform specific overlays -->
     <integer-array name="config_autoBrightnessLevels">
-        <item>9</item>
-        <item>30</item>
-        <item>100</item>
-        <item>325</item>
-        <item>1250</item>
-        <item>3500</item>
+        <item>15</item>
+        <item>40</item>
+        <item>190</item>
+        <item>350</item>
+        <item>600</item>
+        <item>1000</item>
+        <item>1600</item>
+        <item>3000</item>
         <item>10000</item>
-        <item>20000</item>
     </integer-array>
-
     <!-- Array of output values for LCD backlight corresponding to the LUX values
          in the config_autoBrightnessLevels array.  This array should have size one greater
-         than the size of the config_autoBrightnessLevels array.
-         This must be overridden in platform specific overlays -->
+         than the size of the config_autoBrightnessLevels array. -->
     <integer-array name="config_autoBrightnessLcdBacklightValues">
-        <!--     9 --> <item>18</item>
-        <!--    30 --> <item>30</item>
-        <!--   100 --> <item>59</item>
-        <!--   325 --> <item>74</item>
-        <!--  1250 --> <item>92</item>
-        <!--  3500 --> <item>118</item>
-        <!-- 10000 --> <item>155</item>
-        <!-- 20000 --> <item>222</item>
-                       <item>255</item>
+        <item>10</item>   <!-- 0-15 -->
+        <item>20</item>   <!-- 15-40 -->
+        <item>40</item>   <!-- 40-190 -->
+        <item>55</item>   <!-- 190-350 -->
+        <item>88</item>   <!-- 350-600 -->
+        <item>130</item>  <!-- 600-1000 -->
+        <item>167</item>  <!-- 1000-1600 -->
+        <item>204</item>  <!-- 1600-3000 -->
+        <item>240</item>  <!-- 3000-10000 -->
+        <item>255</item>  <!-- 10000+ -->
     </integer-array>
 
     <!-- Minimum screen brightness setting allowed by the power manager.
@@ -218,12 +220,6 @@
          timeout expires.  May be less than the minimum allowed brightness setting
          that can be set by the user. -->
     <integer name="config_screenBrightnessDim">10</integer>
-
-    <!-- Is the notification LED intrusive? Used to decide if there should be a disable option -->
-    <bool name="config_intrusiveNotificationLed">true</bool>
-
-    <!-- Is the battery LED intrusive? Used to decide if there should be a disable option -->
-    <bool name="config_intrusiveBatteryLed">true</bool>
 
     <!-- Boolean to enable stk functionality on Samsung phones -->
     <bool name="config_samsung_stk">true</bool>
@@ -247,20 +243,6 @@
 
     <!-- Allow screen mirroring/miracast -->
     <bool name="config_enableWifiDisplay">true</bool>
-
-    <!-- The device supports freeform window management -->
-    <bool name="config_freeformWindowManagement">true</bool>
-
-    <!-- Flag indicating whether strict threshold is used, or lenient threshold is used,
-            when evaluating RSRP for LTE antenna bar display
-           0. Strict threshold
-           1. Lenient threshold
-           2. Custom threshold
-    -->
-    <integer name="config_LTE_RSRP_threshold_type">2</integer>
-
-    <!-- For performance and storage reasons, limit the number of fingerprints per user -->
-    <integer name="config_fingerprintMaxTemplatesPerUser">4</integer>
 
     <!-- Idle Receive current for wifi radio. 0 by default-->
     <integer translatable="false" name="config_wifi_idle_receive_cur_ma">1</integer>
@@ -288,7 +270,7 @@
     <bool name="config_useRoundIcon">true</bool>
 
     <!--  Maximum number of supported users -->
-    <integer name="config_multiuserMaximumUsers">5</integer>
+    <integer name="config_multiuserMaximumUsers">4</integer>
     <!-- Whether UI for multi user should be shown -->
     <bool name="config_enableMultiUserUI">true</bool>
 
@@ -304,5 +286,7 @@
     <!-- The restoring is handled by modem if it is true -->
     <bool translatable="false" name="skip_restoring_network_selection">true</bool>
 
+    <!-- Make things go fast -->
+    <bool name="config_ui_enableFadingMarquee">false</bool>
 
 </resources>
